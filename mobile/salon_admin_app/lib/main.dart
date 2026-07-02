@@ -18,10 +18,10 @@ class SalonAdminApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: fontFamily,
         textTheme: ThemeData.light().textTheme.apply(
-          fontFamily: fontFamily,
-          bodyColor: const Color(0xFF111827),
-          displayColor: const Color(0xFF111827),
-        ),
+              fontFamily: fontFamily,
+              bodyColor: const Color(0xFF111827),
+              displayColor: const Color(0xFF111827),
+            ),
         colorScheme: ColorScheme.fromSeed(seedColor: primary, primary: primary),
         scaffoldBackgroundColor: const Color(0xFFF6F8F7),
         appBarTheme: const AppBarTheme(
@@ -109,17 +109,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int get _weekRevenue {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    return _bookings
-        .where((booking) {
-          final slot = DateTime.parse(booking['slotStart']);
-          return slot.isAfter(
-            DateTime(weekStart.year, weekStart.month, weekStart.day),
-          );
-        })
-        .fold<int>(
-          0,
-          (total, booking) => total + ((booking['salonPayout'] ?? 0) as int),
-        );
+    return _bookings.where((booking) {
+      final slot = DateTime.parse(booking['slotStart']);
+      return slot.isAfter(
+        DateTime(weekStart.year, weekStart.month, weekStart.day),
+      );
+    }).fold<int>(
+      0,
+      (total, booking) => total + ((booking['salonPayout'] ?? 0) as int),
+    );
   }
 
   Future<void> _toggleCanSetOwnPrice(
@@ -369,9 +367,8 @@ class _TabButton extends StatelessWidget {
           child: Text(
             '$label  $count',
             style: TextStyle(
-              color: selected
-                  ? const Color(0xFF00796B)
-                  : const Color(0xFF6B7280),
+              color:
+                  selected ? const Color(0xFF00796B) : const Color(0xFF6B7280),
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -409,8 +406,7 @@ class _BookingCard extends StatelessWidget {
     final slot = DateTime.parse(booking['slotStart']);
     final payout = ((booking['salonPayout'] ?? 0) as int) ~/ 100;
     final status = booking['status'] ?? 'CONFIRMED';
-    final customerRequestedReschedule =
-        status == 'PENDING_RESCHEDULE' &&
+    final customerRequestedReschedule = status == 'PENDING_RESCHEDULE' &&
         booking['rescheduleProposedBy'] == 'CUSTOMER';
     final proposedSlot = booking['proposedDateTime'] == null
         ? null
@@ -502,10 +498,47 @@ class _BookingCard extends StatelessWidget {
                 ),
               ],
             ),
+          ] else if (status == 'PENDING') ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _updateStatus(context, 'CANCELLED'),
+                    icon: const Icon(Icons.close),
+                    label: const Text('Reject'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => _updateStatus(context, 'CONFIRMED'),
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('Confirm'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ],
       ),
     );
+  }
+
+  Future<void> _updateStatus(BuildContext context, String status) async {
+    try {
+      await Dio(BaseOptions(baseUrl: _AdminDashboardScreenState.baseUrl)).patch(
+        '/v2/bookings/${booking['id']}/status',
+        data: {'status': status},
+      );
+      onChanged();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Update failed: $e')));
+      }
+    }
   }
 
   Future<void> _acceptReschedule(BuildContext context) async {
