@@ -1,0 +1,219 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  email     String?  @unique
+  name      String?
+  role      UserRole @default(CUSTOMER)
+  password  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lat       Float?
+  lng       Float?
+
+  stylist       Stylist?
+  salonOwned    Salon?        @relation("SalonOwner")
+  bookings      Booking[]     @relation("CustomerBookings")
+}
+
+model Stylist {
+  id                        String   @id @default(cuid())
+  userId                    String   @unique
+  registrationType          RegistrationType @default(INDEPENDENT)
+  primarySalonId            String?
+  independentBookingEnabled Boolean  @default(true)
+  basePrice                 Int?
+  homeServiceEnabled        Boolean  @default(false)
+  homeServiceCatalog        Json?
+  reviewFlagsUsed           Int      @default(0)
+  reviewFlagsResetAt        DateTime @default(now())
+  lat                       Float?
+  lng                       Float?
+  rating                    Float    @default(0)
+  totalReviews              Int      @default(0)
+
+  user          User            @relation(fields: [userId], references: [id])
+  primarySalon  Salon?          @relation("PrimaryStylists", fields: [primarySalonId], references: [id])
+  salonStylists SalonStylist[]
+  bookings      Booking[]
+  services      Service[]
+  availability  StylistAvailability[]
+}
+
+model StylistAvailability {
+  id          String   @id @default(cuid())
+  stylistId   String
+  dayOfWeek   Int?
+  date        DateTime?
+  startTime   String
+  endTime     String
+  isBlocked   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  stylist Stylist @relation(fields: [stylistId], references: [id])
+
+  @@index([stylistId, date])
+  @@index([stylistId, dayOfWeek])
+}
+
+model Salon {
+  id              String   @id @default(cuid())
+  ownerId         String   @unique
+  name            String
+  address         String
+  lat             Float
+  lng             Float
+  noShowPenalty   Int      @default(0)
+  noShowSplit     Json     @default("{\"stylist\": 70, \"salon\": 30}")
+  commissionRate  Int      @default(15)
+  saasPlan        String   @default("FREE")
+  rating          Float    @default(0)
+  totalReviews    Int      @default(0)
+
+  owner             User            @relation("SalonOwner", fields: [ownerId], references: [id])
+  stylists          SalonStylist[]
+  stylistsPrimary   Stylist[]       @relation("PrimaryStylists")
+  bookings          Booking[]
+  services          Service[]
+}
+
+model SalonStylist {
+  id              String             @id @default(cuid())
+  salonId         String
+  stylistId       String
+  status          SalonStylistStatus @default(PENDING)
+  exclusive       Boolean            @default(false)
+  canSetOwnPrice  Boolean            @default(false)
+  canCancelBooking Boolean           @default(false)
+  priceOverrides  Json?
+  commissionRate  Int                @default(70)
+  joinedAt        DateTime           @default(now())
+
+  salon   Salon   @relation(fields: [salonId], references: [id])
+  stylist Stylist @relation(fields: [stylistId], references: [id])
+
+  @@unique([salonId, stylistId])
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  duration    Int
+  salonId     String?
+  stylistId   String?
+  basePrice   Int
+
+  salon   Salon?   @relation(fields: [salonId], references: [id])
+  stylist Stylist? @relation(fields: [stylistId], references: [id])
+  bookings Booking[]
+}
+
+model Booking {
+  id                  String        @id @default(cuid())
+  customerId          String
+  providerType        ProviderType
+  salonId             String?
+  stylistId           String?
+  serviceId           String
+  bookedVia           BookedVia
+  serviceType         ServiceType   @default(IN_SALON)
+  slotStart           DateTime
+  slotEnd             DateTime
+  originalDateTime    DateTime?
+  proposedDateTime    DateTime?
+  rescheduleReason    String?
+  rescheduleProposedBy String?
+  price               Int
+  travelFee           Int           @default(0)
+  platformFee         Int
+  stylistPayout       Int
+  salonPayout         Int
+  commissionSnapshot  Json
+  status              BookingStatus @default(PENDING)
+  paymentId           String?
+  noShowCharged       Boolean       @default(false)
+  createdAt           DateTime      @default(now())
+
+  customer  User      @relation("CustomerBookings", fields: [customerId], references: [id])
+  salon     Salon?    @relation(fields: [salonId], references: [id])
+  stylist   Stylist?  @relation(fields: [stylistId], references: [id])
+  service   Service   @relation(fields: [serviceId], references: [id])
+  review    Review?
+
+  @@index([stylistId, slotStart])
+}
+
+model Review {
+  id               String           @id @default(cuid())
+  bookingId        String           @unique
+  customerId       String
+  stylistRating    Int?
+  salonRating      Int?
+  stylistComment   String?
+  salonComment     String?
+  reviewTargetType ReviewTargetType @default(BOTH)
+  flaggedToSalon   Boolean          @default(false)
+  flagReason       String?
+  createdAt        DateTime         @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+}
+
+enum UserRole {
+  CUSTOMER
+  STYLIST
+  SALON_OWNER
+  SUPER_ADMIN
+}
+
+enum RegistrationType {
+  INDEPENDENT
+  SALON_EXCLUSIVE
+}
+
+enum SalonStylistStatus {
+  PENDING
+  ACTIVE
+  TERMINATED
+}
+
+enum ProviderType {
+  SALON
+  STYLIST_INDEPENDENT
+  STYLIST_AT_SALON
+}
+
+enum BookedVia {
+  SALONS_TAB
+  STYLISTS_TAB
+}
+
+enum ServiceType {
+  IN_SALON
+  HOME_SERVICE
+}
+
+enum BookingStatus {
+  PENDING
+  PENDING_RESCHEDULE
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ReviewTargetType {
+  STYLIST
+  SALON
+  BOTH
+}

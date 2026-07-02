@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_DB: salon_db
+      POSTGRES_PASSWORD: localpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+      - "5555:5555"
+    environment:
+      DATABASE_URL: postgresql://postgres:localpass@postgres:5432/salon_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: changeme
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma db push --accept-data-loss && npm start"
+
+volumes:
+  pg_data:

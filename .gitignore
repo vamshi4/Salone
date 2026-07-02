@@ -1,0 +1,27 @@
+# Node / backend
+node_modules/
+dist/
+.env
+.env.*
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+
+# Android / Gradle
+.gradle/
+local.properties
+android/.kotlin/
+*.apk
+
+# IDE / OS
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
