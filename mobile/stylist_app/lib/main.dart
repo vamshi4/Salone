@@ -18,10 +18,10 @@ class StylistApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: fontFamily,
         textTheme: ThemeData.light().textTheme.apply(
-              fontFamily: fontFamily,
-              bodyColor: const Color(0xFF17121F),
-              displayColor: const Color(0xFF17121F),
-            ),
+          fontFamily: fontFamily,
+          bodyColor: const Color(0xFF17121F),
+          displayColor: const Color(0xFF17121F),
+        ),
         colorScheme: ColorScheme.fromSeed(seedColor: primary, primary: primary),
         scaffoldBackgroundColor: const Color(0xFFFAF7FC),
         appBarTheme: const AppBarTheme(
@@ -111,12 +111,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int get _weekTotal {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    return _bookings.where((booking) {
-      final slot = DateTime.parse(booking['slotStart']);
-      return slot
-          .isAfter(DateTime(weekStart.year, weekStart.month, weekStart.day));
-    }).fold<int>(0,
-        (total, booking) => total + ((booking['stylistPayout'] ?? 0) as int));
+    return _bookings
+        .where((booking) {
+          final slot = DateTime.parse(booking['slotStart']);
+          return slot.isAfter(
+            DateTime(weekStart.year, weekStart.month, weekStart.day),
+          );
+        })
+        .fold<int>(
+          0,
+          (total, booking) => total + ((booking['stylistPayout'] ?? 0) as int),
+        );
   }
 
   Future<void> _patchStylist(Map<String, dynamic> data) async {
@@ -148,8 +153,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () {
               final rupees = int.tryParse(controller.text);
@@ -164,9 +170,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _showServiceDialog([Map<String, dynamic>? service]) async {
-    final nameController = TextEditingController(
-      text: service?['name'] ?? '',
-    );
+    final nameController = TextEditingController(text: service?['name'] ?? '');
     final durationController = TextEditingController(
       text: '${service?['duration'] ?? 60}',
     );
@@ -229,8 +233,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   decoration: InputDecoration(
                     labelText: 'Price',
                     prefixText: 'Rs ',
-                    helperText:
-                        _canSetPrice ? null : 'Price is controlled by salon',
+                    helperText: _canSetPrice
+                        ? null
+                        : 'Price is controlled by salon',
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -263,11 +268,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 _saveService(
                                   service: service,
                                   name: nameController.text,
-                                  duration: int.tryParse(
-                                          durationController.text.trim()) ??
+                                  duration:
+                                      int.tryParse(
+                                        durationController.text.trim(),
+                                      ) ??
                                       60,
-                                  price: int.tryParse(
-                                          priceController.text.trim()) ??
+                                  price:
+                                      int.tryParse(
+                                        priceController.text.trim(),
+                                      ) ??
                                       0,
                                 );
                                 Navigator.pop(context);
@@ -309,8 +318,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       };
 
       if (service == null) {
-        await _dio.post('/api/v2/stylists/${_stylist!['id']}/services',
-            data: data);
+        await _dio.post(
+          '/api/v2/stylists/${_stylist!['id']}/services',
+          data: data,
+        );
       } else {
         await _dio.patch(
           '/api/v2/stylists/${_stylist!['id']}/services/${service['id']}',
@@ -346,8 +357,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _show(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -417,21 +429,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 14),
             if (_tabIndex == 0) ...[
-              const Text('Incoming bookings',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+              const Text(
+                'Incoming bookings',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              ),
               const SizedBox(height: 10),
               if (_bookings.isEmpty)
                 const _EmptyBookings()
               else
                 ..._bookings.map(
-                  (booking) => _BookingCard(
-                    booking: booking,
-                    onChanged: _loadDashboard,
-                  ),
+                  (booking) =>
+                      _BookingCard(booking: booking, onChanged: _loadDashboard),
                 ),
             ] else ...[
-              const Text('Settings',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+              const Text(
+                'Settings',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              ),
               const SizedBox(height: 10),
               _SettingsCard(
                 isIndependent: _isIndependent,
@@ -518,8 +532,9 @@ class _TabButton extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color:
-                  selected ? const Color(0xFF5B3DB8) : const Color(0xFF756E80),
+              color: selected
+                  ? const Color(0xFF5B3DB8)
+                  : const Color(0xFF756E80),
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -552,13 +567,18 @@ class _MetricCard extends StatelessWidget {
         children: [
           Icon(icon, color: color),
           const SizedBox(height: 12),
-          Text(label,
-              style: const TextStyle(
-                  color: Color(0xFF756E80), fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF756E80),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value,
-              style:
-                  const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+          ),
         ],
       ),
     );
@@ -598,24 +618,31 @@ class _SettingsCard extends StatelessWidget {
         children: [
           SwitchListTile(
             secondary: const Icon(Icons.home_outlined),
-            title: const Text('Home service',
-                style: TextStyle(fontWeight: FontWeight.w900)),
-            subtitle: Text(isIndependent
-                ? 'Available for independent stylists'
-                : 'Salon exclusive'),
+            title: const Text(
+              'Home service',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
+            subtitle: Text(
+              isIndependent
+                  ? 'Available for independent stylists'
+                  : 'Salon exclusive',
+            ),
             value: homeServiceEnabled,
             onChanged: saving || !isIndependent ? null : onHomeServiceChanged,
           ),
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.payments_outlined),
-            title: const Text('Base price',
-                style: TextStyle(fontWeight: FontWeight.w900)),
+            title: const Text(
+              'Base price',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
             subtitle: Text('Rs $price'),
             trailing: canSetPrice
                 ? IconButton(
                     icon: const Icon(Icons.edit),
-                    onPressed: saving ? null : onEditPrice)
+                    onPressed: saving ? null : onEditPrice,
+                  )
                 : const Text('Set by salon'),
           ),
           const Divider(height: 1),
@@ -701,7 +728,8 @@ class _ServiceRow extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.w900),
       ),
       subtitle: Text(
-          '$duration min • ${canSetPrice ? 'Editable price' : 'Salon price'}'),
+        '$duration min • ${canSetPrice ? 'Editable price' : 'Salon price'}',
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -730,8 +758,16 @@ class _BookingCard extends StatelessWidget {
     final customer = booking['customer']?['name'] ?? 'Customer';
     final slot = DateTime.parse(booking['slotStart']);
     final payout = ((booking['stylistPayout'] ?? 0) as int) ~/ 100;
-    final type =
-        booking['serviceType'] == 'HOME_SERVICE' ? 'Home service' : 'In salon';
+    final type = booking['serviceType'] == 'HOME_SERVICE'
+        ? 'Home service'
+        : 'In salon';
+    final status = booking['status'] ?? 'CONFIRMED';
+    final customerRequestedReschedule =
+        status == 'PENDING_RESCHEDULE' &&
+        booking['rescheduleProposedBy'] == 'CUSTOMER';
+    final proposedSlot = booking['proposedDateTime'] == null
+        ? null
+        : DateTime.parse(booking['proposedDateTime']);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -743,36 +779,91 @@ class _BookingCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(service,
-                    style: const TextStyle(
-                        fontSize: 17, fontWeight: FontWeight.w900)),
+                child: Text(
+                  service,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
-              _StatusBadge(status: booking['status'] ?? 'CONFIRMED'),
+              _StatusBadge(status: status),
             ],
           ),
           const SizedBox(height: 8),
-          Text(customer,
-              style: const TextStyle(
-                  color: Color(0xFF756E80), fontWeight: FontWeight.w700)),
+          Text(
+            customer,
+            style: const TextStyle(
+              color: Color(0xFF756E80),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
               const Icon(Icons.schedule, size: 18, color: Color(0xFF5B3DB8)),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(_formatDate(slot),
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                child: Text(
+                  _formatDate(slot),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
-              Text('Rs $payout',
-                  style: const TextStyle(
-                      color: Color(0xFF0F8D58), fontWeight: FontWeight.w900)),
+              Text(
+                'Rs $payout',
+                style: const TextStyle(
+                  color: Color(0xFF0F8D58),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(type,
-              style: const TextStyle(
-                  color: Color(0xFF756E80), fontWeight: FontWeight.w700)),
-          if (booking['status'] == 'PENDING') ...[
+          Text(
+            type,
+            style: const TextStyle(
+              color: Color(0xFF756E80),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (customerRequestedReschedule && proposedSlot != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF4DD),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Customer requested ${_formatDate(proposedSlot)}',
+                style: const TextStyle(
+                  color: Color(0xFF9B6410),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _rejectReschedule(context),
+                    icon: const Icon(Icons.close),
+                    label: const Text('Reject'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => _acceptReschedule(context),
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('Accept'),
+                  ),
+                ),
+              ],
+            ),
+          ] else if (status == 'PENDING') ...[
             const SizedBox(height: 14),
             Row(
               children: [
@@ -807,15 +898,15 @@ class _BookingCard extends StatelessWidget {
 
   Future<void> _updateStatus(BuildContext context, String status) async {
     try {
-      await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl)).patch(
-        '/v2/bookings/${booking['id']}/status',
-        data: {'status': status},
-      );
+      await Dio(
+        BaseOptions(baseUrl: _DashboardScreenState.baseUrl),
+      ).patch('/v2/bookings/${booking['id']}/status', data: {'status': status});
       onChanged();
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Update failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Update failed: $e')));
       }
     }
   }
@@ -837,7 +928,10 @@ class _BookingCard extends StatelessWidget {
     try {
       await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl)).patch(
         '/v2/bookings/${booking['id']}/reschedule',
-        data: {'dateTime': newTime.toUtc().toIso8601String()},
+        data: {
+          'dateTime': newTime.toUtc().toIso8601String(),
+          'proposedBy': 'STYLIST',
+        },
       );
       onChanged();
       if (context.mounted) {
@@ -847,16 +941,50 @@ class _BookingCard extends StatelessWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Reschedule failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Reschedule failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _acceptReschedule(BuildContext context) async {
+    try {
+      await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl)).patch(
+        '/v2/bookings/${booking['id']}/accept-reschedule',
+        data: {'acceptedBy': 'STYLIST'},
+      );
+      onChanged();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Accept failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _rejectReschedule(BuildContext context) async {
+    try {
+      await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl)).patch(
+        '/v2/bookings/${booking['id']}/reject-reschedule',
+        data: {'rejectedBy': 'STYLIST'},
+      );
+      onChanged();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Reject failed: $e')));
       }
     }
   }
 
   String _formatDate(DateTime date) {
-    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
+    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final minute = date.minute.toString().padLeft(2, '0');
     final suffix = date.hour >= 12 ? 'PM' : 'AM';
-    return '${date.day}/${date.month}, $hour:00 $suffix';
+    return '${date.day}/${date.month}, $hour:$minute $suffix';
   }
 }
 
@@ -898,11 +1026,10 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
     try {
       final date = _dateParam(widget.currentSlot);
       final res = await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl))
-          .get('/api/v2/stylists/${widget.stylistId}/availability',
-              queryParameters: {
-            'date': date,
-            'serviceId': widget.serviceId,
-          });
+          .get(
+            '/api/v2/stylists/${widget.stylistId}/availability',
+            queryParameters: {'date': date, 'serviceId': widget.serviceId},
+          );
 
       final slots = ((res.data['slots'] ?? []) as List)
           .map((slot) => DateTime.parse(slot['dateTime']).toLocal())
@@ -979,7 +1106,8 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                 spacing: 8,
                 runSpacing: 8,
                 children: _slots.map((slot) {
-                  final selected = _selectedSlot != null &&
+                  final selected =
+                      _selectedSlot != null &&
                       slot.isAtSameMomentAs(_selectedSlot!);
                   return ChoiceChip(
                     selected: selected,
@@ -1016,9 +1144,10 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
   }
 
   String _formatSlot(DateTime slot) {
-    final hour = slot.hour > 12 ? slot.hour - 12 : slot.hour;
+    final hour = slot.hour % 12 == 0 ? 12 : slot.hour % 12;
+    final minute = slot.minute.toString().padLeft(2, '0');
     final suffix = slot.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:00 $suffix';
+    return '$hour:$minute $suffix';
   }
 }
 
@@ -1038,9 +1167,10 @@ class _StatusBadge extends StatelessWidget {
       child: Text(
         status,
         style: const TextStyle(
-            color: Color(0xFF0F8D58),
-            fontSize: 11,
-            fontWeight: FontWeight.w900),
+          color: Color(0xFF0F8D58),
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
@@ -1058,8 +1188,10 @@ class _EmptyBookings extends StatelessWidget {
         children: [
           Icon(Icons.event_busy_outlined, size: 40, color: Color(0xFF756E80)),
           SizedBox(height: 10),
-          Text('No bookings yet',
-              style: TextStyle(fontWeight: FontWeight.w900)),
+          Text(
+            'No bookings yet',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
         ],
       ),
     );

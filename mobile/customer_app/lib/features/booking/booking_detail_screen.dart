@@ -21,8 +21,8 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   Future<void> _rejectReschedule() async {
     await _updateBooking(
       request: () => ApiClient().patch(
-        '/v2/bookings/${widget.booking.id}/status',
-        data: {'status': 'CANCELLED'},
+        '/v2/bookings/${widget.booking.id}/reject-reschedule',
+        data: {'rejectedBy': 'CUSTOMER'},
       ),
       message: 'Reschedule rejected',
     );
@@ -30,9 +30,44 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
 
   Future<void> _acceptReschedule() async {
     await _updateBooking(
-      request: () => ApiClient()
-          .patch('/v2/bookings/${widget.booking.id}/accept-reschedule'),
+      request: () => ApiClient().patch(
+        '/v2/bookings/${widget.booking.id}/accept-reschedule',
+        data: {'acceptedBy': 'CUSTOMER'},
+      ),
       message: 'Reschedule accepted',
+    );
+  }
+
+  Future<void> _requestReschedule() async {
+    final booking = widget.booking;
+    if (booking.stylistId == null || booking.serviceId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Booking cannot be rescheduled yet')),
+      );
+      return;
+    }
+
+    final newTime = await showModalBottomSheet<DateTime>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _CustomerRescheduleSheet(
+        currentSlot: booking.slotStart,
+        stylistId: booking.stylistId!,
+        serviceId: booking.serviceId,
+      ),
+    );
+
+    if (newTime == null) return;
+
+    await _updateBooking(
+      request: () => ApiClient().patch(
+        '/v2/bookings/${booking.id}/reschedule',
+        data: {
+          'dateTime': newTime.toUtc().toIso8601String(),
+          'proposedBy': 'CUSTOMER',
+        },
+      ),
+      message: 'Reschedule request sent',
     );
   }
 
@@ -45,13 +80,15 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       await request();
       ref.invalidate(bookingsProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
       Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Update failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Update failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -62,6 +99,11 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   Widget build(BuildContext context) {
     final booking = widget.booking;
     final isRescheduled = booking.status == 'PENDING_RESCHEDULE';
+    final proposedByCustomer =
+        isRescheduled && booking.rescheduleProposedBy == 'CUSTOMER';
+    final proposedByStylist =
+        isRescheduled && booking.rescheduleProposedBy != 'CUSTOMER';
+    final canRequestReschedule = booking.status == 'CONFIRMED';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Booking details')),
@@ -108,6 +150,12 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 label: 'Time',
                 value: _formatDate(booking.slotStart),
               ),
+              if (booking.proposedDateTime != null)
+                _InfoRow(
+                  icon: Icons.update,
+                  label: 'Proposed time',
+                  value: _formatDate(booking.proposedDateTime!),
+                ),
               _InfoRow(
                 icon: booking.serviceType == 'HOME_SERVICE'
                     ? Icons.home_outlined
@@ -132,15 +180,17 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 color: const Color(0xFFFFF4DD),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, color: Color(0xFF9B6410)),
-                  SizedBox(width: 10),
+                  const Icon(Icons.info_outline, color: Color(0xFF9B6410)),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Master suggested this new time. Accept it to confirm the appointment, or reject it to cancel.',
-                      style: TextStyle(
+                      proposedByCustomer
+                          ? 'Your reschedule request is waiting for the stylist or salon to confirm.'
+                          : 'Stylist suggested this new time. Accept it to update the appointment, or reject it to keep the original time.',
+                      style: const TextStyle(
                         color: Color(0xFF9B6410),
                         fontWeight: FontWeight.w800,
                       ),
@@ -149,25 +199,35 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 ],
               ),
             ),
+            if (proposedByStylist) ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _saving ? null : _rejectReschedule,
+                      icon: const Icon(Icons.close),
+                      label: const Text('Reject'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _saving ? null : _acceptReschedule,
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: Text(_saving ? 'Saving...' : 'Accept'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+          if (canRequestReschedule) ...[
             const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _saving ? null : _rejectReschedule,
-                    icon: const Icon(Icons.close),
-                    label: const Text('Reject'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: _saving ? null : _acceptReschedule,
-                    icon: const Icon(Icons.check_circle_outline),
-                    label: Text(_saving ? 'Saving...' : 'Accept'),
-                  ),
-                ),
-              ],
+            FilledButton.icon(
+              onPressed: _saving ? null : _requestReschedule,
+              icon: const Icon(Icons.update),
+              label: Text(_saving ? 'Sending...' : 'Request reschedule'),
             ),
           ],
         ],
@@ -176,9 +236,175 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
+    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final minute = date.minute.toString().padLeft(2, '0');
     final suffix = date.hour >= 12 ? 'PM' : 'AM';
-    return '${date.day}/${date.month}, $hour:00 $suffix';
+    return '${date.day}/${date.month}, $hour:$minute $suffix';
+  }
+}
+
+class _CustomerRescheduleSheet extends StatefulWidget {
+  const _CustomerRescheduleSheet({
+    required this.currentSlot,
+    required this.stylistId,
+    required this.serviceId,
+  });
+
+  final DateTime currentSlot;
+  final String stylistId;
+  final String serviceId;
+
+  @override
+  State<_CustomerRescheduleSheet> createState() =>
+      _CustomerRescheduleSheetState();
+}
+
+class _CustomerRescheduleSheetState extends State<_CustomerRescheduleSheet> {
+  DateTime? _selectedSlot;
+  List<DateTime> _slots = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSlots();
+  }
+
+  Future<void> _loadSlots() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+      _slots = [];
+      _selectedSlot = null;
+    });
+
+    try {
+      final date = _dateParam(widget.currentSlot);
+      final res = await ApiClient().get(
+        '/api/v2/stylists/${widget.stylistId}/availability'
+        '?date=${Uri.encodeQueryComponent(date)}'
+        '&serviceId=${Uri.encodeQueryComponent(widget.serviceId)}',
+      );
+
+      final slots = ((res.data['slots'] ?? []) as List)
+          .map((slot) => DateTime.parse(slot['dateTime']).toLocal())
+          .where((slot) => !slot.isAtSameMomentAs(widget.currentSlot))
+          .toList();
+
+      setState(() {
+        _slots = slots;
+        _selectedSlot = slots.isNotEmpty ? slots.first : null;
+        _error = slots.isEmpty ? 'No other slots available.' : null;
+      });
+    } catch (e) {
+      setState(() => _error = 'Could not load slots: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _dateParam(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
+  }
+
+  String _formatSlot(DateTime slot) {
+    final hour = slot.hour % 12 == 0 ? 12 : slot.hour % 12;
+    final minute = slot.minute.toString().padLeft(2, '0');
+    final suffix = slot.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $suffix';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Request new time',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Pick an available slot. The stylist or salon must approve it.',
+              style: TextStyle(
+                color: Color(0xFF756E80),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (_loading)
+              const LinearProgressIndicator(minHeight: 3)
+            else if (_error != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _error!,
+                    style: const TextStyle(
+                      color: Color(0xFFE06464),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: _loadSlots,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _slots.map((slot) {
+                  final selected =
+                      _selectedSlot != null &&
+                      slot.isAtSameMomentAs(_selectedSlot!);
+                  return ChoiceChip(
+                    selected: selected,
+                    label: Text(_formatSlot(slot)),
+                    onSelected: (_) => setState(() => _selectedSlot = slot),
+                  );
+                }).toList(),
+              ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _selectedSlot == null
+                        ? null
+                        : () => Navigator.pop(context, _selectedSlot),
+                    icon: const Icon(Icons.send_outlined),
+                    label: const Text('Request'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -196,9 +422,10 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 10),
           ...children,
         ],
@@ -227,9 +454,13 @@ class _InfoRow extends StatelessWidget {
           Icon(icon, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(label,
-                style: const TextStyle(
-                    color: Color(0xFF756E80), fontWeight: FontWeight.w700)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF756E80),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           Flexible(
             child: Text(

@@ -364,17 +364,26 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
-// PATCH /api/v2/bookings/:id/reschedule - Master suggests a new slot.
+// PATCH /api/v2/bookings/:id/reschedule - Customer or provider suggests a new slot.
 router.patch('/:id/reschedule', async (req, res) => {
   try {
-    const { dateTime } = req.body;
+    const { dateTime, proposedBy = 'STYLIST' } = req.body;
     if (!dateTime) return res.status(400).json({ error: 'dateTime is required' });
+    if (!['CUSTOMER', 'STYLIST'].includes(proposedBy)) {
+      return res.status(400).json({ error: 'Invalid reschedule proposer' });
+    }
 
     const existing = await prisma.booking.findUnique({
       where: { id: req.params.id },
       include: { service: true },
     });
     if (!existing) return res.status(404).json({ error: 'Booking not found' });
+    if (proposedBy === 'CUSTOMER' && existing.status !== 'CONFIRMED') {
+      return res.status(400).json({ error: 'Only confirmed bookings can be rescheduled by customer' });
+    }
+    if (proposedBy === 'STYLIST' && !['PENDING', 'CONFIRMED'].includes(existing.status)) {
+      return res.status(400).json({ error: 'Booking cannot be rescheduled in current status' });
+    }
 
     const start = new Date(dateTime);
     const end = new Date(start.getTime() + existing.service.duration * 60 * 1000);
@@ -395,7 +404,7 @@ router.patch('/:id/reschedule', async (req, res) => {
       data: {
         proposedDateTime: start,
         rescheduleReason: req.body.reason ?? null,
-        rescheduleProposedBy: req.body.proposedBy ?? 'STYLIST',
+        rescheduleProposedBy: proposedBy,
         status: 'PENDING_RESCHEDULE',
       },
       include: {
@@ -412,9 +421,14 @@ router.patch('/:id/reschedule', async (req, res) => {
   }
 });
 
-// PATCH /api/v2/bookings/:id/accept-reschedule - Customer accepts master's suggested time.
+// PATCH /api/v2/bookings/:id/accept-reschedule - Opposite party accepts suggested time.
 router.patch('/:id/accept-reschedule', async (req, res) => {
   try {
+    const { acceptedBy = 'CUSTOMER' } = req.body;
+    if (!['CUSTOMER', 'STYLIST'].includes(acceptedBy)) {
+      return res.status(400).json({ error: 'Invalid reschedule accepter' });
+    }
+
     const existing = await prisma.booking.findUnique({
       where: { id: req.params.id },
       include: { service: true },
@@ -423,9 +437,21 @@ router.patch('/:id/accept-reschedule', async (req, res) => {
     if (!existing.proposedDateTime) {
       return res.status(400).json({ error: 'No proposed reschedule time found' });
     }
+    if (existing.rescheduleProposedBy === acceptedBy) {
+      return res.status(400).json({ error: 'Reschedule must be accepted by the other party' });
+    }
 
     const start = existing.proposedDateTime;
     const end = new Date(start.getTime() + existing.service.duration * 60 * 1000);
+    if (existing.stylistId) {
+      const slotError = await validateStylistSlot(
+        existing.stylistId,
+        [existing.serviceId],
+        start,
+        existing.id,
+      );
+      if (slotError) return res.status(400).json({ error: slotError });
+    }
 
     const booking = await prisma.booking.update({
       where: { id: req.params.id },
@@ -433,6 +459,47 @@ router.patch('/:id/accept-reschedule', async (req, res) => {
         slotStart: start,
         slotEnd: end,
         proposedDateTime: null,
+        rescheduleProposedBy: null,
+        status: 'CONFIRMED',
+      },
+      include: {
+        customer: true,
+        stylist: { include: { user: true, primarySalon: true } },
+        salon: true,
+        service: true,
+      },
+    });
+
+    res.json(booking);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/v2/bookings/:id/reject-reschedule - Reject proposed time and keep original booking.
+router.patch('/:id/reject-reschedule', async (req, res) => {
+  try {
+    const { rejectedBy = 'CUSTOMER' } = req.body;
+    if (!['CUSTOMER', 'STYLIST'].includes(rejectedBy)) {
+      return res.status(400).json({ error: 'Invalid reschedule rejecter' });
+    }
+
+    const existing = await prisma.booking.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!existing) return res.status(404).json({ error: 'Booking not found' });
+    if (!existing.proposedDateTime) {
+      return res.status(400).json({ error: 'No proposed reschedule time found' });
+    }
+    if (existing.rescheduleProposedBy === rejectedBy) {
+      return res.status(400).json({ error: 'Reschedule must be rejected by the other party' });
+    }
+
+    const booking = await prisma.booking.update({
+      where: { id: req.params.id },
+      data: {
+        proposedDateTime: null,
+        rescheduleReason: null,
         rescheduleProposedBy: null,
         status: 'CONFIRMED',
       },

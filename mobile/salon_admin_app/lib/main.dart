@@ -18,10 +18,10 @@ class SalonAdminApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: fontFamily,
         textTheme: ThemeData.light().textTheme.apply(
-              fontFamily: fontFamily,
-              bodyColor: const Color(0xFF111827),
-              displayColor: const Color(0xFF111827),
-            ),
+          fontFamily: fontFamily,
+          bodyColor: const Color(0xFF111827),
+          displayColor: const Color(0xFF111827),
+        ),
         colorScheme: ColorScheme.fromSeed(seedColor: primary, primary: primary),
         scaffoldBackgroundColor: const Color(0xFFF6F8F7),
         appBarTheme: const AppBarTheme(
@@ -78,13 +78,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         (item) => item['name'] == 'Glamour Salon',
         orElse: () => salons.first,
       );
-      final bookingsRes =
-          await _dio.get('/api/v2/salons/${salon['id']}/bookings');
+      final bookingsRes = await _dio.get(
+        '/api/v2/salons/${salon['id']}/bookings',
+      );
 
       setState(() {
         _salon = salon;
-        _staffRelations =
-            List<Map<String, dynamic>>.from(salon['stylists'] ?? []);
+        _staffRelations = List<Map<String, dynamic>>.from(
+          salon['stylists'] ?? [],
+        );
         _bookings = List<Map<String, dynamic>>.from(bookingsRes.data);
       });
     } catch (e) {
@@ -107,16 +109,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int get _weekRevenue {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    return _bookings.where((booking) {
-      final slot = DateTime.parse(booking['slotStart']);
-      return slot
-          .isAfter(DateTime(weekStart.year, weekStart.month, weekStart.day));
-    }).fold<int>(
-        0, (total, booking) => total + ((booking['salonPayout'] ?? 0) as int));
+    return _bookings
+        .where((booking) {
+          final slot = DateTime.parse(booking['slotStart']);
+          return slot.isAfter(
+            DateTime(weekStart.year, weekStart.month, weekStart.day),
+          );
+        })
+        .fold<int>(
+          0,
+          (total, booking) => total + ((booking['salonPayout'] ?? 0) as int),
+        );
   }
 
   Future<void> _toggleCanSetOwnPrice(
-      Map<String, dynamic> relation, bool value) async {
+    Map<String, dynamic> relation,
+    bool value,
+  ) async {
     final salon = _salon;
     final stylist = relation['stylist'];
     if (salon == null || stylist == null) return;
@@ -138,8 +147,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   void _show(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -215,7 +225,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               if (_bookings.isEmpty)
                 const _EmptyCard(text: 'No salon bookings yet')
               else
-                ..._bookings.map((booking) => _BookingCard(booking: booking)),
+                ..._bookings.map(
+                  (booking) =>
+                      _BookingCard(booking: booking, onChanged: _loadDashboard),
+                ),
             ] else ...[
               const _SectionTitle(title: 'Staff permissions'),
               const SizedBox(height: 10),
@@ -263,16 +276,23 @@ class _MetricCard extends StatelessWidget {
         children: [
           Icon(icon, color: color),
           const SizedBox(height: 12),
-          Text(label,
-              style: const TextStyle(
-                  color: Color(0xFF6B7280), fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value,
-              style:
-                  const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 2),
-          Text(helper,
-              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12)),
+          Text(
+            helper,
+            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+          ),
         ],
       ),
     );
@@ -303,15 +323,17 @@ class _SegmentedTabs extends StatelessWidget {
       child: Row(
         children: [
           _TabButton(
-              label: 'Bookings',
-              count: bookingsCount,
-              selected: selectedIndex == 0,
-              onTap: () => onChanged(0)),
+            label: 'Bookings',
+            count: bookingsCount,
+            selected: selectedIndex == 0,
+            onTap: () => onChanged(0),
+          ),
           _TabButton(
-              label: 'Staff',
-              count: staffCount,
-              selected: selectedIndex == 1,
-              onTap: () => onChanged(1)),
+            label: 'Staff',
+            count: staffCount,
+            selected: selectedIndex == 1,
+            onTap: () => onChanged(1),
+          ),
         ],
       ),
     );
@@ -319,11 +341,12 @@ class _SegmentedTabs extends StatelessWidget {
 }
 
 class _TabButton extends StatelessWidget {
-  const _TabButton(
-      {required this.label,
-      required this.count,
-      required this.selected,
-      required this.onTap});
+  const _TabButton({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final int count;
@@ -346,8 +369,9 @@ class _TabButton extends StatelessWidget {
           child: Text(
             '$label  $count',
             style: TextStyle(
-              color:
-                  selected ? const Color(0xFF00796B) : const Color(0xFF6B7280),
+              color: selected
+                  ? const Color(0xFF00796B)
+                  : const Color(0xFF6B7280),
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -364,15 +388,18 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(title,
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900));
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+    );
   }
 }
 
 class _BookingCard extends StatelessWidget {
-  const _BookingCard({required this.booking});
+  const _BookingCard({required this.booking, required this.onChanged});
 
   final Map<String, dynamic> booking;
+  final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -381,6 +408,13 @@ class _BookingCard extends StatelessWidget {
     final customer = booking['customer']?['name'] ?? 'Customer';
     final slot = DateTime.parse(booking['slotStart']);
     final payout = ((booking['salonPayout'] ?? 0) as int) ~/ 100;
+    final status = booking['status'] ?? 'CONFIRMED';
+    final customerRequestedReschedule =
+        status == 'PENDING_RESCHEDULE' &&
+        booking['rescheduleProposedBy'] == 'CUSTOMER';
+    final proposedSlot = booking['proposedDateTime'] == null
+        ? null
+        : DateTime.parse(booking['proposedDateTime']);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -392,46 +426,134 @@ class _BookingCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                  child: Text(service,
-                      style: const TextStyle(
-                          fontSize: 17, fontWeight: FontWeight.w900))),
-              _StatusBadge(status: booking['status'] ?? 'CONFIRMED'),
+                child: Text(
+                  service,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              _StatusBadge(status: status),
             ],
           ),
           const SizedBox(height: 8),
-          Text('$customer with $stylist',
-              style: const TextStyle(
-                  color: Color(0xFF6B7280), fontWeight: FontWeight.w700)),
+          Text(
+            '$customer with $stylist',
+            style: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
               const Icon(Icons.schedule, size: 18, color: Color(0xFF00796B)),
               const SizedBox(width: 6),
               Expanded(
-                  child: Text(_formatDate(slot),
-                      style: const TextStyle(fontWeight: FontWeight.w800))),
-              Text('Rs $payout',
-                  style: const TextStyle(
-                      color: Color(0xFF00796B), fontWeight: FontWeight.w900)),
+                child: Text(
+                  _formatDate(slot),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+              Text(
+                'Rs $payout',
+                style: const TextStyle(
+                  color: Color(0xFF00796B),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ],
           ),
+          if (customerRequestedReschedule && proposedSlot != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF4DD),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Customer requested ${_formatDate(proposedSlot)}',
+                style: const TextStyle(
+                  color: Color(0xFF9B6410),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _rejectReschedule(context),
+                    icon: const Icon(Icons.close),
+                    label: const Text('Reject'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => _acceptReschedule(context),
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('Accept'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 
+  Future<void> _acceptReschedule(BuildContext context) async {
+    try {
+      await Dio(BaseOptions(baseUrl: _AdminDashboardScreenState.baseUrl)).patch(
+        '/v2/bookings/${booking['id']}/accept-reschedule',
+        data: {'acceptedBy': 'STYLIST'},
+      );
+      onChanged();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Accept failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _rejectReschedule(BuildContext context) async {
+    try {
+      await Dio(BaseOptions(baseUrl: _AdminDashboardScreenState.baseUrl)).patch(
+        '/v2/bookings/${booking['id']}/reject-reschedule',
+        data: {'rejectedBy': 'STYLIST'},
+      );
+      onChanged();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Reject failed: $e')));
+      }
+    }
+  }
+
   String _formatDate(DateTime date) {
-    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
+    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final minute = date.minute.toString().padLeft(2, '0');
     final suffix = date.hour >= 12 ? 'PM' : 'AM';
-    return '${date.day}/${date.month}, $hour:00 $suffix';
+    return '${date.day}/${date.month}, $hour:$minute $suffix';
   }
 }
 
 class _StaffCard extends StatelessWidget {
-  const _StaffCard(
-      {required this.relation,
-      required this.saving,
-      required this.onTogglePrice});
+  const _StaffCard({
+    required this.relation,
+    required this.saving,
+    required this.onTogglePrice,
+  });
 
   final Map<String, dynamic> relation;
   final bool saving;
@@ -458,16 +580,22 @@ class _StaffCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user['name'] ?? 'Stylist',
-                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  user['name'] ?? 'Stylist',
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 3),
-                Text('${stylist['registrationType'] ?? 'STYLIST'} - Active',
-                    style: const TextStyle(color: Color(0xFF6B7280))),
+                Text(
+                  '${stylist['registrationType'] ?? 'STYLIST'} - Active',
+                  style: const TextStyle(color: Color(0xFF6B7280)),
+                ),
               ],
             ),
           ),
           Switch(
-              value: canSetOwnPrice, onChanged: saving ? null : onTogglePrice),
+            value: canSetOwnPrice,
+            onChanged: saving ? null : onTogglePrice,
+          ),
         ],
       ),
     );
@@ -484,14 +612,16 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-          color: const Color(0xFFE7F4F1),
-          borderRadius: BorderRadius.circular(8)),
+        color: const Color(0xFFE7F4F1),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Text(
         status,
         style: const TextStyle(
-            color: Color(0xFF00796B),
-            fontSize: 11,
-            fontWeight: FontWeight.w900),
+          color: Color(0xFF00796B),
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
@@ -525,9 +655,10 @@ BoxDecoration _boxDecoration() {
     border: Border.all(color: Colors.black.withValues(alpha: 0.07)),
     boxShadow: [
       BoxShadow(
-          color: Colors.black.withValues(alpha: 0.04),
-          blurRadius: 16,
-          offset: const Offset(0, 8)),
+        color: Colors.black.withValues(alpha: 0.04),
+        blurRadius: 16,
+        offset: const Offset(0, 8),
+      ),
     ],
   );
 }
