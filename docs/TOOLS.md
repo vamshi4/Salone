@@ -32,17 +32,33 @@ Use it for customer, stylist, and salon admin UI work:
 
 Goal: generate a project graph/report so agents can understand backend/mobile structure without rereading the whole repo.
 
-Status: install was attempted, but Python failed because the C drive was full. Retry only after C has enough free space or after Python cache/site packages are redirected to D.
+Status: installed as the `graphify` CLI and wired into Codex/Cursor project instructions.
 
-Recommended output folder: `graphify-output/`.
+Generated output folder: `graphify-out/` (ignored by git).
+
+Useful commands:
+
+```powershell
+graphify update . --no-cluster
+graphify query "Where is booking reschedule handled?"
+graphify explain "booking.routes"
+```
 
 ### RTK
 
 Goal: compact noisy terminal output before sending it into AI context.
 
-Status: not installed yet. Use only as a helper for long build/test logs; do not replace direct file inspection when debugging exact code.
+Status: installed project-local at `tools/rtk/rtk.exe` (ignored by git).
 
-Recommended output folder: `rtk-output/`.
+Use it for noisy status/log/test commands:
+
+```powershell
+tools\rtk\rtk.exe git status
+tools\rtk\rtk.exe git diff
+tools\rtk\rtk.exe test npm run build
+```
+
+Do not replace direct file inspection when debugging exact code.
 
 ## Practical Rule
 

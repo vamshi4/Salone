@@ -85,6 +85,8 @@ The app is now closer to the intended salon marketplace flow:
 - `AGENTS.md`, `PRODUCT.md`, `DESIGN.md`, and `docs/FLOWS.md` now capture the project direction so Codex/Cursor/Meta AI stay aligned.
 - Ponytail project skills are installed for smaller, cleaner coding changes.
 - Impeccable project skills/hooks are installed for stronger product UI review.
+- Graphify is installed and wired into Codex/Cursor instructions.
+- RTK is installed project-local under `tools/rtk/` for compact command output.
 - `docs/TOOLS.md` documents how to use Ponytail, Impeccable, Graphify, and RTK for this project.
 
 ## Extra Work Added Beyond The Initial Demo
@@ -181,4 +183,6 @@ Update: Customer Booking Detail and in-app Notification Center are now implement
 
 Update: Salon admin booking actions are implemented for pending bookings and customer reschedule requests.
 
-Update: Project agent workflow docs and Ponytail/Impeccable skills are installed. Graphify and RTK are documented but should be retried after local tool storage is stable.
+Update: Project agent workflow docs and Ponytail/Impeccable skills are installed.
+
+Update: Graphify is installed and a first local graph was generated. RTK is installed project-local for compact command output.

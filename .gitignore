@@ -28,6 +28,8 @@ npm-debug.log*
 
 # Local analysis/tool outputs
 graphify-output/
+graphify-out/
 codegraph-output/
 rtk-output/
 tools/bin/
+tools/rtk/
