@@ -62,6 +62,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool _loading = true;
   bool _saving = false;
   int _tabIndex = 0;
+  String _bookingFilter = 'ACTION';
 
   @override
   void initState() {
@@ -118,6 +119,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       0,
       (total, booking) => total + ((booking['salonPayout'] ?? 0) as int),
     );
+  }
+
+  List<Map<String, dynamic>> get _filteredBookings {
+    if (_bookingFilter == 'ALL') return _bookings;
+    if (_bookingFilter == 'ACTION') {
+      return _bookings.where((booking) {
+        final status = booking['status'];
+        return status == 'PENDING' ||
+            (status == 'PENDING_RESCHEDULE' &&
+                booking['rescheduleProposedBy'] == 'CUSTOMER');
+      }).toList();
+    }
+
+    return _bookings
+        .where((booking) => booking['status'] == _bookingFilter)
+        .toList();
   }
 
   Future<void> _toggleCanSetOwnPrice(
@@ -220,10 +237,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             if (_tabIndex == 0) ...[
               const _SectionTitle(title: 'Bookings'),
               const SizedBox(height: 10),
-              if (_bookings.isEmpty)
+              _BookingFilters(
+                selected: _bookingFilter,
+                bookings: _bookings,
+                onChanged: (value) => setState(() => _bookingFilter = value),
+              ),
+              const SizedBox(height: 10),
+              if (_filteredBookings.isEmpty)
                 const _EmptyCard(text: 'No salon bookings yet')
               else
-                ..._bookings.map(
+                ..._filteredBookings.map(
                   (booking) =>
                       _BookingCard(booking: booking, onChanged: _loadDashboard),
                 ),
@@ -246,6 +269,63 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
       ),
     );
+  }
+}
+
+class _BookingFilters extends StatelessWidget {
+  const _BookingFilters({
+    required this.selected,
+    required this.bookings,
+    required this.onChanged,
+  });
+
+  final String selected;
+  final List<Map<String, dynamic>> bookings;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final filters = [
+      ('ACTION', 'Needs action'),
+      ('PENDING', 'Pending'),
+      ('PENDING_RESCHEDULE', 'Reschedule'),
+      ('CONFIRMED', 'Confirmed'),
+      ('COMPLETED', 'Completed'),
+      ('CANCELLED', 'Cancelled'),
+      ('ALL', 'All'),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: filters.map((filter) {
+          final selectedFilter = selected == filter.$1;
+          final count = _countFor(filter.$1);
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              selected: selectedFilter,
+              label: Text('${filter.$2} $count'),
+              onSelected: (_) => onChanged(filter.$1),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  int _countFor(String filter) {
+    if (filter == 'ALL') return bookings.length;
+    if (filter == 'ACTION') {
+      return bookings.where((booking) {
+        final status = booking['status'];
+        return status == 'PENDING' ||
+            (status == 'PENDING_RESCHEDULE' &&
+                booking['rescheduleProposedBy'] == 'CUSTOMER');
+      }).length;
+    }
+
+    return bookings.where((booking) => booking['status'] == filter).length;
   }
 }
 

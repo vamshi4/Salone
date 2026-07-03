@@ -18,10 +18,10 @@ class StylistApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: fontFamily,
         textTheme: ThemeData.light().textTheme.apply(
-          fontFamily: fontFamily,
-          bodyColor: const Color(0xFF17121F),
-          displayColor: const Color(0xFF17121F),
-        ),
+              fontFamily: fontFamily,
+              bodyColor: const Color(0xFF17121F),
+              displayColor: const Color(0xFF17121F),
+            ),
         colorScheme: ColorScheme.fromSeed(seedColor: primary, primary: primary),
         scaffoldBackgroundColor: const Color(0xFFFAF7FC),
         appBarTheme: const AppBarTheme(
@@ -58,6 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final Dio _dio = Dio(BaseOptions(baseUrl: baseUrl));
   Map<String, dynamic>? _stylist;
   List<Map<String, dynamic>> _bookings = [];
+  List<Map<String, dynamic>> _availability = [];
   bool _loading = true;
   bool _saving = false;
   int _tabIndex = 0;
@@ -79,10 +80,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
       final detailRes = await _dio.get('/api/v2/stylists/${ravi['id']}');
       final bookingRes = await _dio.get('/v2/bookings/stylist/${ravi['id']}');
+      final availabilityRes = await _dio.get(
+        '/api/v2/stylists/${ravi['id']}/availability-rules',
+      );
 
       setState(() {
         _stylist = Map<String, dynamic>.from(detailRes.data);
         _bookings = List<Map<String, dynamic>>.from(bookingRes.data);
+        _availability = List<Map<String, dynamic>>.from(availabilityRes.data);
       });
     } catch (e) {
       _show('Error loading dashboard: $e');
@@ -111,17 +116,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int get _weekTotal {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    return _bookings
-        .where((booking) {
-          final slot = DateTime.parse(booking['slotStart']);
-          return slot.isAfter(
-            DateTime(weekStart.year, weekStart.month, weekStart.day),
-          );
-        })
-        .fold<int>(
-          0,
-          (total, booking) => total + ((booking['stylistPayout'] ?? 0) as int),
-        );
+    return _bookings.where((booking) {
+      final slot = DateTime.parse(booking['slotStart']);
+      return slot.isAfter(
+        DateTime(weekStart.year, weekStart.month, weekStart.day),
+      );
+    }).fold<int>(
+      0,
+      (total, booking) => total + ((booking['stylistPayout'] ?? 0) as int),
+    );
   }
 
   Future<void> _patchStylist(Map<String, dynamic> data) async {
@@ -233,9 +236,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   decoration: InputDecoration(
                     labelText: 'Price',
                     prefixText: 'Rs ',
-                    helperText: _canSetPrice
-                        ? null
-                        : 'Price is controlled by salon',
+                    helperText:
+                        _canSetPrice ? null : 'Price is controlled by salon',
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -268,13 +270,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 _saveService(
                                   service: service,
                                   name: nameController.text,
-                                  duration:
-                                      int.tryParse(
+                                  duration: int.tryParse(
                                         durationController.text.trim(),
                                       ) ??
                                       60,
-                                  price:
-                                      int.tryParse(
+                                  price: int.tryParse(
                                         priceController.text.trim(),
                                       ) ??
                                       0,
@@ -355,6 +355,194 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _addAvailability({required bool block}) async {
+    if (_stylist == null) return;
+
+    final dateController = TextEditingController(
+      text: _dateParam(DateTime.now()),
+    );
+    final startController =
+        TextEditingController(text: block ? '13:00' : '09:00');
+    final endController =
+        TextEditingController(text: block ? '14:00' : '18:00');
+    int dayOfWeek = DateTime.now().weekday % 7;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) => Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    block ? 'Block time' : 'Set working hours',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  if (block)
+                    TextField(
+                      controller: dateController,
+                      decoration: const InputDecoration(
+                        labelText: 'Date',
+                        helperText: 'YYYY-MM-DD',
+                      ),
+                    )
+                  else
+                    DropdownButtonFormField<int>(
+                      initialValue: dayOfWeek,
+                      decoration: const InputDecoration(labelText: 'Day'),
+                      items: List.generate(7, (index) {
+                        return DropdownMenuItem(
+                          value: index,
+                          child: Text(_dayName(index)),
+                        );
+                      }),
+                      onChanged: (value) =>
+                          setSheetState(() => dayOfWeek = value ?? dayOfWeek),
+                    ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: startController,
+                          decoration: const InputDecoration(
+                            labelText: 'Start',
+                            helperText: 'HH:mm',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: endController,
+                          decoration: const InputDecoration(
+                            labelText: 'End',
+                            helperText: 'HH:mm',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _saveAvailability(
+                              block: block,
+                              dayOfWeek: dayOfWeek,
+                              date: dateController.text,
+                              startTime: startController.text,
+                              endTime: endController.text,
+                            );
+                          },
+                          icon: Icon(block ? Icons.block : Icons.schedule),
+                          label: const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _saveAvailability({
+    required bool block,
+    required int dayOfWeek,
+    required String date,
+    required String startTime,
+    required String endTime,
+  }) async {
+    if (_stylist == null) return;
+
+    setState(() => _saving = true);
+    try {
+      if (block) {
+        await _dio.post(
+          '/api/v2/stylists/${_stylist!['id']}/block',
+          data: {
+            'date': date.trim(),
+            'startTime': startTime.trim(),
+            'endTime': endTime.trim(),
+          },
+        );
+      } else {
+        await _dio.post(
+          '/api/v2/stylists/${_stylist!['id']}/availability',
+          data: {
+            'dayOfWeek': dayOfWeek,
+            'startTime': startTime.trim(),
+            'endTime': endTime.trim(),
+            'isBlocked': false,
+          },
+        );
+      }
+
+      await _loadDashboard();
+      _show(block ? 'Blocked time added' : 'Working hours added');
+    } catch (e) {
+      _show('Availability save failed: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _deleteAvailability(Map<String, dynamic> rule) async {
+    if (_stylist == null) return;
+
+    setState(() => _saving = true);
+    try {
+      await _dio.delete(
+        '/api/v2/stylists/${_stylist!['id']}/availability/${rule['id']}',
+      );
+      await _loadDashboard();
+      _show('Availability rule removed');
+    } catch (e) {
+      _show('Remove failed: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  String _dateParam(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
+  }
+
   void _show(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(
@@ -425,6 +613,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _SegmentedTabs(
               selectedIndex: _tabIndex,
               bookingsCount: _bookings.length,
+              availabilityCount: _availability.length,
               onChanged: (index) => setState(() => _tabIndex = index),
             ),
             const SizedBox(height: 14),
@@ -441,6 +630,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   (booking) =>
                       _BookingCard(booking: booking, onChanged: _loadDashboard),
                 ),
+            ] else if (_tabIndex == 1) ...[
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Availability',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  IconButton.filledTonal(
+                    onPressed:
+                        _saving ? null : () => _addAvailability(block: false),
+                    icon: const Icon(Icons.schedule),
+                    tooltip: 'Add working hours',
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
+                    onPressed:
+                        _saving ? null : () => _addAvailability(block: true),
+                    icon: const Icon(Icons.block),
+                    tooltip: 'Block time',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _AvailabilityCard(
+                rules: _availability,
+                saving: _saving,
+                onDelete: _deleteAvailability,
+              ),
             ] else ...[
               const Text(
                 'Settings',
@@ -472,11 +694,13 @@ class _SegmentedTabs extends StatelessWidget {
   const _SegmentedTabs({
     required this.selectedIndex,
     required this.bookingsCount,
+    required this.availabilityCount,
     required this.onChanged,
   });
 
   final int selectedIndex;
   final int bookingsCount;
+  final int availabilityCount;
   final ValueChanged<int> onChanged;
 
   @override
@@ -495,14 +719,96 @@ class _SegmentedTabs extends StatelessWidget {
             onTap: () => onChanged(0),
           ),
           _TabButton(
-            label: 'Settings',
+            label: 'Hours $availabilityCount',
             selected: selectedIndex == 1,
             onTap: () => onChanged(1),
+          ),
+          _TabButton(
+            label: 'Settings',
+            selected: selectedIndex == 2,
+            onTap: () => onChanged(2),
           ),
         ],
       ),
     );
   }
+}
+
+class _AvailabilityCard extends StatelessWidget {
+  const _AvailabilityCard({
+    required this.rules,
+    required this.saving,
+    required this.onDelete,
+  });
+
+  final List<Map<String, dynamic>> rules;
+  final bool saving;
+  final ValueChanged<Map<String, dynamic>> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    if (rules.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(18),
+        decoration: _boxDecoration(),
+        child: const Text(
+          'Default hours are 9:00 AM to 6:00 PM. Add weekly hours or block time to control the real booking slots.',
+          style: TextStyle(
+            color: Color(0xFF756E80),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: _boxDecoration(),
+      child: Column(
+        children: rules.map((rule) {
+          final blocked = rule['isBlocked'] == true;
+          final date = rule['date'] == null
+              ? _dayName(rule['dayOfWeek'] ?? 0)
+              : _formatDateText(rule['date']);
+
+          return ListTile(
+            leading: Icon(
+              blocked ? Icons.block : Icons.schedule,
+              color:
+                  blocked ? const Color(0xFFE06464) : const Color(0xFF5B3DB8),
+            ),
+            title: Text(
+              blocked ? 'Blocked time' : 'Working hours',
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            subtitle: Text('$date  ${rule['startTime']} - ${rule['endTime']}'),
+            trailing: IconButton(
+              onPressed: saving ? null : () => onDelete(rule),
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Remove',
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  static String _formatDateText(String value) {
+    final date = DateTime.parse(value).toLocal();
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+String _dayName(int day) {
+  const names = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
+  return names[day.clamp(0, 6)];
 }
 
 class _TabButton extends StatelessWidget {
@@ -532,9 +838,8 @@ class _TabButton extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: selected
-                  ? const Color(0xFF5B3DB8)
-                  : const Color(0xFF756E80),
+              color:
+                  selected ? const Color(0xFF5B3DB8) : const Color(0xFF756E80),
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -758,12 +1063,10 @@ class _BookingCard extends StatelessWidget {
     final customer = booking['customer']?['name'] ?? 'Customer';
     final slot = DateTime.parse(booking['slotStart']);
     final payout = ((booking['stylistPayout'] ?? 0) as int) ~/ 100;
-    final type = booking['serviceType'] == 'HOME_SERVICE'
-        ? 'Home service'
-        : 'In salon';
+    final type =
+        booking['serviceType'] == 'HOME_SERVICE' ? 'Home service' : 'In salon';
     final status = booking['status'] ?? 'CONFIRMED';
-    final customerRequestedReschedule =
-        status == 'PENDING_RESCHEDULE' &&
+    final customerRequestedReschedule = status == 'PENDING_RESCHEDULE' &&
         booking['rescheduleProposedBy'] == 'CUSTOMER';
     final proposedSlot = booking['proposedDateTime'] == null
         ? null
@@ -1025,11 +1328,11 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
 
     try {
       final date = _dateParam(widget.currentSlot);
-      final res = await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl))
-          .get(
-            '/api/v2/stylists/${widget.stylistId}/availability',
-            queryParameters: {'date': date, 'serviceId': widget.serviceId},
-          );
+      final res =
+          await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl)).get(
+        '/api/v2/stylists/${widget.stylistId}/availability',
+        queryParameters: {'date': date, 'serviceId': widget.serviceId},
+      );
 
       final slots = ((res.data['slots'] ?? []) as List)
           .map((slot) => DateTime.parse(slot['dateTime']).toLocal())
@@ -1106,8 +1409,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                 spacing: 8,
                 runSpacing: 8,
                 children: _slots.map((slot) {
-                  final selected =
-                      _selectedSlot != null &&
+                  final selected = _selectedSlot != null &&
                       slot.isAtSameMomentAs(_selectedSlot!);
                   return ChoiceChip(
                     selected: selected,

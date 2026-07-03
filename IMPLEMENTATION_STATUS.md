@@ -65,6 +65,9 @@ The app is now closer to the intended salon marketplace flow:
 - Stylist can add and edit services with duration and price.
 - Stylist can remove unused services.
 - Service price editing respects salon admin `canSetOwnPrice`.
+- Stylist can add weekly working hours.
+- Stylist can block specific date/time slots.
+- Stylist availability rules are listed and removable.
 - Home service toggle is disabled for salon-exclusive stylists.
 - Base price is visible.
 - UI font was cleaned up with bundled app font.
@@ -77,6 +80,7 @@ The app is now closer to the intended salon marketplace flow:
 - Staff permission toggle works.
 - Admin can confirm/reject pending bookings.
 - Admin can accept/reject customer-initiated reschedule requests.
+- Admin booking list has filters for action-needed, pending, reschedule, confirmed, completed, cancelled, and all.
 - UI font was cleaned up with bundled app font.
 - Refresh action exists.
 
@@ -117,13 +121,15 @@ These are still not complete enough for a full product flow:
    - Customer now has in-app notification center.
    - Real push notifications are not implemented.
 
-2. Full stylist availability management UI.
+2. Stylist availability management depth.
    - Backend availability exists.
-   - Stylist still needs a dedicated screen to set weekly hours and blocked time.
+   - Stylist can now add weekly hours and blocked time.
+   - Next improvement is calendar-style editing and overlap warnings before save.
 
 3. Admin booking depth.
    - Admin can now act on pending bookings and customer reschedules.
-   - Admin still needs stronger filtering/grouping for pending, confirmed, rescheduled, cancelled, and completed bookings.
+   - Admin now has status filters.
+   - Next improvement is queue grouping by today, upcoming, and history.
 
 4. Real authentication.
    - Current flow is still demo-user based.
@@ -139,26 +145,24 @@ These are still not complete enough for a full product flow:
 
 ## Recommended Next Task
 
-Build the Stylist Availability and Queue flow next.
+Build the Customer Notification and Booking Queue polish next.
 
 Reason:
 
-- Stylist can currently suggest a simple next-hour reschedule.
-- The app still needs real available slots and conflict prevention.
-- This is required before booking volume becomes realistic.
+- Booking actions now exist across customer, stylist, and admin.
+- The next polish is making status changes obvious to customer and provider without manual refresh.
 
 Required behavior:
 
-1. Stylist sets working hours.
-2. Stylist blocks unavailable slots.
-3. Customer only sees valid available slots.
-4. Reschedule uses a selectable available slot, not automatic next hour.
-5. Backend prevents double booking.
+1. Add clearer booking status timelines.
+2. Improve customer notification center after provider confirm/reject/reschedule.
+3. Add admin/stylist queue grouping by today/upcoming/history.
+4. Add calendar-style availability editing.
 
 ## Suggested Implementation Order
 
-1. Add stylist availability/calendar queue.
-2. Improve Salon Admin booking management.
+1. Improve Customer Notification and Booking Queue polish.
+2. Add calendar-style availability editing.
 3. Add real push notifications.
 4. Add real login/OTP and user roles.
 
@@ -186,3 +190,5 @@ Update: Salon admin booking actions are implemented for pending bookings and cus
 Update: Project agent workflow docs and Ponytail/Impeccable skills are installed.
 
 Update: Graphify is installed and a first local graph was generated. RTK is installed project-local for compact command output.
+
+Update: Stylist Availability and Admin Queue filtering are implemented. Stylist can add weekly hours, block specific slots, remove availability rules, and admin can filter booking statuses.

@@ -45,6 +45,25 @@ Customer rejects:
   status = CONFIRMED
 ```
 
+## Stylist Availability
+
+```text
+Stylist opens Hours tab
+Stylist adds weekly working hours
+Stylist blocks specific date/time slots
+Customer and reschedule slot pickers use backend availability
+Backend still rejects stale or conflicting slots
+```
+
+## Salon Admin Queue
+
+```text
+Admin opens Bookings tab
+Admin filters by needs action, pending, reschedule, confirmed, completed, cancelled, or all
+Admin confirms/rejects pending bookings
+Admin accepts/rejects customer reschedule requests
+```
+
 ## Local Mobile API
 
 Phone builds must use current PC Wi-Fi IP:
@@ -52,4 +71,3 @@ Phone builds must use current PC Wi-Fi IP:
 ```powershell
 flutter run -d ed083e3d --dart-define=API_URL=http://YOUR_PC_IP:3000
 ```
-

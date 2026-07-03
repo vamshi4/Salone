@@ -243,6 +243,20 @@ router.post('/:id/availability', async (req, res) => {
   }
 });
 
+// GET /api/v2/stylists/:id/availability-rules - List working hours and blocks.
+router.get('/:id/availability-rules', async (req, res) => {
+  try {
+    const rules = await prisma.stylistAvailability.findMany({
+      where: { stylistId: req.params.id },
+      orderBy: [{ date: 'asc' }, { dayOfWeek: 'asc' }, { startTime: 'asc' }],
+    });
+
+    res.json(rules);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // POST /api/v2/stylists/:id/block - Block a specific date/time.
 router.post('/:id/block', async (req, res) => {
   try {
@@ -264,6 +278,24 @@ router.post('/:id/block', async (req, res) => {
     });
 
     res.status(201).json(block);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/v2/stylists/:id/availability/:availabilityId - Remove a rule.
+router.delete('/:id/availability/:availabilityId', async (req, res) => {
+  try {
+    const { id, availabilityId } = req.params;
+
+    const rule = await prisma.stylistAvailability.findFirst({
+      where: { id: availabilityId, stylistId: id },
+    });
+
+    if (!rule) return res.status(404).json({ error: 'Availability rule not found' });
+
+    await prisma.stylistAvailability.delete({ where: { id: availabilityId } });
+    res.json({ ok: true });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
