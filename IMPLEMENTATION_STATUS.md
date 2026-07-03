@@ -1,6 +1,6 @@
 # GlamBook Implementation Status
 
-Last updated: July 2, 2026
+Last updated: July 4, 2026
 
 ## Current Product Flow
 
@@ -75,8 +75,17 @@ The app is now closer to the intended salon marketplace flow:
 - Salon booking list is shown.
 - Staff list is shown.
 - Staff permission toggle works.
+- Admin can confirm/reject pending bookings.
+- Admin can accept/reject customer-initiated reschedule requests.
 - UI font was cleaned up with bundled app font.
 - Refresh action exists.
+
+### Agent Workflow
+
+- `AGENTS.md`, `PRODUCT.md`, `DESIGN.md`, and `docs/FLOWS.md` now capture the project direction so Codex/Cursor/Meta AI stay aligned.
+- Ponytail project skills are installed for smaller, cleaner coding changes.
+- Impeccable project skills/hooks are installed for stronger product UI review.
+- `docs/TOOLS.md` documents how to use Ponytail, Impeccable, Graphify, and RTK for this project.
 
 ## Extra Work Added Beyond The Initial Demo
 
@@ -110,9 +119,9 @@ These are still not complete enough for a full product flow:
    - Backend availability exists.
    - Stylist still needs a dedicated screen to set weekly hours and blocked time.
 
-3. Admin booking actions.
-   - Admin can view bookings, but does not yet manage booking statuses deeply.
-   - Admin should see pending, confirmed, rescheduled, cancelled, completed.
+3. Admin booking depth.
+   - Admin can now act on pending bookings and customer reschedules.
+   - Admin still needs stronger filtering/grouping for pending, confirmed, rescheduled, cancelled, and completed bookings.
 
 4. Real authentication.
    - Current flow is still demo-user based.
@@ -168,4 +177,8 @@ Backend and customer/stylist/admin apps are partially wired. We added request-ba
 
 Update: Stylist Services & Pricing is now implemented. The next priority is Customer Booking Detail plus Notification Center so reschedule/confirm actions feel like a complete customer flow.
 
-Update: Customer Booking Detail and in-app Notification Center are now implemented. The next priority is Stylist Availability and Queue.
+Update: Customer Booking Detail and in-app Notification Center are now implemented.
+
+Update: Salon admin booking actions are implemented for pending bookings and customer reschedule requests.
+
+Update: Project agent workflow docs and Ponytail/Impeccable skills are installed. Graphify and RTK are documented but should be retried after local tool storage is stable.

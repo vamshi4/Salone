@@ -1,0 +1,74 @@
+# Salone Agent Instructions
+
+Use this file as the first context for Codex, Cursor, Meta AI, and any other coding agent working on Salone.
+
+## Project
+
+Salone/GlamBook is a salon and stylist marketplace with:
+
+- Backend: `backend/`
+- Customer app: `mobile/customer_app/`
+- Stylist app: `mobile/stylist_app/`
+- Salon admin app: `mobile/salon_admin_app/`
+
+Do not create a new app or restart the project. Continue from the existing code.
+
+## Working Style
+
+- Be brief. Do the work, then report only what changed and what passed.
+- Prefer small patches over rewrites.
+- Reuse existing code and UI patterns before adding packages.
+- Do not add dependencies unless they clearly reduce real complexity.
+- Preserve demo flow until real auth is intentionally implemented.
+- Commit and push verified work when asked or when completing a feature.
+
+## Verification
+
+Backend:
+
+```powershell
+cd backend
+npm run build
+```
+
+Flutter apps:
+
+```powershell
+cd mobile/customer_app
+flutter analyze
+
+cd ../stylist_app
+flutter analyze
+
+cd ../salon_admin_app
+flutter analyze
+```
+
+Physical Android device:
+
+```powershell
+flutter run -d ed083e3d --dart-define=API_URL=http://YOUR_PC_IP:3000
+```
+
+`YOUR_PC_IP` must be the current Wi-Fi IPv4 of the backend machine. Do not type placeholder text like `NEW_PC_IP`.
+
+## Current Business Flow
+
+1. Customer discovers salon/stylist.
+2. Customer selects service(s), time, and location.
+3. Booking starts as `PENDING`.
+4. Stylist or salon admin confirms/rejects.
+5. Customer can request reschedule after confirmation.
+6. Stylist/admin can accept/reject customer reschedule.
+7. Stylist can propose reschedule.
+8. Customer can accept/reject stylist proposal.
+
+Rejecting a reschedule keeps the original confirmed booking. It must not cancel the booking unless the user explicitly cancels.
+
+## Agent Tool Preferences
+
+- Ponytail principle: reuse, native/simple first, only add minimum needed.
+- Impeccable principle: product UI should be quiet, usable, aligned, and not AI-template-looking.
+- Graphify/CodeGraph principle: prefer project maps and targeted queries over rereading many files.
+- RTK principle: use compact command output for noisy commands, but use exact files/logs when debugging needs precision.
+

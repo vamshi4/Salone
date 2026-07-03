@@ -25,3 +25,9 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Local analysis/tool outputs
+graphify-output/
+codegraph-output/
+rtk-output/
+tools/bin/
