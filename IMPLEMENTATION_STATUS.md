@@ -28,6 +28,7 @@ The app is now closer to the intended salon marketplace flow:
 - Stylist service create/update/delete API is working.
 - Backend availability slot API is working.
 - Backend availability supports multiple selected services and combined duration.
+- Backend availability rejects overlapping working-hour rules and overlapping blocked slots.
 - Backend rejects bookings that conflict with existing pending/confirmed bookings.
 - Backend rejects bookings outside stylist working hours or blocked time.
 - Reschedule now stores proposed time separately until customer accepts.
@@ -70,6 +71,8 @@ The app is now closer to the intended salon marketplace flow:
 - Stylist can add weekly working hours.
 - Stylist can block specific date/time slots.
 - Stylist availability rules are listed and removable.
+- Stylist Hours tab groups Weekly hours and Blocked dates.
+- Availability forms validate date/time before saving.
 - Home service toggle is disabled for salon-exclusive stylists.
 - Base price is visible.
 - UI font was cleaned up with bundled app font.
@@ -148,27 +151,28 @@ These are still not complete enough for a full product flow:
 
 ## Recommended Next Task
 
-Build Calendar Availability polish next.
+Build Authentication and real notification foundation next.
 
 Reason:
 
 - Customer booking statuses are clearer now.
 - Provider/admin queues are grouped now.
-- The next polish is improving availability editing.
+- Availability editing has validation and grouping.
+- The next major product foundation is real auth and real notifications.
 
 Required behavior:
 
-1. Add calendar-style availability editing.
-2. Add overlap warnings before saving availability.
-3. Add real push notifications.
-4. Add real login/OTP and user roles.
+1. Add real login/OTP and user roles.
+2. Add real push notifications.
+3. Add payment/commission foundation.
+4. Add reviews and flagging workflow.
 
 ## Suggested Implementation Order
 
-1. Add calendar-style availability editing.
-2. Add overlap warnings before saving availability.
-3. Add real push notifications.
-4. Add real login/OTP and user roles.
+1. Add real login/OTP and user roles.
+2. Add real push notifications.
+3. Add payment and commission foundation.
+4. Add reviews and flagging workflow.
 
 ## Current Testing Notes
 
@@ -200,3 +204,5 @@ Update: Stylist Availability and Admin Queue filtering are implemented. Stylist 
 Update: Customer booking detail now has a status timeline and clearer action/waiting messages. Notification badge and notification center now count only provider-proposed reschedules that need customer action.
 
 Update: Stylist and Salon Admin booking queues now group bookings into Needs action, Today, Upcoming, and History with clearer card labels.
+
+Update: Availability polish is implemented. Backend rejects overlapping working hours/blocks, and stylist Hours tab groups Weekly hours and Blocked dates with time/date validation and quick presets.

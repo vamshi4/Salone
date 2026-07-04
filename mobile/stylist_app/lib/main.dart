@@ -397,6 +397,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
+                  if (!block) ...[
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ActionChip(
+                          label: const Text('9 AM - 6 PM'),
+                          onPressed: () {
+                            startController.text = '09:00';
+                            endController.text = '18:00';
+                          },
+                        ),
+                        ActionChip(
+                          label: const Text('10 AM - 7 PM'),
+                          onPressed: () {
+                            startController.text = '10:00';
+                            endController.text = '19:00';
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   if (block)
                     TextField(
                       controller: dateController,
@@ -488,6 +511,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }) async {
     if (_stylist == null) return;
 
+    final trimmedStart = startTime.trim();
+    final trimmedEnd = endTime.trim();
+    final validationError = _validateAvailabilityInput(
+      block: block,
+      date: date.trim(),
+      startTime: trimmedStart,
+      endTime: trimmedEnd,
+    );
+
+    if (validationError != null) {
+      _show(validationError);
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       if (block) {
@@ -495,8 +532,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           '/api/v2/stylists/${_stylist!['id']}/block',
           data: {
             'date': date.trim(),
-            'startTime': startTime.trim(),
-            'endTime': endTime.trim(),
+            'startTime': trimmedStart,
+            'endTime': trimmedEnd,
           },
         );
       } else {
@@ -504,8 +541,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           '/api/v2/stylists/${_stylist!['id']}/availability',
           data: {
             'dayOfWeek': dayOfWeek,
-            'startTime': startTime.trim(),
-            'endTime': endTime.trim(),
+            'startTime': trimmedStart,
+            'endTime': trimmedEnd,
             'isBlocked': false,
           },
         );
@@ -518,6 +555,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  String? _validateAvailabilityInput({
+    required bool block,
+    required String date,
+    required String startTime,
+    required String endTime,
+  }) {
+    final timePattern = RegExp(r'^\d{2}:\d{2}$');
+    if (!timePattern.hasMatch(startTime) || !timePattern.hasMatch(endTime)) {
+      return 'Use HH:mm time, for example 09:00';
+    }
+
+    final start = _clockMinutes(startTime);
+    final end = _clockMinutes(endTime);
+    if (start == null || end == null) {
+      return 'Use valid 24-hour time';
+    }
+    if (start >= end) return 'Start time must be before end time';
+
+    if (block && DateTime.tryParse(date) == null) {
+      return 'Use valid date, for example ${_dateParam(DateTime.now())}';
+    }
+
+    return null;
+  }
+
+  int? _clockMinutes(String value) {
+    final parts = value.split(':').map(int.tryParse).toList();
+    if (parts.length != 2 || parts.any((part) => part == null)) return null;
+    final hour = parts[0]!;
+    final minute = parts[1]!;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+    return hour * 60 + minute;
   }
 
   Future<void> _deleteAvailability(Map<String, dynamic> rule) async {
@@ -747,16 +818,32 @@ class _AvailabilityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final weeklyRules = rules
+        .where((rule) => rule['isBlocked'] != true && rule['date'] == null)
+        .toList();
+    final blockedRules =
+        rules.where((rule) => rule['isBlocked'] == true).toList();
+
     if (rules.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(18),
         decoration: _boxDecoration(),
-        child: const Text(
-          'Default hours are 9:00 AM to 6:00 PM. Add weekly hours or block time to control the real booking slots.',
-          style: TextStyle(
-            color: Color(0xFF756E80),
-            fontWeight: FontWeight.w700,
-          ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Default availability',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'Customers can book 9:00 AM to 6:00 PM until you add weekly hours or blocked time.',
+              style: TextStyle(
+                color: Color(0xFF756E80),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -764,30 +851,114 @@ class _AvailabilityCard extends StatelessWidget {
     return Container(
       decoration: _boxDecoration(),
       child: Column(
-        children: rules.map((rule) {
-          final blocked = rule['isBlocked'] == true;
-          final date = rule['date'] == null
-              ? _dayName(rule['dayOfWeek'] ?? 0)
-              : _formatDateText(rule['date']);
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _AvailabilityGroup(
+            title: 'Weekly hours',
+            emptyText: 'No custom weekly hours. Default 9 AM - 6 PM is active.',
+            rules: weeklyRules,
+            saving: saving,
+            onDelete: onDelete,
+          ),
+          const Divider(height: 1),
+          _AvailabilityGroup(
+            title: 'Blocked dates',
+            emptyText: 'No blocked time added.',
+            rules: blockedRules,
+            saving: saving,
+            onDelete: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-          return ListTile(
-            leading: Icon(
-              blocked ? Icons.block : Icons.schedule,
-              color:
-                  blocked ? const Color(0xFFE06464) : const Color(0xFF5B3DB8),
+class _AvailabilityGroup extends StatelessWidget {
+  const _AvailabilityGroup({
+    required this.title,
+    required this.emptyText,
+    required this.rules,
+    required this.saving,
+    required this.onDelete,
+  });
+
+  final String title;
+  final String emptyText;
+  final List<Map<String, dynamic>> rules;
+  final bool saving;
+  final ValueChanged<Map<String, dynamic>> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          if (rules.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                emptyText,
+                style: const TextStyle(
+                  color: Color(0xFF756E80),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            )
+          else
+            ...rules.map(
+              (rule) => _AvailabilityRuleRow(
+                rule: rule,
+                saving: saving,
+                onDelete: onDelete,
+              ),
             ),
-            title: Text(
-              blocked ? 'Blocked time' : 'Working hours',
-              style: const TextStyle(fontWeight: FontWeight.w900),
-            ),
-            subtitle: Text('$date  ${rule['startTime']} - ${rule['endTime']}'),
-            trailing: IconButton(
-              onPressed: saving ? null : () => onDelete(rule),
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Remove',
-            ),
-          );
-        }).toList(),
+        ],
+      ),
+    );
+  }
+}
+
+class _AvailabilityRuleRow extends StatelessWidget {
+  const _AvailabilityRuleRow({
+    required this.rule,
+    required this.saving,
+    required this.onDelete,
+  });
+
+  final Map<String, dynamic> rule;
+  final bool saving;
+  final ValueChanged<Map<String, dynamic>> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final blocked = rule['isBlocked'] == true;
+    final date = rule['date'] == null
+        ? _dayName(rule['dayOfWeek'] ?? 0)
+        : _formatDateText(rule['date']);
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(
+        blocked ? Icons.block : Icons.schedule,
+        color: blocked ? const Color(0xFFE06464) : const Color(0xFF5B3DB8),
+      ),
+      title: Text(
+        '$date  ${rule['startTime']} - ${rule['endTime']}',
+        style: const TextStyle(fontWeight: FontWeight.w900),
+      ),
+      subtitle: Text(blocked ? 'Not bookable' : 'Bookable window'),
+      trailing: IconButton(
+        onPressed: saving ? null : () => onDelete(rule),
+        icon: const Icon(Icons.delete_outline),
+        tooltip: 'Remove',
       ),
     );
   }

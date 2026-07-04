@@ -53,6 +53,7 @@ Customer notification badge:
 Stylist opens Hours tab
 Stylist adds weekly working hours
 Stylist blocks specific date/time slots
+Backend rejects overlapping working-hour rules and overlapping blocked slots
 Customer and reschedule slot pickers use backend availability
 Backend still rejects stale or conflicting slots
 ```

@@ -45,7 +45,13 @@ function canSetServicePrice(stylist: any) {
 }
 
 function parseClock(value: string): number {
+  if (!/^\d{2}:\d{2}$/.test(value)) {
+    throw new Error('Time must use HH:mm format');
+  }
   const [hours, minutes] = value.split(':').map(Number);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    throw new Error('Time must be a valid 24-hour value');
+  }
   return hours * 60 + (minutes || 0);
 }
 
@@ -167,6 +173,64 @@ async function buildAvailableSlots(
   return slots;
 }
 
+async function validateAvailabilityRule({
+  stylistId,
+  dayOfWeek,
+  date,
+  startTime,
+  endTime,
+  isBlocked,
+}: {
+  stylistId: string;
+  dayOfWeek: number | null;
+  date: Date | null;
+  startTime: string;
+  endTime: string;
+  isBlocked: boolean;
+}) {
+  const start = parseClock(startTime);
+  const end = parseClock(endTime);
+
+  if (start >= end) {
+    return 'Start time must be before end time';
+  }
+
+  if (!date && (dayOfWeek == null || dayOfWeek < 0 || dayOfWeek > 6)) {
+    return 'Choose a valid day of week';
+  }
+
+  if (date && Number.isNaN(date.getTime())) {
+    return 'Choose a valid date';
+  }
+
+  const existingRules = await prisma.stylistAvailability.findMany({
+    where: {
+      stylistId,
+      isBlocked,
+      ...(date
+        ? { date }
+        : {
+            dayOfWeek,
+            date: null,
+          }),
+    },
+  });
+
+  const overlaps = existingRules.some((rule) => {
+    const existingStart = parseClock(rule.startTime);
+    const existingEnd = parseClock(rule.endTime);
+    return start < existingEnd && end > existingStart;
+  });
+
+  if (overlaps) {
+    return isBlocked
+      ? 'Blocked time overlaps an existing block'
+      : 'Working hours overlap an existing rule';
+  }
+
+  return null;
+}
+
 // GET /api/v2/stylists - List all stylists for customer app.
 router.get('/', async (_req, res) => {
   try {
@@ -219,18 +283,27 @@ router.post('/:id/availability', async (req, res) => {
       return res.status(400).json({ error: 'startTime and endTime are required' });
     }
 
-    if (parseClock(startTime) >= parseClock(endTime)) {
-      return res.status(400).json({ error: 'startTime must be before endTime' });
-    }
-
     const stylist = await prisma.stylist.findUnique({ where: { id } });
     if (!stylist) return res.status(404).json({ error: 'Stylist not found' });
+
+    const normalizedDate = date ? sameDate(new Date(date)) : null;
+    const normalizedDay = normalizedDate ? null : Number(dayOfWeek ?? new Date().getDay());
+    const validationError = await validateAvailabilityRule({
+      stylistId: id,
+      dayOfWeek: normalizedDay,
+      date: normalizedDate,
+      startTime,
+      endTime,
+      isBlocked,
+    });
+
+    if (validationError) return res.status(400).json({ error: validationError });
 
     const availability = await prisma.stylistAvailability.create({
       data: {
         stylistId: id,
-        dayOfWeek: date ? null : Number(dayOfWeek ?? new Date().getDay()),
-        date: date ? sameDate(new Date(date)) : null,
+        dayOfWeek: normalizedDay,
+        date: normalizedDate,
         startTime,
         endTime,
         isBlocked,
@@ -267,10 +340,22 @@ router.post('/:id/block', async (req, res) => {
       return res.status(400).json({ error: 'date, startTime and endTime are required' });
     }
 
+    const normalizedDate = sameDate(new Date(date));
+    const validationError = await validateAvailabilityRule({
+      stylistId: id,
+      dayOfWeek: null,
+      date: normalizedDate,
+      startTime,
+      endTime,
+      isBlocked: true,
+    });
+
+    if (validationError) return res.status(400).json({ error: validationError });
+
     const block = await prisma.stylistAvailability.create({
       data: {
         stylistId: id,
-        date: sameDate(new Date(date)),
+        date: normalizedDate,
         startTime,
         endTime,
         isBlocked: true,
