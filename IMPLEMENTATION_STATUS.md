@@ -38,6 +38,8 @@ The app is now closer to the intended salon marketplace flow:
 - Backend supports configurable CORS origins.
 - Backend limits JSON request body size.
 - Backend disconnects Prisma on shutdown.
+- Backend has signed bearer-token auth helpers.
+- Backend write endpoints are wrapped in role checks.
 
 ### Customer App
 
@@ -143,8 +145,9 @@ Production readiness is tracked in `docs/PRODUCTION_READINESS.md`.
    - Next improvement is queue grouping by today, upcoming, and history.
 
 4. Real authentication.
-   - Current flow is still demo-user based.
-   - Need phone OTP/login and role-based sessions.
+   - Backend auth foundation exists.
+   - Current apps still use demo-user assumptions.
+   - Need phone OTP/login screens, token storage, and role-based app sessions.
 
 5. Payment and commission flow.
    - Booking price is visible.
@@ -213,3 +216,5 @@ Update: Stylist and Salon Admin booking queues now group bookings into Needs act
 Update: Availability polish is implemented. Backend rejects overlapping working hours/blocks, and stylist Hours tab groups Weekly hours and Blocked dates with time/date validation and quick presets.
 
 Update: Production readiness audit started. Backend hardening now includes configurable CORS, JSON body limits, generic unhandled error responses, graceful Prisma shutdown, and a production readiness checklist.
+
+Update: Backend auth foundation is implemented. Signed bearer tokens, demo-token endpoint, and role middleware now exist; write endpoints are protected when `AUTH_REQUIRED=true`.

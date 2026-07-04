@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../index';
+import { requireRole } from '../auth';
 
 const router = Router();
 
@@ -46,7 +47,7 @@ router.get('/:salonId/bookings', async (req, res) => {
 });
 
 // POST /api/v2/salons/:salonId/stylists/:stylistId/make-exclusive
-router.post('/:salonId/stylists/:stylistId/make-exclusive', async (req, res) => {
+router.post('/:salonId/stylists/:stylistId/make-exclusive', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { salonId, stylistId } = req.params;
 
@@ -86,7 +87,7 @@ router.post('/:salonId/stylists/:stylistId/make-exclusive', async (req, res) => 
 });
 
 // PATCH /api/v2/salons/:salonId/stylists/:stylistId
-router.patch('/:salonId/stylists/:stylistId', async (req, res) => {
+router.patch('/:salonId/stylists/:stylistId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { salonId, stylistId } = req.params;
     const { canSetOwnPrice } = req.body;

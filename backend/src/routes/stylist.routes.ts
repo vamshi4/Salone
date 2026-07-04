@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../index';
+import { requireRole } from '../auth';
 
 const router = Router();
 
@@ -274,7 +275,7 @@ router.get('/:id/availability', async (req, res) => {
 });
 
 // POST /api/v2/stylists/:id/availability - Set weekly/specific working hours.
-router.post('/:id/availability', async (req, res) => {
+router.post('/:id/availability', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
     const { dayOfWeek, date, startTime, endTime, isBlocked = false } = req.body;
@@ -331,7 +332,7 @@ router.get('/:id/availability-rules', async (req, res) => {
 });
 
 // POST /api/v2/stylists/:id/block - Block a specific date/time.
-router.post('/:id/block', async (req, res) => {
+router.post('/:id/block', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
     const { date, startTime, endTime } = req.body;
@@ -369,7 +370,7 @@ router.post('/:id/block', async (req, res) => {
 });
 
 // DELETE /api/v2/stylists/:id/availability/:availabilityId - Remove a rule.
-router.delete('/:id/availability/:availabilityId', async (req, res) => {
+router.delete('/:id/availability/:availabilityId', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id, availabilityId } = req.params;
 
@@ -405,7 +406,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/v2/stylists - Create stylist for local testing.
-router.post('/', async (req, res) => {
+router.post('/', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const {
       phone,
@@ -442,7 +443,7 @@ router.post('/', async (req, res) => {
 });
 
 // POST /api/v2/stylists/:id/services - Add a bookable service for this stylist.
-router.post('/:id/services', async (req, res) => {
+router.post('/:id/services', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, category = 'Salon', duration = 60, basePrice } = req.body;
@@ -481,7 +482,7 @@ router.post('/:id/services', async (req, res) => {
 });
 
 // PATCH /api/v2/stylists/:id/services/:serviceId - Update service details.
-router.patch('/:id/services/:serviceId', async (req, res) => {
+router.patch('/:id/services/:serviceId', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id, serviceId } = req.params;
     const { name, category, duration, basePrice } = req.body;
@@ -519,7 +520,7 @@ router.patch('/:id/services/:serviceId', async (req, res) => {
 });
 
 // DELETE /api/v2/stylists/:id/services/:serviceId - Remove an unused service.
-router.delete('/:id/services/:serviceId', async (req, res) => {
+router.delete('/:id/services/:serviceId', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id, serviceId } = req.params;
 
@@ -544,7 +545,7 @@ router.delete('/:id/services/:serviceId', async (req, res) => {
 });
 
 // PATCH /api/v2/stylists/:id - Update any stylist fields used by local flows.
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
     const allowedFields = [
@@ -577,7 +578,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // POST /api/v2/stylists/:id/make-independent - Revert an exclusive stylist.
-router.post('/:id/make-independent', async (req, res) => {
+router.post('/:id/make-independent', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
 

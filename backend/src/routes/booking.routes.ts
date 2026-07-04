@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../index';
+import { requireRole } from '../auth';
 
 const router = Router();
 
@@ -167,7 +168,7 @@ router.get('/stylist/:stylistId', async (req, res) => {
 });
 
 // POST /api/v2/bookings/check-home-service - 5km validation
-router.post('/check-home-service', async (req, res) => {
+router.post('/check-home-service', requireRole('CUSTOMER'), async (req, res) => {
   try {
     const { stylistId, customerLat, customerLng } = req.body;
 
@@ -201,7 +202,7 @@ router.post('/check-home-service', async (req, res) => {
 });
 
 // POST /api/v2/bookings - Create a simple booking for the mobile demo.
-router.post('/', async (req, res) => {
+router.post('/', requireRole('CUSTOMER'), async (req, res) => {
   try {
     const {
       stylistId,
@@ -340,7 +341,7 @@ router.post('/', async (req, res) => {
 });
 
 // PATCH /api/v2/bookings/:id/status - Confirm/cancel a booking request.
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { status } = req.body;
     if (!['PENDING', 'PENDING_RESCHEDULE', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(status)) {
@@ -365,7 +366,7 @@ router.patch('/:id/status', async (req, res) => {
 });
 
 // PATCH /api/v2/bookings/:id/reschedule - Customer or provider suggests a new slot.
-router.patch('/:id/reschedule', async (req, res) => {
+router.patch('/:id/reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { dateTime, proposedBy = 'STYLIST' } = req.body;
     if (!dateTime) return res.status(400).json({ error: 'dateTime is required' });
@@ -422,7 +423,7 @@ router.patch('/:id/reschedule', async (req, res) => {
 });
 
 // PATCH /api/v2/bookings/:id/accept-reschedule - Opposite party accepts suggested time.
-router.patch('/:id/accept-reschedule', async (req, res) => {
+router.patch('/:id/accept-reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { acceptedBy = 'CUSTOMER' } = req.body;
     if (!['CUSTOMER', 'STYLIST'].includes(acceptedBy)) {
@@ -477,7 +478,7 @@ router.patch('/:id/accept-reschedule', async (req, res) => {
 });
 
 // PATCH /api/v2/bookings/:id/reject-reschedule - Reject proposed time and keep original booking.
-router.patch('/:id/reject-reschedule', async (req, res) => {
+router.patch('/:id/reject-reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { rejectedBy = 'CUSTOMER' } = req.body;
     if (!['CUSTOMER', 'STYLIST'].includes(rejectedBy)) {

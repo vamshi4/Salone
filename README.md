@@ -18,6 +18,8 @@ npm install
 docker-compose up -d --build
 ```
 
+For production-style auth enforcement set `AUTH_REQUIRED=true`, a strong `JWT_SECRET`, and disable demo tokens with `DEMO_AUTH_ENABLED=false`.
+
 Health check:
 
 ```powershell

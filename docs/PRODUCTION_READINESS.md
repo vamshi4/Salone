@@ -8,7 +8,7 @@ Salone is not production-ready until every P0 and P1 item below is complete and 
   - Customer login.
   - Stylist login.
   - Salon admin login.
-  - Role-based access checks on every write endpoint.
+  - Role-based access checks on every write endpoint. `AUTH_REQUIRED=true` enables enforcement.
 - Replace demo identities:
   - Remove hard-coded `customer-demo`.
   - Remove app-side selection of the first/Ravi stylist.
@@ -50,13 +50,17 @@ Salone is not production-ready until every P0 and P1 item below is complete and 
 
 - Backend CORS can be restricted with `CORS_ORIGIN`.
 - Backend JSON body size is limited with `JSON_LIMIT`.
+- Backend has signed bearer-token helpers and role middleware.
+- Backend write endpoints are wrapped in role checks.
+- Development can issue a demo token from `/api/v2/auth/demo-token` while `DEMO_AUTH_ENABLED=true`.
 - Backend returns generic errors for unhandled server errors.
 - Backend disconnects Prisma on shutdown.
 
 ## Current Demo Limitations
 
 - Apps still use demo/local identity assumptions.
-- Backend write endpoints do not yet enforce logged-in roles.
+- Apps do not yet have login screens or token storage.
+- Production auth enforcement requires `AUTH_REQUIRED=true`.
 - Notifications are in-app only.
 - Payments are not implemented.
 - Local Docker compose is for development, not production deployment.

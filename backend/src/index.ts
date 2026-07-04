@@ -5,6 +5,8 @@ import { PrismaClient } from '@prisma/client';
 import stylistRoutes from './routes/stylist.routes';
 import bookingRoutes from './routes/booking.routes';
 import salonRoutes from './routes/salon.routes';
+import authRoutes from './routes/auth.routes';
+import { authOptional } from './auth';
 
 dotenv.config();
 export const prisma = new PrismaClient();
@@ -29,12 +31,14 @@ app.use(
   }),
 );
 app.use(express.json({ limit: process.env.JSON_LIMIT || '1mb' }));
+app.use(authOptional);
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', version: '2.0.0' });
 });
 
 // Mount v2 routes
+app.use('/api/v2/auth', authRoutes);
 app.use('/api/v2/stylists', stylistRoutes);
 app.use('/api/v2/bookings', bookingRoutes);
 app.use('/api/v2/salons', salonRoutes);
