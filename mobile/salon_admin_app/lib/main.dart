@@ -246,9 +246,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               if (_filteredBookings.isEmpty)
                 const _EmptyCard(text: 'No salon bookings yet')
               else
-                ..._filteredBookings.map(
-                  (booking) =>
-                      _BookingCard(booking: booking, onChanged: _loadDashboard),
+                _BookingQueue(
+                  bookings: _filteredBookings,
+                  onChanged: _loadDashboard,
                 ),
             ] else ...[
               const _SectionTitle(title: 'Staff permissions'),
@@ -326,6 +326,117 @@ class _BookingFilters extends StatelessWidget {
     }
 
     return bookings.where((booking) => booking['status'] == filter).length;
+  }
+}
+
+class _BookingQueue extends StatelessWidget {
+  const _BookingQueue({
+    required this.bookings,
+    required this.onChanged,
+  });
+
+  final List<Map<String, dynamic>> bookings;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final groups = [
+      _QueueGroup('Needs action', _needsAction),
+      _QueueGroup('Today', _today),
+      _QueueGroup('Upcoming', _upcoming),
+      _QueueGroup('History', _history),
+    ];
+
+    return Column(
+      children: groups
+          .map(
+            (group) => _QueueSection(
+              title: group.title,
+              bookings: bookings.where(group.test).toList(),
+              onChanged: onChanged,
+            ),
+          )
+          .where((section) => section.bookings.isNotEmpty)
+          .toList(),
+    );
+  }
+
+  bool _needsAction(Map<String, dynamic> booking) {
+    final status = booking['status'];
+    return status == 'PENDING' ||
+        (status == 'PENDING_RESCHEDULE' &&
+            booking['rescheduleProposedBy'] == 'CUSTOMER');
+  }
+
+  bool _today(Map<String, dynamic> booking) {
+    if (_needsAction(booking) || _history(booking)) return false;
+    final slot = DateTime.parse(booking['slotStart']).toLocal();
+    final now = DateTime.now();
+    return slot.year == now.year &&
+        slot.month == now.month &&
+        slot.day == now.day;
+  }
+
+  bool _upcoming(Map<String, dynamic> booking) {
+    if (_needsAction(booking) || _today(booking) || _history(booking)) {
+      return false;
+    }
+    final slot = DateTime.parse(booking['slotStart']).toLocal();
+    return slot.isAfter(DateTime.now());
+  }
+
+  bool _history(Map<String, dynamic> booking) {
+    final status = booking['status'];
+    final slot = DateTime.parse(booking['slotStart']).toLocal();
+    return status == 'CANCELLED' ||
+        status == 'COMPLETED' ||
+        status == 'NO_SHOW' ||
+        slot.isBefore(DateTime.now());
+  }
+}
+
+class _QueueGroup {
+  const _QueueGroup(this.title, this.test);
+
+  final String title;
+  final bool Function(Map<String, dynamic>) test;
+}
+
+class _QueueSection extends StatelessWidget {
+  const _QueueSection({
+    required this.title,
+    required this.bookings,
+    required this.onChanged,
+  });
+
+  final String title;
+  final List<Map<String, dynamic>> bookings;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8, top: 6),
+          child: Text(
+            '$title ${bookings.length}',
+            style: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        ...bookings.map(
+          (booking) => _BookingCard(
+            booking: booking,
+            onChanged: onChanged,
+            queueLabel: title,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -473,10 +584,15 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _BookingCard extends StatelessWidget {
-  const _BookingCard({required this.booking, required this.onChanged});
+  const _BookingCard({
+    required this.booking,
+    required this.onChanged,
+    required this.queueLabel,
+  });
 
   final Map<String, dynamic> booking;
   final VoidCallback onChanged;
+  final String queueLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -541,6 +657,18 @@ class _BookingCard extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Text(
+            _queueHint(
+              queueLabel: queueLabel,
+              status: status,
+              customerRequestedReschedule: customerRequestedReschedule,
+            ),
+            style: const TextStyle(
+              color: Color(0xFF00796B),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           if (customerRequestedReschedule && proposedSlot != null) ...[
             const SizedBox(height: 10),
             Container(
@@ -603,6 +731,19 @@ class _BookingCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _queueHint({
+    required String queueLabel,
+    required String status,
+    required bool customerRequestedReschedule,
+  }) {
+    if (status == 'PENDING') return 'Customer waiting for confirmation';
+    if (customerRequestedReschedule) return 'Customer requested reschedule';
+    if (queueLabel == 'Today') return 'Confirmed today';
+    if (queueLabel == 'Upcoming') return 'Upcoming appointment';
+    if (queueLabel == 'History') return 'Past or closed booking';
+    return queueLabel;
   }
 
   Future<void> _updateStatus(BuildContext context, String status) async {

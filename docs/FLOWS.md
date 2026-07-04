@@ -62,8 +62,19 @@ Backend still rejects stale or conflicting slots
 ```text
 Admin opens Bookings tab
 Admin filters by needs action, pending, reschedule, confirmed, completed, cancelled, or all
+Admin sees filtered results grouped into Needs action, Today, Upcoming, and History
 Admin confirms/rejects pending bookings
 Admin accepts/rejects customer reschedule requests
+```
+
+## Stylist Queue
+
+```text
+Stylist opens Bookings tab
+Bookings are grouped into Needs action, Today, Upcoming, and History
+Needs action includes pending bookings and customer reschedule requests
+Cards explain why action is needed
+Stylist confirms/rejects requests or proposes reschedule
 ```
 
 ## Local Mobile API

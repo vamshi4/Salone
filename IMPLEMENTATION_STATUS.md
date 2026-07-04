@@ -63,6 +63,7 @@ The app is now closer to the intended salon marketplace flow:
 - Stylist can suggest a reschedule time.
 - Stylist reschedule sheet loads valid backend availability slots.
 - Stylist can reject pending requests.
+- Stylist bookings are grouped into Needs action, Today, Upcoming, and History.
 - Stylist can add and edit services with duration and price.
 - Stylist can remove unused services.
 - Service price editing respects salon admin `canSetOwnPrice`.
@@ -82,6 +83,7 @@ The app is now closer to the intended salon marketplace flow:
 - Admin can confirm/reject pending bookings.
 - Admin can accept/reject customer-initiated reschedule requests.
 - Admin booking list has filters for action-needed, pending, reschedule, confirmed, completed, cancelled, and all.
+- Admin filtered bookings are grouped into Needs action, Today, Upcoming, and History.
 - UI font was cleaned up with bundled app font.
 - Refresh action exists.
 
@@ -146,24 +148,25 @@ These are still not complete enough for a full product flow:
 
 ## Recommended Next Task
 
-Build Booking Queue grouping and Calendar Availability polish next.
+Build Calendar Availability polish next.
 
 Reason:
 
 - Customer booking statuses are clearer now.
-- The next polish is grouping provider/admin queues and improving availability editing.
+- Provider/admin queues are grouped now.
+- The next polish is improving availability editing.
 
 Required behavior:
 
-1. Add admin/stylist queue grouping by today/upcoming/history.
-2. Add calendar-style availability editing.
-3. Add overlap warnings before saving availability.
-4. Add real push notifications.
+1. Add calendar-style availability editing.
+2. Add overlap warnings before saving availability.
+3. Add real push notifications.
+4. Add real login/OTP and user roles.
 
 ## Suggested Implementation Order
 
-1. Add provider/admin queue grouping.
-2. Add calendar-style availability editing.
+1. Add calendar-style availability editing.
+2. Add overlap warnings before saving availability.
 3. Add real push notifications.
 4. Add real login/OTP and user roles.
 
@@ -195,3 +198,5 @@ Update: Graphify is installed and a first local graph was generated. RTK is inst
 Update: Stylist Availability and Admin Queue filtering are implemented. Stylist can add weekly hours, block specific slots, remove availability rules, and admin can filter booking statuses.
 
 Update: Customer booking detail now has a status timeline and clearer action/waiting messages. Notification badge and notification center now count only provider-proposed reschedules that need customer action.
+
+Update: Stylist and Salon Admin booking queues now group bookings into Needs action, Today, Upcoming, and History with clearer card labels.
