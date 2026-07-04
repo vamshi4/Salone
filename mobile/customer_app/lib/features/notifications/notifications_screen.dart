@@ -15,9 +15,8 @@ class NotificationsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Notifications')),
       body: bookingsAsync.when(
         data: (bookings) {
-          final actionItems = bookings
-              .where((booking) => booking.status == 'PENDING_RESCHEDULE')
-              .toList();
+          final actionItems =
+              bookings.where((booking) => booking.needsCustomerAction).toList();
 
           if (actionItems.isEmpty) {
             return const Center(
@@ -36,7 +35,7 @@ class NotificationsScreen extends ConsumerWidget {
                     ),
                     SizedBox(height: 6),
                     Text(
-                      'Booking changes that need your action will appear here.',
+                      'Booking changes that need your confirmation will appear here.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           color: Color(0xFF756E80),
@@ -70,11 +69,11 @@ class NotificationsScreen extends ConsumerWidget {
                     child: Icon(Icons.schedule),
                   ),
                   title: Text(
-                    '${booking.serviceName} was rescheduled',
+                    booking.customerStatusTitle,
                     style: const TextStyle(fontWeight: FontWeight.w900),
                   ),
                   subtitle: Text(
-                    'Review the new time from ${booking.providerText}.',
+                    '${booking.serviceName} with ${booking.providerText}. ${booking.customerStatusMessage}',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   trailing: const Icon(Icons.chevron_right),

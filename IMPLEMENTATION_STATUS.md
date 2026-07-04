@@ -49,7 +49,8 @@ The app is now closer to the intended salon marketplace flow:
 - Booking history screen exists.
 - Booking detail screen exists.
 - Reschedule confirmation flow exists in customer bookings.
-- Bell notification center shows pending reschedule actions.
+- Booking detail shows customer-facing status messaging and a status timeline.
+- Bell notification center shows provider-proposed reschedule actions that need customer confirmation.
 - Retry button exists after network errors.
 - UI font was cleaned up with bundled app font.
 
@@ -118,7 +119,7 @@ The app is now closer to the intended salon marketplace flow:
 These are still not complete enough for a full product flow:
 
 1. Push notifications.
-   - Customer now has in-app notification center.
+   - Customer now has in-app notification center for customer action items.
    - Real push notifications are not implemented.
 
 2. Stylist availability management depth.
@@ -145,23 +146,23 @@ These are still not complete enough for a full product flow:
 
 ## Recommended Next Task
 
-Build the Customer Notification and Booking Queue polish next.
+Build Booking Queue grouping and Calendar Availability polish next.
 
 Reason:
 
-- Booking actions now exist across customer, stylist, and admin.
-- The next polish is making status changes obvious to customer and provider without manual refresh.
+- Customer booking statuses are clearer now.
+- The next polish is grouping provider/admin queues and improving availability editing.
 
 Required behavior:
 
-1. Add clearer booking status timelines.
-2. Improve customer notification center after provider confirm/reject/reschedule.
-3. Add admin/stylist queue grouping by today/upcoming/history.
-4. Add calendar-style availability editing.
+1. Add admin/stylist queue grouping by today/upcoming/history.
+2. Add calendar-style availability editing.
+3. Add overlap warnings before saving availability.
+4. Add real push notifications.
 
 ## Suggested Implementation Order
 
-1. Improve Customer Notification and Booking Queue polish.
+1. Add provider/admin queue grouping.
 2. Add calendar-style availability editing.
 3. Add real push notifications.
 4. Add real login/OTP and user roles.
@@ -192,3 +193,5 @@ Update: Project agent workflow docs and Ponytail/Impeccable skills are installed
 Update: Graphify is installed and a first local graph was generated. RTK is installed project-local for compact command output.
 
 Update: Stylist Availability and Admin Queue filtering are implemented. Stylist can add weekly hours, block specific slots, remove availability rules, and admin can filter booking statuses.
+
+Update: Customer booking detail now has a status timeline and clearer action/waiting messages. Notification badge and notification center now count only provider-proposed reschedules that need customer action.

@@ -117,8 +117,8 @@ class _DiscoveryPage extends StatelessWidget {
                           bookingsProvider.select(
                             (value) => value.maybeWhen(
                               data: (bookings) => bookings
-                                  .where((booking) =>
-                                      booking.status == 'PENDING_RESCHEDULE')
+                                  .where(
+                                      (booking) => booking.needsCustomerAction)
                                   .length,
                               orElse: () => 0,
                             ),

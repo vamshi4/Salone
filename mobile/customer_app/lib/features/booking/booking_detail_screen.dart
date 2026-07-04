@@ -98,11 +98,9 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final booking = widget.booking;
-    final isRescheduled = booking.status == 'PENDING_RESCHEDULE';
-    final proposedByCustomer =
-        isRescheduled && booking.rescheduleProposedBy == 'CUSTOMER';
-    final proposedByStylist =
-        isRescheduled && booking.rescheduleProposedBy != 'CUSTOMER';
+    final isRescheduled = booking.isPendingReschedule;
+    final proposedByCustomer = booking.rescheduleByCustomer;
+    final proposedByStylist = booking.rescheduleByProvider;
     final canRequestReschedule = booking.status == 'CONFIRMED';
 
     return Scaffold(
@@ -138,16 +136,54 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: booking.needsCustomerAction
+                        ? const Color(0xFFFFF4DD)
+                        : const Color(0xFFF0ECFF),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        booking.needsCustomerAction
+                            ? Icons.touch_app_outlined
+                            : Icons.info_outline,
+                        color: booking.needsCustomerAction
+                            ? const Color(0xFF9B6410)
+                            : const Color(0xFF5B3DB8),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          booking.customerStatusMessage,
+                          style: TextStyle(
+                            color: booking.needsCustomerAction
+                                ? const Color(0xFF9B6410)
+                                : const Color(0xFF5B3DB8),
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
+          const SizedBox(height: 14),
+          _TimelineSection(booking: booking),
           const SizedBox(height: 14),
           _Section(
             title: 'Appointment',
             children: [
               _InfoRow(
                 icon: Icons.schedule,
-                label: 'Time',
+                label:
+                    booking.proposedDateTime == null ? 'Time' : 'Current time',
                 value: _formatDate(booking.slotStart),
               ),
               if (booking.proposedDateTime != null)
@@ -188,8 +224,8 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                   Expanded(
                     child: Text(
                       proposedByCustomer
-                          ? 'Your reschedule request is waiting for the stylist or salon to confirm.'
-                          : 'Stylist suggested this new time. Accept it to update the appointment, or reject it to keep the original time.',
+                          ? 'Your reschedule request is waiting for the stylist or salon to confirm. The original time stays active until they approve it.'
+                          : 'Provider suggested this new time. Accept it to update the appointment, or reject it to keep the original time.',
                       style: const TextStyle(
                         color: Color(0xFF9B6410),
                         fontWeight: FontWeight.w800,
@@ -370,8 +406,7 @@ class _CustomerRescheduleSheetState extends State<_CustomerRescheduleSheet> {
                 spacing: 8,
                 runSpacing: 8,
                 children: _slots.map((slot) {
-                  final selected =
-                      _selectedSlot != null &&
+                  final selected = _selectedSlot != null &&
                       slot.isAtSameMomentAs(_selectedSlot!);
                   return ChoiceChip(
                     selected: selected,
@@ -428,6 +463,154 @@ class _Section extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           ...children,
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineSection extends StatelessWidget {
+  const _TimelineSection({required this.booking});
+
+  final CustomerBooking booking;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <_TimelineItem>[
+      const _TimelineItem(
+        title: 'Requested',
+        subtitle: 'Booking request sent',
+        done: true,
+      ),
+      _TimelineItem(
+        title: 'Provider confirmation',
+        subtitle: _providerSubtitle,
+        done: booking.isConfirmed ||
+            booking.isPendingReschedule ||
+            booking.isCompleted,
+        active: booking.isPending,
+      ),
+      if (booking.isPendingReschedule)
+        _TimelineItem(
+          title: booking.rescheduleByCustomer
+              ? 'Provider review'
+              : 'Customer review',
+          subtitle: booking.rescheduleByCustomer
+              ? 'Waiting for provider to approve your new time'
+              : 'Accept or reject the proposed time',
+          done: false,
+          active: true,
+        ),
+      _TimelineItem(
+        title: booking.isCancelled ? 'Cancelled' : 'Final appointment',
+        subtitle: _finalSubtitle,
+        done: booking.isConfirmed || booking.isCompleted || booking.isCancelled,
+        active: false,
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: _boxDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Status timeline',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 12),
+          ...items.map((item) => _TimelineRow(item: item)),
+        ],
+      ),
+    );
+  }
+
+  String get _providerSubtitle {
+    if (booking.isPending) return 'Waiting for stylist or salon';
+    if (booking.isCancelled) {
+      return 'Provider rejected or booking was cancelled';
+    }
+    return 'Provider accepted';
+  }
+
+  String get _finalSubtitle {
+    if (booking.isCancelled) return 'This appointment will not happen';
+    if (booking.isCompleted) return 'Service completed';
+    if (booking.isConfirmed) return 'Appointment time is confirmed';
+    return 'Not final yet';
+  }
+}
+
+class _TimelineItem {
+  const _TimelineItem({
+    required this.title,
+    required this.subtitle,
+    required this.done,
+    this.active = false,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool done;
+  final bool active;
+}
+
+class _TimelineRow extends StatelessWidget {
+  const _TimelineRow({required this.item});
+
+  final _TimelineItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = item.done
+        ? const Color(0xFF0F8D58)
+        : item.active
+            ? const Color(0xFF9B6410)
+            : const Color(0xFFB8B0C2);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              item.done
+                  ? Icons.check
+                  : item.active
+                      ? Icons.hourglass_top
+                      : Icons.circle_outlined,
+              size: 16,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  item.subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFF756E80),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

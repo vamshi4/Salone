@@ -95,15 +95,14 @@ class _BookingCard extends StatelessWidget {
   final VoidCallback onChanged;
 
   String _formatDate(DateTime date) {
-    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
+    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final minute = date.minute.toString().padLeft(2, '0');
     final suffix = date.hour >= 12 ? 'PM' : 'AM';
-    return '${date.day}/${date.month}, $hour:00 $suffix';
+    return '${date.day}/${date.month}, $hour:$minute $suffix';
   }
 
   @override
   Widget build(BuildContext context) {
-    final isRescheduled = booking.status == 'PENDING_RESCHEDULE';
-
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: () async {
@@ -148,6 +147,16 @@ class _BookingCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
+                  booking.customerStatusTitle,
+                  style: TextStyle(
+                    color: booking.needsCustomerAction
+                        ? const Color(0xFF9B6410)
+                        : const Color(0xFF5B3DB8),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
                   booking.providerText,
                   style: const TextStyle(
                       color: Color(0xFF756E80), fontWeight: FontWeight.w700),
@@ -170,7 +179,9 @@ class _BookingCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (isRescheduled) ...[
+                if (booking.isPending ||
+                    booking.isPendingReschedule ||
+                    booking.isCancelled) ...[
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -178,16 +189,22 @@ class _BookingCard extends StatelessWidget {
                       color: const Color(0xFFFFF4DD),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.info_outline, color: Color(0xFF9B6410)),
-                        SizedBox(width: 8),
+                        Icon(
+                          booking.needsCustomerAction
+                              ? Icons.touch_app_outlined
+                              : Icons.info_outline,
+                          color: const Color(0xFF9B6410),
+                        ),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Action needed. Open details to accept or reject.',
-                            style: TextStyle(
-                                color: Color(0xFF9B6410),
-                                fontWeight: FontWeight.w800),
+                            booking.customerStatusMessage,
+                            style: const TextStyle(
+                              color: Color(0xFF9B6410),
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ],
@@ -210,19 +227,34 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final warning = status == 'PENDING' || status == 'PENDING_RESCHEDULE';
+    final cancelled = status == 'CANCELLED';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F7EF),
+        color: cancelled
+            ? const Color(0xFFFFE8E8)
+            : warning
+                ? const Color(0xFFFFF4DD)
+                : const Color(0xFFE8F7EF),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        status,
-        style: const TextStyle(
-            color: Color(0xFF0F8D58),
-            fontSize: 11,
-            fontWeight: FontWeight.w900),
+        _label(status),
+        style: TextStyle(
+          color: cancelled
+              ? const Color(0xFFE06464)
+              : warning
+                  ? const Color(0xFF9B6410)
+                  : const Color(0xFF0F8D58),
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
+  }
+
+  String _label(String status) {
+    return status.replaceAll('_', ' ');
   }
 }

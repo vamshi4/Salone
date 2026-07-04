@@ -43,6 +43,8 @@ Customer accepts:
 Customer rejects:
   original slot remains
   status = CONFIRMED
+Customer notification badge:
+  shows only when provider proposed a new time
 ```
 
 ## Stylist Availability
