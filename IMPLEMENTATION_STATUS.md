@@ -35,6 +35,9 @@ The app is now closer to the intended salon marketplace flow:
 - Home service distance check endpoint exists.
 - Exclusive stylist logic exists.
 - Staff price permission toggle exists.
+- Backend supports configurable CORS origins.
+- Backend limits JSON request body size.
+- Backend disconnects Prisma on shutdown.
 
 ### Customer App
 
@@ -123,6 +126,8 @@ The app is now closer to the intended salon marketplace flow:
 
 These are still not complete enough for a full product flow:
 
+Production readiness is tracked in `docs/PRODUCTION_READINESS.md`.
+
 1. Push notifications.
    - Customer now has in-app notification center for customer action items.
    - Real push notifications are not implemented.
@@ -206,3 +211,5 @@ Update: Customer booking detail now has a status timeline and clearer action/wai
 Update: Stylist and Salon Admin booking queues now group bookings into Needs action, Today, Upcoming, and History with clearer card labels.
 
 Update: Availability polish is implemented. Backend rejects overlapping working hours/blocks, and stylist Hours tab groups Weekly hours and Blocked dates with time/date validation and quick presets.
+
+Update: Production readiness audit started. Backend hardening now includes configurable CORS, JSON body limits, generic unhandled error responses, graceful Prisma shutdown, and a production readiness checklist.

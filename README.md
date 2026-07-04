@@ -8,6 +8,8 @@ Salon and stylist marketplace prototype with:
 - Salon admin app: `mobile/salon_admin_app/`
 - Current progress notes: `IMPLEMENTATION_STATUS.md`
 
+Production status: see `docs/PRODUCTION_READINESS.md`. The current app is a working MVP/demo, not yet safe for real public users.
+
 ## Backend
 
 ```powershell
