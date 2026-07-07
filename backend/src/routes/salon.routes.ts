@@ -4,9 +4,19 @@ import { requireRole } from '../auth';
 
 const router = Router();
 
+async function findOwnedSalon(salonId: string, user: any) {
+  return prisma.salon.findFirst({
+    where: {
+      id: salonId,
+      ...(user?.role === 'SUPER_ADMIN' ? {} : { ownerId: user?.id }),
+    },
+  });
+}
+
 // GET /api/v2/salons
 router.get('/', async (req, res) => {
   const salons = await prisma.salon.findMany({
+    where: req.user?.role === 'SALON_OWNER' ? { ownerId: req.user.id } : {},
     include: {
       services: true,
       owner: true,
@@ -28,8 +38,11 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/v2/salons/:salonId/bookings - Salon admin booking dashboard.
-router.get('/:salonId/bookings', async (req, res) => {
+router.get('/:salonId/bookings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
     const bookings = await prisma.booking.findMany({
       where: { salonId: req.params.salonId },
       orderBy: { slotStart: 'desc' },
@@ -37,10 +50,177 @@ router.get('/:salonId/bookings', async (req, res) => {
         customer: true,
         stylist: { include: { user: true } },
         service: true,
+        services: {
+          include: { service: true },
+          orderBy: { sortOrder: 'asc' },
+        },
       },
     });
 
     res.json(bookings);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/v2/salons/:salonId/retention - Month-end retention analytics.
+// Splits customers into new / retained (constant) / churned (dropped) / reactivated,
+// and returns the "missed" list (active last month but not this month) to re-engage.
+router.get('/:salonId/retention', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    // A booking counts as a "visit" if the customer attended or is committed.
+    const bookings = await prisma.booking.findMany({
+      where: { salonId: req.params.salonId, status: { in: ['COMPLETED', 'CONFIRMED'] } },
+      include: { customer: true },
+      orderBy: { slotStart: 'asc' },
+    });
+
+    const now = new Date();
+    const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const thisKey = monthKey(now);
+    const lastKey = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+
+    type Agg = {
+      id: string; name: string | null; phone: string;
+      months: Set<string>; firstVisit: Date; lastVisit: Date;
+      visits: number; totalSpend: number;
+    };
+    const byCustomer = new Map<string, Agg>();
+
+    for (const b of bookings) {
+      const key = b.customerId;
+      const mk = monthKey(b.slotStart);
+      const existing = byCustomer.get(key);
+      if (!existing) {
+        byCustomer.set(key, {
+          id: b.customerId,
+          name: b.customer?.name ?? null,
+          phone: b.customer?.phone ?? '',
+          months: new Set([mk]),
+          firstVisit: b.slotStart,
+          lastVisit: b.slotStart,
+          visits: 1,
+          totalSpend: b.price,
+        });
+      } else {
+        existing.months.add(mk);
+        existing.visits += 1;
+        existing.totalSpend += b.price;
+        if (b.slotStart < existing.firstVisit) existing.firstVisit = b.slotStart;
+        if (b.slotStart > existing.lastVisit) existing.lastVisit = b.slotStart;
+      }
+    }
+
+    const all = [...byCustomer.values()];
+    const activeThis = all.filter((c) => c.months.has(thisKey));
+    const activeLast = all.filter((c) => c.months.has(lastKey));
+
+    const newCustomers = activeThis.filter((c) => monthKey(c.firstVisit) === thisKey);
+    const retained = activeThis.filter((c) => c.months.has(lastKey)); // came both months
+    const reactivated = activeThis.filter(
+      (c) => !c.months.has(lastKey) && monthKey(c.firstVisit) !== thisKey,
+    );
+    const churned = activeLast.filter((c) => !c.months.has(thisKey)); // missed this month
+
+    // Also surface longer-lapsed customers (last visit before last month, still gone).
+    const lapsed = all.filter(
+      (c) => !c.months.has(thisKey) && !c.months.has(lastKey),
+    );
+
+    const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0);
+    const revenueIn = (key: string) =>
+      bookings.filter((b) => monthKey(b.slotStart) === key).reduce((t, b) => t + b.price, 0);
+    const revThis = revenueIn(thisKey);
+    const revLast = revenueIn(lastKey);
+
+    const missed = [...churned, ...lapsed]
+      .map((c) => ({
+        customerId: c.id,
+        name: c.name,
+        phone: c.phone,
+        lastVisit: c.lastVisit,
+        visits: c.visits,
+        totalSpend: c.totalSpend,
+        status: c.months.has(lastKey) ? 'DROPPED' : 'LAPSED',
+      }))
+      .sort((a, b) => b.totalSpend - a.totalSpend);
+
+    const churnRate = pct(churned.length, activeLast.length);
+
+    res.json({
+      month: thisKey,
+      previousMonth: lastKey,
+      summary: {
+        activeThisMonth: activeThis.length,
+        activeLastMonth: activeLast.length,
+        newCustomers: newCustomers.length,
+        retainedCustomers: retained.length,
+        reactivatedCustomers: reactivated.length,
+        churnedCustomers: churned.length,
+        newPct: pct(newCustomers.length, activeThis.length),
+        retainedPct: pct(retained.length, activeThis.length),
+        reactivatedPct: pct(reactivated.length, activeThis.length),
+        churnRate, // churned as % of last month's active base
+        retentionRate: pct(retained.length, activeLast.length),
+        revenueThisMonth: revThis,
+        revenueLastMonth: revLast,
+        revenueDropPct: revLast > 0 ? Math.round(((revLast - revThis) / revLast) * 1000) / 10 : 0,
+        customerDropPct: pct(activeLast.length - activeThis.length, activeLast.length),
+        alert: churnRate >= 10,
+      },
+      missed,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/v2/salons/:salonId/customers/:customerId - Salon-owned customer notes/tags.
+router.get('/:salonId/customers/:customerId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { salonId, customerId } = req.params;
+    const salon = await findOwnedSalon(salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const record = await prisma.salonCustomer.findUnique({
+      where: { salonId_customerId: { salonId, customerId } },
+    });
+
+    res.json(record ?? { salonId, customerId, notes: '', tags: [] });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/v2/salons/:salonId/customers/:customerId - Save salon-owned customer notes/tags.
+router.patch('/:salonId/customers/:customerId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { salonId, customerId } = req.params;
+    const salon = await findOwnedSalon(salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const tags = Array.isArray(req.body.tags)
+      ? req.body.tags.map((tag: unknown) => String(tag).trim()).filter(Boolean)
+      : [];
+
+    const record = await prisma.salonCustomer.upsert({
+      where: { salonId_customerId: { salonId, customerId } },
+      update: {
+        notes: String(req.body.notes ?? ''),
+        tags,
+      },
+      create: {
+        salonId,
+        customerId,
+        notes: String(req.body.notes ?? ''),
+        tags,
+      },
+    });
+
+    res.json(record);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -92,12 +272,96 @@ router.patch('/:salonId/stylists/:stylistId', requireRole('SALON_OWNER', 'SUPER_
     const { salonId, stylistId } = req.params;
     const { canSetOwnPrice } = req.body;
 
+    const salon = await findOwnedSalon(salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
     const updated = await prisma.salonStylist.update({
       where: { salonId_stylistId: { salonId, stylistId } },
       data: { canSetOwnPrice },
     });
 
     res.json(updated);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/v2/salons/:salonId/staff-setup - Create a staff member with a
+// starter service and default Mon-Sat hours in one atomic step. Replaces a
+// client-side chain of ~9 sequential requests (create stylist, make
+// exclusive, add service, add 6 availability rows) that had no rollback: if
+// any request after the first failed, the phone number was left "used up"
+// by a half-created stylist with no service or hours, and the admin had no
+// way to finish or retry with the same phone.
+router.post('/:salonId/staff-setup', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { salonId } = req.params;
+    const { name, phone, serviceName, basePrice } = req.body;
+
+    if (
+      !name || String(name).trim().length < 2 ||
+      !phone || String(phone).trim().length < 6 ||
+      !serviceName || String(serviceName).trim().length < 2 ||
+      typeof basePrice !== 'number' || basePrice < 1
+    ) {
+      return res.status(400).json({
+        error: 'name, phone, serviceName and basePrice are required',
+      });
+    }
+
+    const salon = await findOwnedSalon(salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const normalizedPhone = String(phone).trim();
+    const existingUser = await prisma.user.findUnique({ where: { phone: normalizedPhone } });
+    if (existingUser) {
+      return res.status(409).json({ error: 'That staff phone is already in use' });
+    }
+
+    const stylist = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: { phone: normalizedPhone, name: String(name).trim(), role: 'STYLIST' },
+      });
+
+      const createdStylist = await tx.stylist.create({
+        data: {
+          userId: user.id,
+          registrationType: 'SALON_EXCLUSIVE',
+          primarySalonId: salonId,
+          independentBookingEnabled: false,
+          homeServiceEnabled: false,
+          basePrice,
+        },
+      });
+
+      await tx.salonStylist.create({
+        data: { salonId, stylistId: createdStylist.id, exclusive: true, status: 'ACTIVE' },
+      });
+
+      await tx.service.create({
+        data: {
+          name: String(serviceName).trim(),
+          category: 'Salon',
+          duration: 60,
+          stylistId: createdStylist.id,
+          salonId,
+          basePrice,
+        },
+      });
+
+      for (const dayOfWeek of [1, 2, 3, 4, 5, 6]) {
+        await tx.stylistAvailability.create({
+          data: { stylistId: createdStylist.id, dayOfWeek, startTime: '09:00', endTime: '18:00' },
+        });
+      }
+
+      return tx.stylist.findUniqueOrThrow({
+        where: { id: createdStylist.id },
+        include: { user: true, services: true },
+      });
+    });
+
+    res.status(201).json(stylist);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

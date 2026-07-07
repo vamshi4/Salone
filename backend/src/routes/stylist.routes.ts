@@ -548,6 +548,7 @@ router.delete('/:id/services/:serviceId', requireRole('STYLIST', 'SALON_OWNER', 
 router.patch('/:id', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
+    const { name, phone } = req.body;
     const allowedFields = [
       'registrationType',
       'primarySalonId',
@@ -565,14 +566,35 @@ router.patch('/:id', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async
       Object.entries(req.body).filter(([key]) => allowedFields.includes(key)),
     );
 
-    const stylist = await prisma.stylist.update({
+    const existing = await prisma.stylist.findUnique({
       where: { id },
-      data,
-      include: stylistInclude,
+      include: { user: true },
+    });
+    if (!existing) return res.status(404).json({ error: 'Stylist not found' });
+
+    const stylist = await prisma.$transaction(async (tx) => {
+      if (name != null || phone != null) {
+        await tx.user.update({
+          where: { id: existing.userId },
+          data: {
+            ...(name != null ? { name: String(name).trim() } : {}),
+            ...(phone != null ? { phone: String(phone).trim() } : {}),
+          },
+        });
+      }
+
+      return tx.stylist.update({
+        where: { id },
+        data,
+        include: stylistInclude,
+      });
     });
 
     res.json(withMobileFields(stylist));
   } catch (e: any) {
+    if (e.code === 'P2002') {
+      return res.status(409).json({ error: 'Phone is already in use' });
+    }
     res.status(500).json({ error: e.message });
   }
 });

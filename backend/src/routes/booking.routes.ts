@@ -4,6 +4,42 @@ import { requireRole } from '../auth';
 
 const router = Router();
 
+const bookingInclude = {
+  customer: true,
+  stylist: { include: { user: true, primarySalon: true } },
+  salon: true,
+  service: true,
+  services: {
+    include: { service: true },
+    orderBy: { sortOrder: 'asc' as const },
+  },
+};
+
+// Returns true when the acting user is allowed to view/modify this specific booking.
+// SUPER_ADMIN can always act. Otherwise the booking must belong to the requester:
+// the customer who made it, the stylist assigned to it, or the owner of its salon.
+function canAccessBooking(
+  booking: {
+    customerId: string;
+    stylist?: { userId: string } | null;
+    salon?: { ownerId: string } | null;
+  },
+  user: { id: string; role: string },
+): boolean {
+  switch (user.role) {
+    case 'SUPER_ADMIN':
+      return true;
+    case 'CUSTOMER':
+      return booking.customerId === user.id;
+    case 'STYLIST':
+      return booking.stylist?.userId === user.id;
+    case 'SALON_OWNER':
+      return booking.salon?.ownerId === user.id;
+    default:
+      return false;
+  }
+}
+
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -122,23 +158,13 @@ async function validateStylistSlot(
   return null;
 }
 
-// GET /api/v2/bookings - Demo customer booking history.
-router.get('/', async (_req, res) => {
+// GET /api/v2/bookings - Customer booking history.
+router.get('/', requireRole('CUSTOMER'), async (req, res) => {
   try {
-    const customer = await prisma.user.findUnique({
-      where: { phone: 'customer-demo' },
-    });
-
-    if (!customer) return res.json([]);
-
     const bookings = await prisma.booking.findMany({
-      where: { customerId: customer.id },
+      where: { customerId: req.user!.id },
       orderBy: { slotStart: 'desc' },
-      include: {
-        stylist: { include: { user: true, primarySalon: true } },
-        salon: true,
-        service: true,
-      },
+      include: bookingInclude,
     });
 
     res.json(bookings);
@@ -148,24 +174,49 @@ router.get('/', async (_req, res) => {
 });
 
 // GET /api/v2/bookings/stylist/:stylistId - Bookings assigned to a stylist.
-router.get('/stylist/:stylistId', async (req, res) => {
-  try {
-    const bookings = await prisma.booking.findMany({
-      where: { stylistId: req.params.stylistId },
-      orderBy: { slotStart: 'desc' },
-      include: {
-        customer: true,
-        stylist: { include: { user: true, primarySalon: true } },
-        salon: true,
-        service: true,
-      },
-    });
+router.get(
+  '/stylist/:stylistId',
+  requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'),
+  async (req, res) => {
+    try {
+      const stylistId = req.params.stylistId;
 
-    res.json(bookings);
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
-  }
-});
+      if (req.user!.role !== 'SUPER_ADMIN') {
+        const stylist = await prisma.stylist.findUnique({
+          where: { id: stylistId },
+          include: { primarySalon: true },
+        });
+        if (!stylist) return res.status(404).json({ error: 'Stylist not found' });
+
+        const isSelf = req.user!.role === 'STYLIST' && stylist.userId === req.user!.id;
+        const ownsSalon =
+          req.user!.role === 'SALON_OWNER' &&
+          ((stylist.primarySalon && stylist.primarySalon.ownerId === req.user!.id) ||
+            (await prisma.salon.findFirst({
+              where: {
+                ownerId: req.user!.id,
+                stylists: { some: { stylistId, status: 'ACTIVE' } },
+              },
+              select: { id: true },
+            })) != null);
+
+        if (!isSelf && !ownsSalon) {
+          return res.status(404).json({ error: 'Stylist not found' });
+        }
+      }
+
+      const bookings = await prisma.booking.findMany({
+        where: { stylistId },
+        orderBy: { slotStart: 'desc' },
+        include: bookingInclude,
+      });
+
+      res.json(bookings);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  },
+);
 
 // POST /api/v2/bookings/check-home-service - 5km validation
 router.post('/check-home-service', requireRole('CUSTOMER'), async (req, res) => {
@@ -252,13 +303,16 @@ router.post('/', requireRole('CUSTOMER'), async (req, res) => {
         })
       : [];
 
-    let service = selectedServices[0] ?? stylist.services[0];
-
     if (requestedServiceIds.length && selectedServices.length !== requestedServiceIds.length) {
       return res.status(400).json({ error: 'One or more services were not found for stylist' });
     }
+    if (requestedServiceIds.length) {
+      selectedServices.sort(
+        (a, b) => requestedServiceIds.indexOf(a.id) - requestedServiceIds.indexOf(b.id),
+      );
+    }
 
-    service = requestedServiceIds.length
+    let service = requestedServiceIds.length
       ? selectedServices[0]
       : stylist.services[0];
 
@@ -276,16 +330,6 @@ router.post('/', requireRole('CUSTOMER'), async (req, res) => {
     } else if (!selectedServices.length) {
       selectedServices = [service];
     }
-
-    const customer = await prisma.user.upsert({
-      where: { phone: 'customer-demo' },
-      update: {},
-      create: {
-        phone: 'customer-demo',
-        name: 'Demo Customer',
-        role: 'CUSTOMER',
-      },
-    });
 
     const start = dateTime ? new Date(dateTime) : new Date(Date.now() + 60 * 60 * 1000);
     const totalDuration = selectedServices.reduce(
@@ -306,7 +350,7 @@ router.post('/', requireRole('CUSTOMER'), async (req, res) => {
 
     const booking = await prisma.booking.create({
       data: {
-        customerId: customer.id,
+        customerId: req.user!.id,
         providerType:
           stylist.registrationType === 'SALON_EXCLUSIVE' ? 'STYLIST_AT_SALON' : 'STYLIST_INDEPENDENT',
         salonId: stylist.primarySalonId,
@@ -327,11 +371,138 @@ router.post('/', requireRole('CUSTOMER'), async (req, res) => {
           salon: stylist.primarySalonId ? 30 : 0,
         },
         status: 'PENDING',
+        services: {
+          create: selectedServices.map((selectedService, index) => ({
+            serviceId: selectedService.id,
+            sortOrder: index,
+          })),
+        },
       },
-      include: {
-        stylist: { include: { user: true, primarySalon: true } },
-        service: true,
+      include: bookingInclude,
+    });
+
+    res.status(201).json(booking);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/v2/bookings/salon-manual - Salon/admin creates a walk-in or phone booking.
+router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const {
+      salonId,
+      stylistId,
+      serviceId,
+      serviceIds = [],
+      dateTime,
+      customerName,
+      customerPhone,
+    } = req.body;
+
+    const requestedServiceIds = Array.isArray(serviceIds)
+      ? serviceIds.filter(Boolean)
+      : serviceId
+          ? [serviceId]
+          : [];
+
+    if (!salonId || !stylistId || requestedServiceIds.length === 0 || !dateTime || !customerPhone) {
+      return res.status(400).json({
+        error: 'salonId, stylistId, serviceId/serviceIds, dateTime and customerPhone are required',
+      });
+    }
+
+    const salon = await prisma.salon.findFirst({
+      where: {
+        id: salonId,
+        ...(req.user!.role === 'SUPER_ADMIN' ? {} : { ownerId: req.user!.id }),
       },
+    });
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const services = await prisma.service.findMany({
+      where: {
+        id: { in: requestedServiceIds },
+        OR: [{ stylistId }, { salonId }],
+      },
+      orderBy: { name: 'asc' },
+    });
+    if (services.length !== requestedServiceIds.length) {
+      return res.status(404).json({ error: 'One or more services were not found for this salon/stylist' });
+    }
+    services.sort(
+      (a, b) => requestedServiceIds.indexOf(a.id) - requestedServiceIds.indexOf(b.id),
+    );
+
+    const stylist = await prisma.stylist.findFirst({
+      where: {
+        id: stylistId,
+        OR: [
+          { primarySalonId: salonId },
+          { salonStylists: { some: { salonId, status: 'ACTIVE' } } },
+        ],
+      },
+    });
+    if (!stylist) return res.status(404).json({ error: 'Stylist not found for this salon' });
+
+    const start = new Date(dateTime);
+    const slotError = await validateStylistSlot(stylistId, requestedServiceIds, start);
+    if (slotError) return res.status(400).json({ error: slotError });
+
+    const totalDuration = services.reduce((total, item) => total + item.duration, 0);
+    const end = new Date(start.getTime() + totalDuration * 60 * 1000);
+
+    // Look up by phone first instead of upserting: an upsert that always sets
+    // role: 'CUSTOMER' would silently downgrade an existing STYLIST/SALON_OWNER
+    // account if a walk-in happens to share their phone number.
+    const normalizedPhone = String(customerPhone).trim();
+    let customer = await prisma.user.findUnique({ where: { phone: normalizedPhone } });
+    if (customer) {
+      if (customerName && customerName !== customer.name) {
+        customer = await prisma.user.update({
+          where: { id: customer.id },
+          data: { name: customerName },
+        });
+      }
+    } else {
+      customer = await prisma.user.create({
+        data: {
+          phone: normalizedPhone,
+          name: customerName || 'Customer',
+          role: 'CUSTOMER',
+        },
+      });
+    }
+
+    const primaryService = services[0];
+    const price = services.reduce((total, item) => total + item.basePrice, 0);
+    const booking = await prisma.booking.create({
+      data: {
+        customerId: customer.id,
+        providerType: 'SALON',
+        salonId,
+        stylistId,
+        serviceId: primaryService.id,
+        bookedVia: 'SALONS_TAB',
+        serviceType: 'IN_SALON',
+        slotStart: start,
+        slotEnd: end,
+        originalDateTime: start,
+        price,
+        platformFee: 0,
+        travelFee: 0,
+        stylistPayout: Math.round(price * 0.7),
+        salonPayout: Math.round(price * 0.3),
+        commissionSnapshot: { stylist: 70, salon: 30, source: 'SALON_MANUAL' },
+        status: 'CONFIRMED',
+        services: {
+          create: services.map((item, index) => ({
+            serviceId: item.id,
+            sortOrder: index,
+          })),
+        },
+      },
+      include: bookingInclude,
     });
 
     res.status(201).json(booking);
@@ -348,15 +519,19 @@ router.patch('/:id/status', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN')
       return res.status(400).json({ error: 'Invalid booking status' });
     }
 
+    const existing = await prisma.booking.findUnique({
+      where: { id: req.params.id },
+      include: bookingInclude,
+    });
+    if (!existing) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessBooking(existing, req.user!)) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
     const booking = await prisma.booking.update({
       where: { id: req.params.id },
       data: { status },
-      include: {
-        customer: true,
-        stylist: { include: { user: true, primarySalon: true } },
-        salon: true,
-        service: true,
-      },
+      include: bookingInclude,
     });
 
     res.json(booking);
@@ -376,9 +551,12 @@ router.patch('/:id/reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON_OWNER'
 
     const existing = await prisma.booking.findUnique({
       where: { id: req.params.id },
-      include: { service: true },
+      include: bookingInclude,
     });
     if (!existing) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessBooking(existing, req.user!)) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
     if (proposedBy === 'CUSTOMER' && existing.status !== 'CONFIRMED') {
       return res.status(400).json({ error: 'Only confirmed bookings can be rescheduled by customer' });
     }
@@ -387,14 +565,22 @@ router.patch('/:id/reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON_OWNER'
     }
 
     const start = new Date(dateTime);
-    const end = new Date(start.getTime() + existing.service.duration * 60 * 1000);
+    const selectedServiceIds =
+      existing.services.length > 0
+        ? existing.services.map((item) => item.serviceId)
+        : [existing.serviceId];
+    const totalDuration =
+      existing.services.length > 0
+        ? existing.services.reduce((total, item) => total + item.service.duration, 0)
+        : existing.service.duration;
+    const end = new Date(start.getTime() + totalDuration * 60 * 1000);
     if (!existing.stylistId) {
       return res.status(400).json({ error: 'Booking has no stylist assigned' });
     }
 
     const slotError = await validateStylistSlot(
       existing.stylistId,
-      [existing.serviceId],
+      selectedServiceIds,
       start,
       existing.id,
     );
@@ -408,12 +594,7 @@ router.patch('/:id/reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON_OWNER'
         rescheduleProposedBy: proposedBy,
         status: 'PENDING_RESCHEDULE',
       },
-      include: {
-        customer: true,
-        stylist: { include: { user: true, primarySalon: true } },
-        salon: true,
-        service: true,
-      },
+      include: bookingInclude,
     });
 
     res.json(booking);
@@ -432,9 +613,12 @@ router.patch('/:id/accept-reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON
 
     const existing = await prisma.booking.findUnique({
       where: { id: req.params.id },
-      include: { service: true },
+      include: bookingInclude,
     });
     if (!existing) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessBooking(existing, req.user!)) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
     if (!existing.proposedDateTime) {
       return res.status(400).json({ error: 'No proposed reschedule time found' });
     }
@@ -443,11 +627,19 @@ router.patch('/:id/accept-reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON
     }
 
     const start = existing.proposedDateTime;
-    const end = new Date(start.getTime() + existing.service.duration * 60 * 1000);
+    const selectedServiceIds =
+      existing.services.length > 0
+        ? existing.services.map((item) => item.serviceId)
+        : [existing.serviceId];
+    const totalDuration =
+      existing.services.length > 0
+        ? existing.services.reduce((total, item) => total + item.service.duration, 0)
+        : existing.service.duration;
+    const end = new Date(start.getTime() + totalDuration * 60 * 1000);
     if (existing.stylistId) {
       const slotError = await validateStylistSlot(
         existing.stylistId,
-        [existing.serviceId],
+        selectedServiceIds,
         start,
         existing.id,
       );
@@ -463,12 +655,7 @@ router.patch('/:id/accept-reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON
         rescheduleProposedBy: null,
         status: 'CONFIRMED',
       },
-      include: {
-        customer: true,
-        stylist: { include: { user: true, primarySalon: true } },
-        salon: true,
-        service: true,
-      },
+      include: bookingInclude,
     });
 
     res.json(booking);
@@ -487,8 +674,12 @@ router.patch('/:id/reject-reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON
 
     const existing = await prisma.booking.findUnique({
       where: { id: req.params.id },
+      include: bookingInclude,
     });
     if (!existing) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessBooking(existing, req.user!)) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
     if (!existing.proposedDateTime) {
       return res.status(400).json({ error: 'No proposed reschedule time found' });
     }
@@ -504,12 +695,7 @@ router.patch('/:id/reject-reschedule', requireRole('CUSTOMER', 'STYLIST', 'SALON
         rescheduleProposedBy: null,
         status: 'CONFIRMED',
       },
-      include: {
-        customer: true,
-        stylist: { include: { user: true, primarySalon: true } },
-        salon: true,
-        service: true,
-      },
+      include: bookingInclude,
     });
 
     res.json(booking);

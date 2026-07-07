@@ -37,6 +37,19 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', version: '2.0.0' });
 });
 
+// Public app-config: minimum supported version per app (drives force-update).
+// Bump via env (e.g. SALON_ADMIN_MIN_VERSION=2.1.0) without shipping code.
+app.get('/api/v2/app-config', (_req: Request, res: Response) => {
+  res.json({
+    salonAdminMinVersion: process.env.SALON_ADMIN_MIN_VERSION || '2.0.0',
+    customerMinVersion: process.env.CUSTOMER_MIN_VERSION || '2.0.0',
+    stylistMinVersion: process.env.STYLIST_MIN_VERSION || '2.0.0',
+    salonAdminStoreUrl:
+      process.env.SALON_ADMIN_STORE_URL ||
+      'https://play.google.com/store/apps/details?id=com.example.salon_admin_app',
+  });
+});
+
 // Mount v2 routes
 app.use('/api/v2/auth', authRoutes);
 app.use('/api/v2/stylists', stylistRoutes);
