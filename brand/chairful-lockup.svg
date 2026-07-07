@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="200" viewBox="0 0 760 200" font-family="Inter, 'Segoe UI', system-ui, sans-serif">
+  <rect x="10" y="35" width="130" height="130" rx="38" fill="#0E7C6B"/>
+  <g stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M57,67 V137"/>
+    <path d="M57,107 H112"/>
+    <path d="M106,107 V137"/>
+  </g>
+  <text x="172" y="102" font-size="62" font-weight="800" letter-spacing="-1"><tspan fill="#0F172A">Chair</tspan><tspan fill="#0E7C6B">ful</tspan></text>
+  <text x="175" y="140" font-size="19" font-weight="600" fill="#6B7280">Keep every chair full.</text>
+</svg>

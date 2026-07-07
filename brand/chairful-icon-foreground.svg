@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Adaptive-icon foreground: chair only, transparent background, within safe zone -->
+  <g stroke="#FFFFFF" stroke-width="52" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M372,330 L408,556"/>
+    <path d="M408,556 H636"/>
+    <path d="M408,556 V700"/>
+    <path d="M629,556 V700"/>
+  </g>
+</svg>
