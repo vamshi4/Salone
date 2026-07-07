@@ -1,0 +1,77 @@
+appId: com.example.salon_admin_app
+---
+- tapOn: "New salon? Create account"
+- assertVisible: "Create salon account"
+
+- tapOn:
+    point: "50%,33%"
+- inputText: "Maestro Owner"
+
+- tapOn:
+    point: "50%,41%"
+- inputText: "Maestro Salon"
+
+- tapOn:
+    point: "50%,49%"
+- inputText: "Maestro Address"
+
+- tapOn:
+    point: "50%,57%"
+- inputRandomNumber:
+    length: 10
+
+- hideKeyboard
+- tapOn: "Create account"
+
+- assertVisible: "Bookings"
+- tapOn:
+    text: "Staff.*"
+    retryTapIfNoChange: true
+
+- assertVisible: "Staff permissions"
+- tapOn:
+    text: "Add first staff|Add staff"
+
+- assertVisible: "Add staff"
+- tapOn: "Staff name"
+- inputText: "Maestro Stylist"
+
+- tapOn: "Staff phone"
+- inputRandomNumber:
+    length: 10
+
+- tapOn: "Starter service"
+- inputText: "Haircut"
+
+- tapOn: "Price \\(Rs\\)"
+- eraseText
+- inputText: "499"
+
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: "Create staff setup"
+    direction: DOWN
+- tapOn: "Create staff setup"
+
+- assertVisible: "Edit"
+- tapOn: "Edit"
+
+- assertVisible: "Manage staff"
+- tapOn: "New service"
+- inputText: "Beard Trim"
+
+- tapOn:
+    text: "Price \\(Rs\\)"
+    index: 1
+- eraseText
+- inputText: "299"
+
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: "Add service"
+    direction: DOWN
+- tapOn: "Add service"
+
+- assertVisible: "Edit"
