@@ -49,13 +49,19 @@ cd ../salon_admin_app
 flutter analyze
 ```
 
-Physical Android device:
+Physical Android device (`ed083e3d`):
 
 ```powershell
-flutter run -d ed083e3d --dart-define=API_URL=http://YOUR_PC_IP:3000
+adb -s ed083e3d reverse tcp:3000 tcp:3000
+flutter run -d ed083e3d --dart-define=API_URL=http://127.0.0.1:3000
 ```
 
-`YOUR_PC_IP` must be the current Wi-Fi IPv4 of the backend machine. Do not type placeholder text like `NEW_PC_IP`.
+`adb reverse` is more reliable than Wi-Fi IP over USB. If using Wi-Fi instead, set
+`API_URL` to the backend machine's current IPv4 (never a placeholder like `NEW_PC_IP`).
+
+**Gradle gotcha:** if a build fails with "Unable to establish loopback connection", set
+`JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\nonexistent-dir-force-inet` before the
+command. See `docs/HANDOFF.md` for this and other device gotchas.
 
 ## Current Business Flow
 
