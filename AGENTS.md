@@ -2,6 +2,11 @@
 
 Use this file as the first context for Codex, Cursor, Meta AI, and any other coding agent working on Salone.
 
+> **Read [`docs/HANDOFF.md`](docs/HANDOFF.md) first** — it records the latest work (what
+> changed and why), how to run/test on the phone, gotchas, and the current backlog.
+> Sequential hand-off only: **one agent at a time**. When you stop, commit with *why*,
+> append to `docs/HANDOFF.md`, and run `graphify update .`. Canonical dir: `D:\vamshi\Salone`.
+
 ## Project
 
 Salone/GlamBook is a salon and stylist marketplace with:
