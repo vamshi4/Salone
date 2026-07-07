@@ -33,3 +33,8 @@ codegraph-output/
 rtk-output/
 tools/bin/
 tools/rtk/
+
+# Temporary files & IDE attachments
+tmp-*.png
+.codex-remote-attachments/
+

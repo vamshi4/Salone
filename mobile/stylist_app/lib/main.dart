@@ -1,6 +1,40 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
+const _baseUrl = String.fromEnvironment(
+  'API_URL',
+  defaultValue: 'http://10.0.2.2:3000',
+);
+
+Future<String>? _demoToken;
+
+Dio _api() {
+  return Dio(BaseOptions(baseUrl: _baseUrl))
+    ..interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          if (!options.path.contains('/auth/demo-token')) {
+            options.headers['Authorization'] = 'Bearer ${await _authToken()}';
+          }
+          handler.next(options);
+        },
+      ),
+    );
+}
+
+Future<String> _authToken() {
+  return _demoToken ??= Dio(BaseOptions(baseUrl: _baseUrl))
+      .post(
+        '/api/v2/auth/demo-token',
+        data: {
+          'phone': '9999999999',
+          'name': 'Ravi',
+          'role': 'STYLIST',
+        },
+      )
+      .then((res) => res.data['token'] as String);
+}
+
 void main() => runApp(const StylistApp());
 
 class StylistApp extends StatelessWidget {
@@ -50,12 +84,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  static const String baseUrl = String.fromEnvironment(
-    'API_URL',
-    defaultValue: 'http://10.0.2.2:3000',
-  );
-
-  final Dio _dio = Dio(BaseOptions(baseUrl: baseUrl));
+  final Dio _dio = _api();
   Map<String, dynamic>? _stylist;
   List<Map<String, dynamic>> _bookings = [];
   List<Map<String, dynamic>> _availability = [];
@@ -1513,9 +1542,10 @@ class _BookingCard extends StatelessWidget {
 
   Future<void> _updateStatus(BuildContext context, String status) async {
     try {
-      await Dio(
-        BaseOptions(baseUrl: _DashboardScreenState.baseUrl),
-      ).patch('/v2/bookings/${booking['id']}/status', data: {'status': status});
+      await _api().patch(
+        '/v2/bookings/${booking['id']}/status',
+        data: {'status': status},
+      );
       onChanged();
     } catch (e) {
       if (context.mounted) {
@@ -1541,7 +1571,7 @@ class _BookingCard extends StatelessWidget {
     if (newTime == null) return;
 
     try {
-      await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl)).patch(
+      await _api().patch(
         '/v2/bookings/${booking['id']}/reschedule',
         data: {
           'dateTime': newTime.toUtc().toIso8601String(),
@@ -1565,7 +1595,7 @@ class _BookingCard extends StatelessWidget {
 
   Future<void> _acceptReschedule(BuildContext context) async {
     try {
-      await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl)).patch(
+      await _api().patch(
         '/v2/bookings/${booking['id']}/accept-reschedule',
         data: {'acceptedBy': 'STYLIST'},
       );
@@ -1581,7 +1611,7 @@ class _BookingCard extends StatelessWidget {
 
   Future<void> _rejectReschedule(BuildContext context) async {
     try {
-      await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl)).patch(
+      await _api().patch(
         '/v2/bookings/${booking['id']}/reject-reschedule',
         data: {'rejectedBy': 'STYLIST'},
       );
@@ -1640,8 +1670,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
 
     try {
       final date = _dateParam(widget.currentSlot);
-      final res =
-          await Dio(BaseOptions(baseUrl: _DashboardScreenState.baseUrl)).get(
+      final res = await _api().get(
         '/api/v2/stylists/${widget.stylistId}/availability',
         queryParameters: {'date': date, 'serviceId': widget.serviceId},
       );

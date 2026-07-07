@@ -51,3 +51,40 @@ flutter run --dart-define=API_URL=http://YOUR_PC_IP:3000
 ```
 
 For a physical Android phone, `YOUR_PC_IP` must be the current Wi-Fi IP of the backend machine.
+
+## Preflight Check
+
+Run the full local verification pass before handing work over:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\preflight.ps1
+```
+
+Include the core salon admin workflow smoke test:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\preflight.ps1 -RunSmoke
+```
+
+To also launch the salon admin app on a connected Android phone:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\preflight.ps1 -RunSalonAdmin -DeviceId ed083e3d
+```
+
+## Maestro UI Flow
+
+Maestro config and flows live in `.maestro/`.
+
+Run the salon admin UI flow on a connected Android device:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\run-maestro-salon-admin.ps1 -DeviceId ed083e3d
+```
+
+Current flow covers:
+- salon signup
+- add first staff
+- add starter service
+- open manage staff
+- add another service
