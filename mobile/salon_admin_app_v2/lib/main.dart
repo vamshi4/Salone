@@ -1053,7 +1053,9 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
         left: 16,
         right: 16,
         top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            16 +
+            MediaQuery.of(context).viewPadding.bottom,
       ),
       child: Container(
         padding: const EdgeInsets.all(18),
@@ -1433,7 +1435,12 @@ class _StaffSetupSheetState extends State<_StaffSetupSheet> {
   final _staffPhoneController = TextEditingController();
   final _serviceNameController = TextEditingController(text: 'Haircut');
   final _priceController = TextEditingController(text: '499');
+  final _openController = TextEditingController(text: '09:00');
+  final _closeController = TextEditingController(text: '18:00');
+  final Set<int> _workDays = {1, 2, 3, 4, 5, 6}; // dayOfWeek: 0=Sun … 6=Sat
   bool _saving = false;
+
+  static const _dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   @override
   void dispose() {
@@ -1441,6 +1448,8 @@ class _StaffSetupSheetState extends State<_StaffSetupSheet> {
     _staffPhoneController.dispose();
     _serviceNameController.dispose();
     _priceController.dispose();
+    _openController.dispose();
+    _closeController.dispose();
     super.dispose();
   }
 
@@ -1459,6 +1468,18 @@ class _StaffSetupSheetState extends State<_StaffSetupSheet> {
       return;
     }
 
+    final open = _openController.text.trim();
+    final close = _closeController.text.trim();
+    final clock = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
+    if (!clock.hasMatch(open) || !clock.hasMatch(close)) {
+      _show('Enter valid open and close times (HH:MM, 24-hour)');
+      return;
+    }
+    if (_workDays.isEmpty) {
+      _show('Select at least one working day');
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       // One atomic backend call instead of chaining separate create/make-
@@ -1473,6 +1494,9 @@ class _StaffSetupSheetState extends State<_StaffSetupSheet> {
           'phone': staffPhone,
           'serviceName': serviceName,
           'basePrice': priceRupees * 100,
+          'startTime': open,
+          'endTime': close,
+          'days': (_workDays.toList()..sort()),
         },
       );
 
@@ -1499,7 +1523,8 @@ class _StaffSetupSheetState extends State<_StaffSetupSheet> {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(12, 24, 12, viewInsets + 12),
+        padding: EdgeInsets.fromLTRB(
+            12, 24, 12, viewInsets + 12 + MediaQuery.of(context).viewPadding.bottom),
         child: Container(
           decoration: _boxDecoration(),
           child: Padding(
@@ -1563,22 +1588,65 @@ class _StaffSetupSheetState extends State<_StaffSetupSheet> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F1EF),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Working hours will be added as Monday to Saturday, 9:00 AM to 6:00 PM. You can change this later.',
+                  const Text('Working hours',
                       style: TextStyle(
-                        color: Color(0xFF0F766E),
-                        fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w800, fontSize: 14)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          key: const Key('staff_setup_open'),
+                          controller: _openController,
+                          keyboardType: TextInputType.datetime,
+                          decoration: const InputDecoration(
+                            labelText: 'Opens',
+                            hintText: 'HH:MM',
+                            prefixIcon: Icon(Icons.schedule_outlined),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          key: const Key('staff_setup_close'),
+                          controller: _closeController,
+                          keyboardType: TextInputType.datetime,
+                          decoration: const InputDecoration(
+                            labelText: 'Closes',
+                            hintText: 'HH:MM',
+                            prefixIcon: Icon(Icons.schedule_outlined),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
+                  const Text('Working days',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 14)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (var i = 0; i < 7; i++)
+                        FilterChip(
+                          label: Text(_dayLabels[i]),
+                          selected: _workDays.contains(i),
+                          showCheckmark: false,
+                          selectedColor: AppColors.accentSoft,
+                          onSelected: (on) => setState(() {
+                            if (on) {
+                              _workDays.add(i);
+                            } else {
+                              _workDays.remove(i);
+                            }
+                          }),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
@@ -1783,7 +1851,8 @@ class _StaffManageSheetState extends State<_StaffManageSheet> {
         final viewInsets = MediaQuery.of(context).viewInsets.bottom;
         return SafeArea(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(12, 24, 12, viewInsets + 12),
+            padding: EdgeInsets.fromLTRB(
+            12, 24, 12, viewInsets + 12 + MediaQuery.of(context).viewPadding.bottom),
             child: Container(
               decoration: _boxDecoration(),
               child: Padding(
@@ -1900,7 +1969,8 @@ class _StaffManageSheetState extends State<_StaffManageSheet> {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(12, 24, 12, viewInsets + 12),
+        padding: EdgeInsets.fromLTRB(
+            12, 24, 12, viewInsets + 12 + MediaQuery.of(context).viewPadding.bottom),
         child: Container(
           decoration: _boxDecoration(),
           child: SingleChildScrollView(
@@ -2514,6 +2584,7 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
   bool _loadingSlots = false;
   String? _slotError;
   bool _saving = false;
+  String? _formError; // shown inline so it isn't hidden behind the sheet
 
   @override
   void initState() {
@@ -2610,20 +2681,27 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
     final phone = _phoneController.text.trim();
     final dateTime = _selectedSlot;
 
+    if (_nameController.text.trim().length < 2) {
+      setState(() => _formError = 'Enter customer name');
+      return;
+    }
     if (stylist == null || selectedServices.isEmpty) {
-      _show('Choose staff and at least one service');
+      setState(() => _formError = 'Choose staff and at least one service');
       return;
     }
     if (phone.length < 6) {
-      _show('Enter customer phone');
+      setState(() => _formError = 'Enter customer phone');
       return;
     }
     if (dateTime == null) {
-      _show('Choose an available slot');
+      setState(() => _formError = 'Choose an available slot');
       return;
     }
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _formError = null;
+    });
     try {
       await _api().post('/v2/bookings/salon-manual', data: {
         'salonId': widget.salon['id'],
@@ -2636,21 +2714,15 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (kDebugMode) debugPrint('Manual booking create failed: $e');
-      if (e is DioException && e.response?.data is Map) {
-        final serverMessage = (e.response?.data as Map)['error'];
-        _show(serverMessage is String ? serverMessage : 'Could not create booking. Please try again.');
-      } else {
-        _show('Could not create booking. Please try again.');
-      }
+      final serverMessage = (e is DioException && e.response?.data is Map)
+          ? (e.response?.data as Map)['error']
+          : null;
+      setState(() => _formError = serverMessage is String
+          ? serverMessage
+          : 'Could not create booking. Please try again.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-  }
-
-  void _show(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
   }
 
   @override
@@ -2662,7 +2734,9 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            16 +
+            MediaQuery.of(context).viewPadding.bottom,
       ),
       child: Container(
         padding: const EdgeInsets.all(18),
@@ -2807,6 +2881,32 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
                   }).toList(),
                 ),
               const SizedBox(height: 16),
+              if (_formError != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.dangerSoft,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(
+                        color: AppColors.danger.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: AppColors.danger, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(_formError!,
+                            style: const TextStyle(
+                                color: AppColors.danger,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               Row(
                 children: [
                   Expanded(
@@ -3787,9 +3887,9 @@ class _RetentionScreenState extends State<RetentionScreen> {
             '${_atRisk.length} regulars are slipping · ${_rupees(_atRiskRevenue)} at risk',
             style: const TextStyle(fontSize: 13, color: AppColors.inkMuted),
           ),
-          const SizedBox(height: 12),
-          ...(_atRiskExpanded ? _atRisk : _atRisk.take(5)).map(_atRiskTile),
-          _viewMore(_atRisk.length - 5, _atRiskExpanded,
+          const SizedBox(height: 10),
+          ...(_atRiskExpanded ? _atRisk : _atRisk.take(2)).map(_atRiskTile),
+          _viewMore(_atRisk.length - 2, _atRiskExpanded,
               () => setState(() => _atRiskExpanded = !_atRiskExpanded)),
         ],
       ),
@@ -3801,8 +3901,8 @@ class _RetentionScreenState extends State<RetentionScreen> {
     final overdue = c['overdueDays'] ?? 0;
     final ratio = (c['overdueRatio'] ?? 1).toString();
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: AppColors.bg,
         borderRadius: BorderRadius.circular(AppRadius.md),

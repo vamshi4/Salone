@@ -388,7 +388,7 @@ router.patch('/:salonId/stylists/:stylistId', requireRole('SALON_OWNER', 'SUPER_
 router.post('/:salonId/staff-setup', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { salonId } = req.params;
-    const { name, phone, serviceName, basePrice } = req.body;
+    const { name, phone, serviceName, basePrice, startTime, endTime, days } = req.body;
 
     if (
       !name || String(name).trim().length < 2 ||
@@ -400,6 +400,14 @@ router.post('/:salonId/staff-setup', requireRole('SALON_OWNER', 'SUPER_ADMIN'), 
         error: 'name, phone, serviceName and basePrice are required',
       });
     }
+
+    // Working hours are now owner-settable; fall back to Mon-Sat 09:00-18:00.
+    const clock = /^([01]\d|2[0-3]):[0-5]\d$/;
+    const openTime = clock.test(String(startTime)) ? String(startTime) : '09:00';
+    const closeTime = clock.test(String(endTime)) ? String(endTime) : '18:00';
+    const workDays: number[] = Array.isArray(days) && days.length
+      ? [...new Set(days.filter((d: any) => Number.isInteger(d) && d >= 0 && d <= 6))] as number[]
+      : [1, 2, 3, 4, 5, 6];
 
     const salon = await findOwnedSalon(salonId, req.user);
     if (!salon) return res.status(404).json({ error: 'Salon not found' });
@@ -441,9 +449,9 @@ router.post('/:salonId/staff-setup', requireRole('SALON_OWNER', 'SUPER_ADMIN'), 
         },
       });
 
-      for (const dayOfWeek of [1, 2, 3, 4, 5, 6]) {
+      for (const dayOfWeek of workDays) {
         await tx.stylistAvailability.create({
-          data: { stylistId: createdStylist.id, dayOfWeek, startTime: '09:00', endTime: '18:00' },
+          data: { stylistId: createdStylist.id, dayOfWeek, startTime: openTime, endTime: closeTime },
         });
       }
 
