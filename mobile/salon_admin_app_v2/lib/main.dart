@@ -3914,8 +3914,18 @@ class _RetentionScreenState extends State<RetentionScreen> {
     }
   }
 
-  bool get _hasAccess =>
-      '${widget.salon['saasPlan'] ?? 'FREE'}'.toUpperCase() != 'FREE';
+  // Retention is free for the first 6 months from signup (launch offer). Paid
+  // plans always have access. Fails OPEN if the signup date is unknown, so we
+  // never wrongly lock someone out before billing exists.
+  bool get _hasAccess {
+    final plan = '${widget.salon['saasPlan'] ?? 'FREE'}'.toUpperCase();
+    if (plan != 'FREE') return true;
+    final created =
+        DateTime.tryParse('${widget.salon['owner']?['createdAt'] ?? ''}');
+    if (created == null) return true;
+    final trialEnd = DateTime(created.year, created.month + 6, created.day);
+    return DateTime.now().isBefore(trialEnd);
+  }
 
   Future<void> _load() async {
     setState(() {
