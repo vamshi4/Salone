@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.salon_admin_app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36 // geolocator/geocoding + newer plugins require compileSdk 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

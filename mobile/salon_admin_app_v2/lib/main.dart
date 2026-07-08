@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -35,17 +34,21 @@ Future<({double lat, double lng, String address})?> pickCurrentLocation() async 
   final pos = await Geolocator.getCurrentPosition();
   String address = '';
   try {
-    final marks = await placemarkFromCoordinates(pos.latitude, pos.longitude);
-    if (marks.isNotEmpty) {
-      final p = marks.first;
-      address = [p.name, p.street, p.subLocality, p.locality, p.postalCode]
-          .where((s) => s != null && s.trim().isNotEmpty)
-          .cast<String>()
-          .toSet()
-          .join(', ');
-    }
+    // Reverse-geocode over HTTP (OpenStreetMap Nominatim) — no native plugin.
+    final res = await Dio().get(
+      'https://nominatim.openstreetmap.org/reverse',
+      queryParameters: {
+        'lat': pos.latitude,
+        'lon': pos.longitude,
+        'format': 'json',
+        'zoom': 18,
+      },
+      options: Options(headers: {'User-Agent': 'ChairfulSalonApp/1.0'}),
+    );
+    final display = res.data is Map ? res.data['display_name'] : null;
+    if (display is String) address = display;
   } catch (_) {
-    // Reverse-geocoding is best-effort; coordinates still captured.
+    // Reverse-geocoding is best-effort; coordinates are still captured.
   }
   return (lat: pos.latitude, lng: pos.longitude, address: address);
 }
