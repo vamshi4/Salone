@@ -207,6 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _addressController = TextEditingController();
   bool _loading = false;
   bool _signupMode = false;
+  bool _showPassword = false;
   double? _lat;
   double? _lng;
   bool _locating = false;
@@ -360,16 +361,27 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     TextInputType? keyboardType,
     bool obscure = false,
+    bool obscureVisible = false,
+    VoidCallback? onToggleObscure,
   }) {
     return TextField(
       key: key,
       controller: controller,
       keyboardType: keyboardType,
-      obscureText: obscure,
+      obscureText: obscure && !obscureVisible,
       textInputAction: TextInputAction.next,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
+        suffixIcon: obscure
+            ? IconButton(
+                icon: Icon(obscureVisible
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined),
+                tooltip: obscureVisible ? 'Hide password' : 'Show password',
+                onPressed: onToggleObscure,
+              )
+            : null,
       ),
     );
   }
@@ -475,6 +487,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     label: 'Password',
                     icon: Icons.lock_outline,
                     obscure: true,
+                    obscureVisible: _showPassword,
+                    onToggleObscure: () =>
+                        setState(() => _showPassword = !_showPassword),
                   ),
                   const SizedBox(height: 24),
                   FilledButton(
@@ -1015,6 +1030,7 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
   bool _loading = true;
   bool _savingProfile = false;
   bool _savingPassword = false;
+  bool _showPasswords = false;
   bool _locating = false;
   double? _lat;
   double? _lng;
@@ -1301,16 +1317,25 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
                     const SizedBox(height: 10),
                     TextField(
                       controller: _currentPasswordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
+                      obscureText: !_showPasswords,
+                      decoration: InputDecoration(
                         labelText: 'Current password',
-                        prefixIcon: Icon(Icons.lock_outline),
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(_showPasswords
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined),
+                          tooltip:
+                              _showPasswords ? 'Hide passwords' : 'Show passwords',
+                          onPressed: () => setState(
+                              () => _showPasswords = !_showPasswords),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
                     TextField(
                       controller: _newPasswordController,
-                      obscureText: true,
+                      obscureText: !_showPasswords,
                       decoration: const InputDecoration(
                         labelText: 'New password',
                         prefixIcon: Icon(Icons.password_outlined),
@@ -1319,7 +1344,7 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
                     const SizedBox(height: 10),
                     TextField(
                       controller: _confirmPasswordController,
-                      obscureText: true,
+                      obscureText: !_showPasswords,
                       decoration: const InputDecoration(
                         labelText: 'Confirm new password',
                         prefixIcon: Icon(Icons.verified_user_outlined),
