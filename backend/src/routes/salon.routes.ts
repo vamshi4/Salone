@@ -178,6 +178,82 @@ router.get('/:salonId/retention', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asy
   }
 });
 
+// GET /api/v2/salons/:salonId/at-risk - Customers overdue vs their own visit cadence.
+// Ranks a "reach out now" list: each customer's average gap between visits vs days
+// since last seen. High value + most overdue floats to the top.
+router.get('/:salonId/at-risk', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const bookings = await prisma.booking.findMany({
+      where: { salonId: req.params.salonId, status: { in: ['COMPLETED', 'CONFIRMED'] } },
+      include: { customer: true },
+      orderBy: { slotStart: 'asc' },
+    });
+
+    const DAY = 24 * 60 * 60 * 1000;
+    const DEFAULT_CADENCE = 45; // for single-visit customers with no rhythm yet
+    const OVERDUE_FACTOR = 1.3; // overdue once past 1.3x their normal gap
+    const now = Date.now();
+
+    type C = { id: string; name: string | null; phone: string; dates: number[]; spend: number };
+    const byCustomer = new Map<string, C>();
+    for (const b of bookings) {
+      const c = byCustomer.get(b.customerId) ?? {
+        id: b.customerId, name: b.customer?.name ?? null, phone: b.customer?.phone ?? '',
+        dates: [], spend: 0,
+      };
+      c.dates.push(b.slotStart.getTime());
+      c.spend += b.price;
+      byCustomer.set(b.customerId, c);
+    }
+
+    const atRisk = [];
+    for (const c of byCustomer.values()) {
+      const last = Math.max(...c.dates);
+      const daysSince = Math.round((now - last) / DAY);
+      if (daysSince <= 0 || daysSince > 400) continue; // seen today / ancient → skip
+
+      let cadence = DEFAULT_CADENCE;
+      if (c.dates.length >= 2) {
+        const sorted = [...c.dates].sort((a, b) => a - b);
+        let gapSum = 0;
+        for (let i = 1; i < sorted.length; i++) gapSum += (sorted[i] - sorted[i - 1]) / DAY;
+        cadence = Math.max(7, Math.round(gapSum / (sorted.length - 1)));
+      }
+
+      const overdueRatio = daysSince / cadence;
+      if (overdueRatio < OVERDUE_FACTOR) continue; // still within their normal rhythm
+
+      atRisk.push({
+        customerId: c.id,
+        name: c.name,
+        phone: c.phone,
+        visits: c.dates.length,
+        totalSpend: c.spend,
+        lastVisit: new Date(last).toISOString(),
+        daysSince,
+        cadenceDays: cadence,
+        overdueDays: Math.max(0, daysSince - cadence),
+        overdueRatio: Math.round(overdueRatio * 10) / 10,
+        // priority = value weighted by how overdue (capped so one whale can't hog the list)
+        score: c.spend * Math.min(overdueRatio, 3),
+      });
+    }
+
+    atRisk.sort((a, b) => b.score - a.score);
+
+    res.json({
+      count: atRisk.length,
+      atRiskRevenue: atRisk.reduce((t, c) => t + c.totalSpend, 0),
+      customers: atRisk.slice(0, 40),
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/v2/salons/:salonId/customers/:customerId - Salon-owned customer notes/tags.
 router.get('/:salonId/customers/:customerId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {

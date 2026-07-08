@@ -119,6 +119,11 @@ async function main() {
     { phone: '8800000012', name: 'Sneha', tags: ['Winback'], visits: [2, 0] },
     // Fully lapsed (only 2 months ago) -> also "missed"
     { phone: '8800000013', name: 'Vikram', tags: [], visits: [2] },
+    // At-risk regulars: tight visit rhythm, now well past due (drives the churn-risk list).
+    // `daysAgo` = explicit days-before-today per visit (overrides months-ago `visits`).
+    { phone: '8800000020', name: 'Priyanka', tags: ['VIP', 'Regular'], visits: [], daysAgo: [70, 56, 42] },
+    { phone: '8800000021', name: 'Rahul', tags: ['Regular'], visits: [], daysAgo: [95, 63, 49] },
+    { phone: '8800000022', name: 'Aisha', tags: ['VIP'], visits: [], daysAgo: [84, 56, 44] },
   ];
 
   // Clear previously-seeded demo bookings so slot dates are recomputed for "today".
@@ -139,17 +144,24 @@ async function main() {
       create: { salonId: salon.id, customerId: cu.id, tags: c.tags, notes: c.tags.includes('VIP') ? 'Prefers senior stylist.' : '' },
     });
 
-    for (let i = 0; i < c.visits.length; i++) {
-      const monthsBack = c.visits[i];
+    const explicitDays: number[] | undefined = (c as any).daysAgo;
+    const plan = explicitDays ?? c.visits;
+    for (let i = 0; i < plan.length; i++) {
       // deterministic booking id so re-seeding is idempotent
       const bookingId = `${salon.id}:demo:${c.phone}:${i}`;
-      const day = 8 + ((bookingSeq * 3) % 18); // spread within the month (day 8..25)
-      // For "this month", stay within the current calendar month (day 1..today),
-      // otherwise early-in-the-month visits would spill into last month.
-      const dayOfMonth = new Date().getDate();
-      const slotStart = monthsBack === 0
-        ? daysAgo(bookingSeq % Math.max(1, dayOfMonth))
-        : firstOfMonthsAgo(monthsBack, day, 10 + (bookingSeq % 8));
+      let slotStart: Date;
+      if (explicitDays) {
+        slotStart = daysAgo(explicitDays[i], 11 + (bookingSeq % 6));
+      } else {
+        const monthsBack = c.visits[i];
+        const day = 8 + ((bookingSeq * 3) % 18); // spread within the month (day 8..25)
+        // For "this month", stay within the current calendar month (day 1..today),
+        // otherwise early-in-the-month visits would spill into last month.
+        const dayOfMonth = new Date().getDate();
+        slotStart = monthsBack === 0
+          ? daysAgo(bookingSeq % Math.max(1, dayOfMonth))
+          : firstOfMonthsAgo(monthsBack, day, 10 + (bookingSeq % 8));
+      }
       const svc = serviceMenu[bookingSeq % serviceMenu.length] as any;
       const secondSvc = bookingSeq % 3 === 0 ? (serviceMenu[(bookingSeq + 2) % serviceMenu.length] as any) : null;
       const stylist = stylists[bookingSeq % stylists.length];

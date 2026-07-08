@@ -3658,6 +3658,8 @@ class _RetentionScreenState extends State<RetentionScreen> {
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _data;
+  List<Map<String, dynamic>> _atRisk = [];
+  int _atRiskRevenue = 0;
 
   @override
   void initState() {
@@ -3678,9 +3680,19 @@ class _RetentionScreenState extends State<RetentionScreen> {
       _error = null;
     });
     try {
-      final res = await _api()
-          .get('/api/v2/salons/${widget.salon['id']}/retention');
-      if (mounted) setState(() => _data = Map<String, dynamic>.from(res.data));
+      final id = widget.salon['id'];
+      final results = await Future.wait([
+        _api().get('/api/v2/salons/$id/retention'),
+        _api().get('/api/v2/salons/$id/at-risk'),
+      ]);
+      if (mounted) {
+        setState(() {
+          _data = Map<String, dynamic>.from(results[0].data);
+          final risk = Map<String, dynamic>.from(results[1].data);
+          _atRisk = List<Map<String, dynamic>>.from(risk['customers'] ?? []);
+          _atRiskRevenue = (risk['atRiskRevenue'] ?? 0) as int;
+        });
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('Retention load failed: $e');
       if (mounted) setState(() => _error = 'Could not load retention report.');
@@ -3724,6 +3736,105 @@ class _RetentionScreenState extends State<RetentionScreen> {
     return '${d.day}/${d.month}/${d.year}';
   }
 
+  /// "Reach out now" — regulars overdue vs their own visit rhythm.
+  Widget _atRiskSection() {
+    if (_atRisk.isEmpty) return const SizedBox(height: 2);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.accentSoft,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.notifications_active_outlined,
+                  color: AppColors.accent, size: 20),
+              SizedBox(width: 8),
+              Text('Reach out now',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${_atRisk.length} regulars are slipping · ${_rupees(_atRiskRevenue)} at risk',
+            style: const TextStyle(fontSize: 13, color: AppColors.inkMuted),
+          ),
+          const SizedBox(height: 12),
+          ..._atRisk.take(6).map(_atRiskTile),
+        ],
+      ),
+    );
+  }
+
+  Widget _atRiskTile(Map<String, dynamic> c) {
+    final cadence = c['cadenceDays'] ?? 0;
+    final overdue = c['overdueDays'] ?? 0;
+    final ratio = (c['overdueRatio'] ?? 1).toString();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.bg,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text('${c['name'] ?? 'Customer'}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800, fontSize: 15)),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: AppColors.dangerSoft,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text('$ratio× overdue',
+                          style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.danger)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Usually every ${cadence}d · ${overdue}d overdue · spent ${_rupees((c['totalSpend'] ?? 0) as int)}',
+                  style: const TextStyle(fontSize: 12, color: AppColors.inkMuted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: () => _remind(c),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.whatsapp,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            icon: const Icon(Icons.chat, size: 16),
+            label: const Text('Remind'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -3762,6 +3873,7 @@ class _RetentionScreenState extends State<RetentionScreen> {
         key: const Key('retention_body'),
         padding: const EdgeInsets.all(16),
         children: [
+          _atRiskSection(),
           Text(
             '${data['month']} vs ${data['previousMonth']}',
             style: const TextStyle(fontSize: 13, color: Colors.black54),
