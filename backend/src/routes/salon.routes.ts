@@ -148,6 +148,16 @@ router.get('/:salonId/retention', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asy
       }))
       .sort((a, b) => b.totalSpend - a.totalSpend);
 
+    const member = (c: any) => ({
+      customerId: c.id,
+      name: c.name,
+      phone: c.phone,
+      totalSpend: c.totalSpend,
+      lastVisit: c.lastVisit,
+      visits: c.visits,
+    });
+    const bySpend = (a: any, b: any) => b.totalSpend - a.totalSpend;
+
     const churnRate = pct(churned.length, activeLast.length);
 
     res.json({
@@ -172,6 +182,12 @@ router.get('/:salonId/retention', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asy
         alert: churnRate >= 10,
       },
       missed,
+      cohorts: {
+        new: newCustomers.map(member).sort(bySpend),
+        retained: retained.map(member).sort(bySpend),
+        reactivated: reactivated.map(member).sort(bySpend),
+        churned: churned.map(member).sort(bySpend),
+      },
     });
   } catch (e: any) {
     res.status(500).json({ error: e.message });

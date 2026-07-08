@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -3660,6 +3661,7 @@ class _RetentionScreenState extends State<RetentionScreen> {
   Map<String, dynamic>? _data;
   List<Map<String, dynamic>> _atRisk = [];
   int _atRiskRevenue = 0;
+  String? _selectedCohort; // 'retained' | 'new' | 'reactivated' | 'churned'
 
   @override
   void initState() {
@@ -3905,19 +3907,8 @@ class _RetentionScreenState extends State<RetentionScreen> {
                 ],
               ),
             ),
-          // Cohort breakdown.
-          Row(
-            children: [
-              _cohort('New', s['newCustomers'], s['newPct'],
-                  const Color(0xFF2E7D32), Icons.person_add_alt),
-              const SizedBox(width: 10),
-              _cohort('Constant', s['retainedCustomers'], s['retainedPct'],
-                  _brand, Icons.favorite_border),
-              const SizedBox(width: 10),
-              _cohort('Back', s['reactivatedCustomers'], s['reactivatedPct'],
-                  const Color(0xFF6A1B9A), Icons.replay),
-            ],
-          ),
+          // Cohort breakdown — interactive donut. Tap a slice to drill in.
+          _cohortDonut(),
           const SizedBox(height: 16),
           _bigStat(
             'Churn (dropped customers)',
@@ -3969,27 +3960,196 @@ class _RetentionScreenState extends State<RetentionScreen> {
     );
   }
 
-  Widget _cohort(String label, dynamic count, dynamic pct, Color color,
-      IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
+  List<(String, String, Color, List<dynamic>)> _cohortSlices() {
+    final cohorts = Map<String, dynamic>.from(_data?['cohorts'] ?? {});
+    List<dynamic> m(String k) => List<dynamic>.from(cohorts[k] ?? []);
+    return [
+      ('retained', 'Constant', AppColors.accent, m('retained')),
+      ('new', 'New', AppColors.success, m('new')),
+      ('reactivated', 'Back', AppColors.violet, m('reactivated')),
+      ('churned', 'Churned', AppColors.danger, m('churned')),
+    ];
+  }
+
+  Widget _cohortDonut() {
+    final slices = _cohortSlices();
+    final total = slices.fold<int>(0, (t, s) => t + s.$4.length);
+    final sel = _selectedCohort == null
+        ? null
+        : slices.firstWhere((s) => s.$1 == _selectedCohort);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 196,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              PieChart(
+                PieChartData(
+                  centerSpaceRadius: 58,
+                  sectionsSpace: 3,
+                  startDegreeOffset: -90,
+                  pieTouchData: PieTouchData(
+                    touchCallback: (event, resp) {
+                      if (event is FlTapUpEvent) {
+                        final i = resp?.touchedSection?.touchedSectionIndex ?? -1;
+                        if (i >= 0 && i < slices.length) {
+                          setState(() {
+                            final k = slices[i].$1;
+                            _selectedCohort = _selectedCohort == k ? null : k;
+                          });
+                        }
+                      }
+                    },
+                  ),
+                  sections: [
+                    for (final s in slices)
+                      PieChartSectionData(
+                        value: s.$4.isEmpty ? 0.0001 : s.$4.length.toDouble(),
+                        color: (_selectedCohort != null && _selectedCohort != s.$1)
+                            ? s.$3.withValues(alpha: 0.22)
+                            : s.$3,
+                        radius: _selectedCohort == s.$1 ? 34 : 26,
+                        showTitle: false,
+                      ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _selectedCohort = null),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${sel == null ? total : sel.$4.length}',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        color: sel == null ? AppColors.ink : sel.$3,
+                      ),
+                    ),
+                    Text(
+                      sel == null ? 'customers' : sel.$2.toLowerCase(),
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.inkMuted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Column(
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [for (final s in slices) _legendChip(s)],
+        ),
+        if (sel != null) ...[
+          const SizedBox(height: 14),
+          _cohortDrill(sel),
+        ],
+      ],
+    );
+  }
+
+  Widget _legendChip((String, String, Color, List<dynamic>) s) {
+    final selected = _selectedCohort == s.$1;
+    return GestureDetector(
+      onTap: () =>
+          setState(() => _selectedCohort = selected ? null : s.$1),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.bg,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+              color: selected ? AppColors.ink : AppColors.border,
+              width: selected ? 1.4 : 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 6),
-            Text('${pct ?? 0}%',
-                style: TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w900, color: color)),
-            Text('${count ?? 0} $label',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: Colors.black54)),
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(color: s.$3, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 6),
+            Text('${s.$2} ${s.$4.length}',
+                style: const TextStyle(
+                    fontSize: 12.5, fontWeight: FontWeight.w700)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _cohortDrill((String, String, Color, List<dynamic>) s) {
+    final isChurn = s.$1 == 'churned';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('${s.$2} — ${s.$4.length}',
+            style: TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w900, color: s.$3)),
+        const SizedBox(height: 8),
+        if (s.$4.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Text('No ${s.$2.toLowerCase()} customers this period.',
+                style: const TextStyle(color: AppColors.inkMuted)),
+          )
+        else
+          ...s.$4.map((m) =>
+              _cohortMemberTile(Map<String, dynamic>.from(m as Map), isChurn)),
+      ],
+    );
+  }
+
+  Widget _cohortMemberTile(Map<String, dynamic> c, bool isChurn) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.bg,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${c['name'] ?? 'Customer'}',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 14.5)),
+                const SizedBox(height: 2),
+                Text(
+                  '${c['visits'] ?? 0} visits · spent ${_rupees((c['totalSpend'] ?? 0) as int)} · last ${_shortDate('${c['lastVisit']}')}',
+                  style:
+                      const TextStyle(fontSize: 12, color: AppColors.inkMuted),
+                ),
+              ],
+            ),
+          ),
+          if (isChurn) ...[
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: () => _remind(c),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.whatsapp,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              icon: const Icon(Icons.chat, size: 16),
+              label: const Text('Remind'),
+            ),
+          ],
+        ],
       ),
     );
   }
