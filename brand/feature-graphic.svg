@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500" font-family="Inter, 'Segoe UI', system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F8873"/>
+      <stop offset="1" stop-color="#0A5D50"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="500" fill="url(#bg)"/>
+
+  <!-- decorative oversized chair watermark, right side -->
+  <g stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M735,120 L775,360"/>
+    <path d="M775,340 H980"/>
+    <path d="M775,340 V470"/>
+    <path d="M970,340 V470"/>
+  </g>
+
+  <!-- white app-icon badge with teal chair -->
+  <rect x="80" y="168" width="164" height="164" rx="44" fill="#FFFFFF"/>
+  <g stroke="#0E7C6B" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M132,200 L152,262"/>
+    <path d="M152,262 H210"/>
+    <path d="M152,262 V304"/>
+    <path d="M204,262 V304"/>
+  </g>
+
+  <!-- wordmark + tagline -->
+  <text x="290" y="235" font-size="94" font-weight="800" letter-spacing="-2" fill="#FFFFFF">Chairful</text>
+  <text x="294" y="290" font-size="32" font-weight="700" fill="#BFF0E8">Keep every chair full.</text>
+  <text x="294" y="332" font-size="22" font-weight="500" fill="#FFFFFF" fill-opacity="0.9">Bookings · Staff · Retention insights · One-tap win-back</text>
+
+  <!-- feature pills -->
+  <g font-size="19" font-weight="700">
+    <rect x="294" y="372" width="196" height="44" rx="22" fill="#FFFFFF" fill-opacity="0.14"/>
+    <text x="392" y="400" fill="#FFFFFF" text-anchor="middle">See who's slipping</text>
+    <rect x="506" y="372" width="214" height="44" rx="22" fill="#FFFFFF" fill-opacity="0.14"/>
+    <text x="613" y="400" fill="#FFFFFF" text-anchor="middle">Win them back on WhatsApp</text>
+  </g>
+</svg>
