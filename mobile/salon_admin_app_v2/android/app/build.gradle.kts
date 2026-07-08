@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.salon_admin_app"
+    namespace = "com.chairful.admin"
     compileSdk = 36 // geolocator/geocoding + newer plugins require compileSdk 36
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.salon_admin_app"
+        applicationId = "com.chairful.admin"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

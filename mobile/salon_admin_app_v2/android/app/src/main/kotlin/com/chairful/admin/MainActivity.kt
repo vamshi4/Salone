@@ -1,4 +1,4 @@
-package com.example.salon_admin_app
+package com.chairful.admin
 
 import io.flutter.embedding.android.FlutterActivity
 
