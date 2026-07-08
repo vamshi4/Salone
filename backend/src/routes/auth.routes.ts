@@ -150,7 +150,7 @@ router.get('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) =>
 
 router.patch('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
-    const { ownerName, phone, email, salonName, address } = req.body;
+    const { ownerName, phone, email, salonName, address, lat, lng } = req.body;
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { salonOwned: true },
@@ -191,6 +191,8 @@ router.patch('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) 
         data: {
           name: nextSalonName,
           address: nextAddress,
+          ...(lat != null && Number.isFinite(Number(lat)) ? { lat: Number(lat) } : {}),
+          ...(lng != null && Number.isFinite(Number(lng)) ? { lng: Number(lng) } : {}),
         },
       });
       return { user: updatedUser, salon: updatedSalon };

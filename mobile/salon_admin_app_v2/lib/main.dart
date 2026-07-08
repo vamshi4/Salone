@@ -1015,6 +1015,9 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
   bool _loading = true;
   bool _savingProfile = false;
   bool _savingPassword = false;
+  bool _locating = false;
+  double? _lat;
+  double? _lng;
   String _joined = '';
   String _plan = 'FREE';
 
@@ -1022,6 +1025,27 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  Future<void> _useMyLocation() async {
+    setState(() => _locating = true);
+    try {
+      final loc = await pickCurrentLocation();
+      if (loc == null) {
+        _show('Turn on location and allow permission to use this');
+        return;
+      }
+      setState(() {
+        _lat = loc.lat;
+        _lng = loc.lng;
+        if (loc.address.isNotEmpty) _addressController.text = loc.address;
+      });
+    } catch (e) {
+      if (kDebugMode) debugPrint('Location failed: $e');
+      _show('Could not get your location');
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
   }
 
   @override
@@ -1079,6 +1103,8 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
         'email': _emailController.text.trim(),
         'salonName': salonName,
         'address': address,
+        if (_lat != null) 'lat': _lat,
+        if (_lng != null) 'lng': _lng,
       });
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -1226,7 +1252,32 @@ class _AccountSettingsSheetState extends State<_AccountSettingsSheet> {
                         prefixIcon: Icon(Icons.location_on_outlined),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 6),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _locating ? null : _useMyLocation,
+                        icon: _locating
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(
+                                _lat != null
+                                    ? Icons.check_circle
+                                    : Icons.my_location,
+                                size: 18,
+                                color: _lat != null
+                                    ? AppColors.success
+                                    : AppColors.accent,
+                              ),
+                        label: Text(_lat != null
+                            ? 'Location updated'
+                            : 'Use my current location'),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
