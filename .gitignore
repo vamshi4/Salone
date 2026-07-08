@@ -15,6 +15,10 @@ build/
 local.properties
 android/.kotlin/
 *.apk
+*.aab
+*.jks
+*.keystore
+mobile/*/android/key.properties
 
 # IDE / OS
 .idea/
@@ -36,5 +40,5 @@ tools/rtk/
 
 # Temporary files & IDE attachments
 tmp-*.png
+tmp-*.tar
 .codex-remote-attachments/
-

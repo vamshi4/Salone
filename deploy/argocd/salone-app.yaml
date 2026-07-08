@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: salone
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/vamshi4/Salone.git
+    targetRevision: feature/retention-and-redesign
+    path: deploy/k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: salone
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

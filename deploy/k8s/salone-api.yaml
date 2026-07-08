@@ -1,0 +1,186 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: salone
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: salone-pv
+  labels:
+    app: salone
+    type: local
+spec:
+  capacity:
+    storage: 25Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: salone-storage
+  hostPath:
+    path: /mnt/dbsa/salone
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: salone-pvc
+  namespace: salone
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: salone-storage
+  resources:
+    requests:
+      storage: 25Gi
+  volumeName: salone-pv
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: salone-postgres
+  namespace: salone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: salone-postgres
+  template:
+    metadata:
+      labels:
+        app: salone-postgres
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-master
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: salone_db
+            - name: POSTGRES_USER
+              value: salone
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: salone-secrets
+                  key: postgres-password
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - salone
+                - -d
+                - salone_db
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: salone-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: salone-postgres
+  namespace: salone
+spec:
+  selector:
+    app: salone-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: salone-api
+  namespace: salone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: salone-api
+  template:
+    metadata:
+      labels:
+        app: salone-api
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-master
+      initContainers:
+        - name: migrate
+          image: ghcr.io/vamshi4/salone-backend:feature-retention-and-redesign
+          imagePullPolicy: Always
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: salone-secrets
+                  key: database-url
+          command:
+            - sh
+            - -c
+            - |
+              until node -e "require('net').connect(5432,'salone-postgres',()=>process.exit(0)).on('error',()=>process.exit(1))"; do
+                echo "waiting for postgres";
+                sleep 2;
+              done;
+              npx prisma db push --accept-data-loss
+      containers:
+        - name: api
+          image: ghcr.io/vamshi4/salone-backend:feature-retention-and-redesign
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: AUTH_REQUIRED
+              value: "true"
+            - name: DEMO_AUTH_ENABLED
+              value: "false"
+            - name: CORS_ORIGIN
+              value: "https://api.slotvibe.buzz"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: salone-secrets
+                  key: database-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: salone-secrets
+                  key: jwt-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: salone-api
+  namespace: salone
+spec:
+  selector:
+    app: salone-api
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000

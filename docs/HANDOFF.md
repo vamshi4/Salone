@@ -127,3 +127,14 @@ line here, (3) `graphify update .`. The next agent starts from this file + git l
   (effective date, legal/business name, support email).
 - App is now `com.chairful.admin`, signed release AAB builds via
   `android/key.properties` (gitignored). Signed AAB is Play-ready.
+
+## 2026-07-09 GHCR + ArgoCD setup
+- Added GitHub Actions workflow `.github/workflows/backend-image.yml` to build
+  and push backend images to `ghcr.io/vamshi4/salone-backend`.
+- Kubernetes manifest now uses
+  `ghcr.io/vamshi4/salone-backend:feature-retention-and-redesign` with
+  `imagePullPolicy: Always` instead of the manual local containerd image.
+- Added ArgoCD Application manifest at `deploy/argocd/salone-app.yaml`.
+- If the GHCR package is private after first publish, either make it public in
+  GitHub Packages or create a Kubernetes `imagePullSecret` for GHCR before
+  syncing ArgoCD.

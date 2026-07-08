@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kimai-timesheet-nginx
+  namespace: kimai
+data:
+  default.conf: |
+    upstream kimai_backend { server kimai.kimai.svc.cluster.local:8001; }
+    upstream salone_backend { server salone-api.salone.svc.cluster.local:3000; }
+
+    server {
+        listen 80; listen [::]:80;
+        server_name timesheet.magnaquest.in;
+        return 301 https://$host$request_uri;
+    }
+    server {
+        listen 443 ssl http2; listen [::]:443 ssl http2;
+        server_name timesheet.magnaquest.in;
+        ssl_certificate /etc/nginx/ssl/tls.crt;
+        ssl_certificate_key /etc/nginx/ssl/tls.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_session_cache shared:SSL:10m; ssl_session_timeout 10m;
+        location / {
+            proxy_pass http://kimai_backend;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_set_header X-Forwarded-Ssl on;
+            proxy_read_timeout 300; proxy_connect_timeout 60; proxy_redirect off;
+        }
+    }
+
+    # ---- Salone API (api.slotvibe.buzz) ----
+    server {
+        listen 80; listen [::]:80;
+        server_name api.slotvibe.buzz;
+        location / {
+            proxy_pass http://salone_backend;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 300; proxy_connect_timeout 60; proxy_redirect off;
+        }
+    }
+    server {
+        listen 443 ssl http2; listen [::]:443 ssl http2;
+        server_name api.slotvibe.buzz;
+        ssl_certificate /etc/nginx/ssl/tls.crt;
+        ssl_certificate_key /etc/nginx/ssl/tls.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_session_cache shared:SSL:10m; ssl_session_timeout 10m;
+        location / {
+            proxy_pass http://salone_backend;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_read_timeout 300; proxy_connect_timeout 60; proxy_redirect off;
+        }
+    }

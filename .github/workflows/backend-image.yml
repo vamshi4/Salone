@@ -1,0 +1,34 @@
+name: Backend image
+
+on:
+  push:
+    branches:
+      - main
+      - feature/retention-and-redesign
+    paths:
+      - backend/**
+      - .github/workflows/backend-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push
+        shell: bash
+        run: |
+          IMAGE="ghcr.io/vamshi4/salone-backend"
+          BRANCH_TAG="${GITHUB_REF_NAME//\//-}"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          docker build -t "$IMAGE:$SHORT_SHA" -t "$IMAGE:$BRANCH_TAG" backend
+          docker push "$IMAGE:$SHORT_SHA"
+          docker push "$IMAGE:$BRANCH_TAG"
