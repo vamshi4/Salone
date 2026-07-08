@@ -9,6 +9,8 @@ spec:
     repoURL: https://github.com/vamshi4/Salone.git
     targetRevision: feature/retention-and-redesign
     path: deploy/k8s
+    directory:
+      exclude: kimai-nginx-configmap.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: salone
