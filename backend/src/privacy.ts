@@ -1,7 +1,5 @@
 // Privacy Policy served at GET /privacy (public). Embedded as a string so it
 // ships inside the compiled bundle/Docker image with no static-file copy step.
-// Update the bracketed placeholders (effective date, business name, support email)
-// before your Play Store submission.
 export const privacyHtml = `<!doctype html>
 <html lang="en">
 <head>
@@ -29,10 +27,10 @@ export const privacyHtml = `<!doctype html>
 <div class="wrap">
   <h1>Privacy Policy — Chairful</h1>
   <p class="meta">Salon management app for salon owners and staff.</p>
-  <p class="meta"><strong>Effective date:</strong> [DD Month 2026] &nbsp;·&nbsp; <strong>Last updated:</strong> [DD Month 2026]</p>
+  <p class="meta"><strong>Effective date:</strong> 8 July 2026 &nbsp;·&nbsp; <strong>Last updated:</strong> 8 July 2026</p>
 
   <h2>1. Who we are</h2>
-  <p>Chairful (“we”, “us”, the “App”) is a salon management application that helps salon owners and their staff manage appointments, staff, services, and customer relationships. This policy explains what data the App collects, why, and your choices. It applies to the Chairful salon app published by <strong>[Your legal / business name]</strong>.</p>
+  <p>Chairful (“we”, “us”, the “App”) is a salon management application that helps salon owners and their staff manage appointments, staff, services, and customer relationships. This policy explains what data the App collects, why, and your choices. It applies to the Chairful app published by <strong>vamshi</strong>.</p>
 
   <h2>2. Information we collect</h2>
   <table>
@@ -84,7 +82,7 @@ export const privacyHtml = `<!doctype html>
   <p>We may update this policy from time to time. We will change the “Last updated” date above and, for significant changes, notify you in the App.</p>
 
   <h2>11. Contact us</h2>
-  <p>Questions or requests about this policy or your data: <a href="mailto:[your-support-email]">[your-support-email]</a>.</p>
+  <p>Questions or requests about this policy or your data: <a href="mailto:vamshikittu114@gmail.com">vamshikittu114@gmail.com</a>.</p>
 
   <footer>Chairful · This policy covers the Chairful salon management app for Android.</footer>
 </div>
