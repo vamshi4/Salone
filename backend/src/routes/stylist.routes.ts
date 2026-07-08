@@ -56,18 +56,17 @@ function parseClock(value: string): number {
   return hours * 60 + (minutes || 0);
 }
 
-function sameDate(value: Date) {
-  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+// Salon timezone is India (Asia/Kolkata, no DST). Build slot instants explicitly
+// in IST so availability doesn't depend on the server's timezone — the k8s pod
+// runs in UTC, which shifted every slot by +5:30 (9:00 showed as 2:30 PM).
+const IST_OFFSET_MIN = 330;
+
+function istWallToUtc(y: number, mo: number, d: number, minutes: number) {
+  return new Date(Date.UTC(y, mo - 1, d, 0, minutes - IST_OFFSET_MIN));
 }
 
-function minutesToDate(day: Date, minutes: number) {
-  return new Date(
-    day.getFullYear(),
-    day.getMonth(),
-    day.getDate(),
-    Math.floor(minutes / 60),
-    minutes % 60,
-  );
+function sameDate(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
 }
 
 async function getServiceBundle(stylistId: string, serviceIds: string[]) {
@@ -101,13 +100,15 @@ async function buildAvailableSlots(
   serviceIds: string[],
   dateText: string,
 ) {
-  const date = sameDate(new Date(dateText));
-  if (Number.isNaN(date.getTime())) throw new Error('Invalid date');
+  const [yy, mm, dd] = dateText.split('-').map(Number);
+  if (!yy || !mm || !dd) throw new Error('Invalid date');
 
   const bundle = await getServiceBundle(stylistId, serviceIds);
 
-  const weekday = date.getDay();
+  // IST calendar day expressed as a UTC window.
+  const date = istWallToUtc(yy, mm, dd, 0);
   const nextDay = new Date(date.getTime() + 24 * 60 * 60 * 1000);
+  const weekday = new Date(Date.UTC(yy, mm - 1, dd)).getUTCDay();
 
   const availability = await prisma.stylistAvailability.findMany({
     where: {
@@ -145,13 +146,13 @@ async function buildAvailableSlots(
       minutes + bundle.duration <= windowEnd;
       minutes += 30
     ) {
-      const start = minutesToDate(date, minutes);
+      const start = istWallToUtc(yy, mm, dd, minutes);
       const end = new Date(start.getTime() + bundle.duration * 60 * 1000);
       if (start <= now) continue;
 
       const blocked = blocks.some((block) => {
-        const blockStart = minutesToDate(date, parseClock(block.startTime));
-        const blockEnd = minutesToDate(date, parseClock(block.endTime));
+        const blockStart = istWallToUtc(yy, mm, dd, parseClock(block.startTime));
+        const blockEnd = istWallToUtc(yy, mm, dd, parseClock(block.endTime));
         return start < blockEnd && end > blockStart;
       });
 
@@ -163,6 +164,7 @@ async function buildAvailableSlots(
         slots.push({
           dateTime: start.toISOString(),
           label: start.toLocaleTimeString('en-IN', {
+            timeZone: 'Asia/Kolkata',
             hour: 'numeric',
             minute: '2-digit',
           }),
