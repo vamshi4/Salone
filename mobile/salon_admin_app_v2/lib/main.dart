@@ -3662,6 +3662,9 @@ class _RetentionScreenState extends State<RetentionScreen> {
   List<Map<String, dynamic>> _atRisk = [];
   int _atRiskRevenue = 0;
   String? _selectedCohort; // 'retained' | 'new' | 'reactivated' | 'churned'
+  bool _atRiskExpanded = false;
+  bool _cohortExpanded = false;
+  bool _missedExpanded = false;
 
   @override
   void initState() {
@@ -3738,6 +3741,23 @@ class _RetentionScreenState extends State<RetentionScreen> {
     return '${d.day}/${d.month}/${d.year}';
   }
 
+  /// "View all (N more)" / "Show less" toggle shown under a capped list.
+  Widget _viewMore(int hidden, bool expanded, VoidCallback onTap) {
+    if (hidden <= 0) return const SizedBox.shrink();
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        onPressed: onTap,
+        icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 18),
+        label: Text(expanded ? 'Show less' : 'View all ($hidden more)'),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          minimumSize: const Size(0, 0),
+        ),
+      ),
+    );
+  }
+
   /// "Reach out now" — regulars overdue vs their own visit rhythm.
   Widget _atRiskSection() {
     if (_atRisk.isEmpty) return const SizedBox(height: 2);
@@ -3767,7 +3787,9 @@ class _RetentionScreenState extends State<RetentionScreen> {
             style: const TextStyle(fontSize: 13, color: AppColors.inkMuted),
           ),
           const SizedBox(height: 12),
-          ..._atRisk.take(6).map(_atRiskTile),
+          ...(_atRiskExpanded ? _atRisk : _atRisk.take(5)).map(_atRiskTile),
+          _viewMore(_atRisk.length - 5, _atRiskExpanded,
+              () => setState(() => _atRiskExpanded = !_atRiskExpanded)),
         ],
       ),
     );
@@ -3953,8 +3975,11 @@ class _RetentionScreenState extends State<RetentionScreen> {
               padding: EdgeInsets.symmetric(vertical: 20),
               child: Text('No customers missed this month. 🎉'),
             )
-          else
-            ...missed.map(_missedTile),
+          else ...[
+            ...(_missedExpanded ? missed : missed.take(10)).map(_missedTile),
+            _viewMore(missed.length - 10, _missedExpanded,
+                () => setState(() => _missedExpanded = !_missedExpanded)),
+          ],
         ],
       ),
     );
@@ -3999,6 +4024,7 @@ class _RetentionScreenState extends State<RetentionScreen> {
                           setState(() {
                             final k = slices[i].$1;
                             _selectedCohort = _selectedCohort == k ? null : k;
+                            _cohortExpanded = false;
                           });
                         }
                       }
@@ -4058,8 +4084,10 @@ class _RetentionScreenState extends State<RetentionScreen> {
   Widget _legendChip((String, String, Color, List<dynamic>) s) {
     final selected = _selectedCohort == s.$1;
     return GestureDetector(
-      onTap: () =>
-          setState(() => _selectedCohort = selected ? null : s.$1),
+      onTap: () => setState(() {
+        _selectedCohort = selected ? null : s.$1;
+        _cohortExpanded = false;
+      }),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         decoration: BoxDecoration(
@@ -4102,9 +4130,12 @@ class _RetentionScreenState extends State<RetentionScreen> {
             child: Text('No ${s.$2.toLowerCase()} customers this period.',
                 style: const TextStyle(color: AppColors.inkMuted)),
           )
-        else
-          ...s.$4.map((m) =>
+        else ...[
+          ...(_cohortExpanded ? s.$4 : s.$4.take(10)).map((m) =>
               _cohortMemberTile(Map<String, dynamic>.from(m as Map), isChurn)),
+          _viewMore(s.$4.length - 10, _cohortExpanded,
+              () => setState(() => _cohortExpanded = !_cohortExpanded)),
+        ],
       ],
     );
   }
