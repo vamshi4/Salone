@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -17,6 +19,36 @@ const _baseUrl = String.fromEnvironment(
 const appVersion = '2.0.0';
 
 String? _sessionToken;
+
+/// Captures the device's current GPS location and a readable address.
+/// Returns null if location services are off or permission is denied.
+Future<({double lat, double lng, String address})?> pickCurrentLocation() async {
+  if (!await Geolocator.isLocationServiceEnabled()) return null;
+  var perm = await Geolocator.checkPermission();
+  if (perm == LocationPermission.denied) {
+    perm = await Geolocator.requestPermission();
+  }
+  if (perm == LocationPermission.denied ||
+      perm == LocationPermission.deniedForever) {
+    return null;
+  }
+  final pos = await Geolocator.getCurrentPosition();
+  String address = '';
+  try {
+    final marks = await placemarkFromCoordinates(pos.latitude, pos.longitude);
+    if (marks.isNotEmpty) {
+      final p = marks.first;
+      address = [p.name, p.street, p.subLocality, p.locality, p.postalCode]
+          .where((s) => s != null && s.trim().isNotEmpty)
+          .cast<String>()
+          .toSet()
+          .join(', ');
+    }
+  } catch (_) {
+    // Reverse-geocoding is best-effort; coordinates still captured.
+  }
+  return (lat: pos.latitude, lng: pos.longitude, address: address);
+}
 
 /// Returns true when [current] is a lower semver than [min] (x.y.z).
 bool _isVersionLower(String current, String min) {
@@ -172,6 +204,30 @@ class _LoginScreenState extends State<LoginScreen> {
   final _addressController = TextEditingController();
   bool _loading = false;
   bool _signupMode = false;
+  double? _lat;
+  double? _lng;
+  bool _locating = false;
+
+  Future<void> _useMyLocation() async {
+    setState(() => _locating = true);
+    try {
+      final loc = await pickCurrentLocation();
+      if (loc == null) {
+        _show('Turn on location and allow permission to use this');
+        return;
+      }
+      setState(() {
+        _lat = loc.lat;
+        _lng = loc.lng;
+        if (loc.address.isNotEmpty) _addressController.text = loc.address;
+      });
+    } catch (e) {
+      if (kDebugMode) debugPrint('Location failed: $e');
+      _show('Could not get your location');
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -268,6 +324,8 @@ class _LoginScreenState extends State<LoginScreen> {
           'password': _passwordController.text,
           'salonName': salonName,
           'address': address,
+          if (_lat != null) 'lat': _lat,
+          if (_lng != null) 'lng': _lng,
         },
       );
       await _saveAuthToken(res.data['token'] as String);
@@ -373,7 +431,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       label: 'Salon address',
                       icon: Icons.location_on_outlined,
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _locating ? null : _useMyLocation,
+                        icon: _locating
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(
+                                _lat != null
+                                    ? Icons.check_circle
+                                    : Icons.my_location,
+                                size: 18,
+                                color: _lat != null
+                                    ? AppColors.success
+                                    : AppColors.accent,
+                              ),
+                        label: Text(_lat != null
+                            ? 'Location set'
+                            : 'Use my current location'),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                   ],
                   _field(
                     key: const Key('auth_phone'),
