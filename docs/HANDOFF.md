@@ -97,3 +97,33 @@ Other gotchas:
 ## Baton-pass protocol (sequential agents)
 When you finish a chunk: (1) commit with *why* in the body, (2) append a dated
 line here, (3) `graphify update .`. The next agent starts from this file + git log.
+
+## 2026-07-08 production API deploy note
+- Backend image `salone-backend:20260708-1` is imported on `192.168.0.150`
+  (`k8s-master`) and running in namespace `salone`.
+- Public API health is live at `https://api.slotvibe.buzz/health` and returns
+  `{"status":"ok","version":"2.0.0"}` through Cloudflare.
+- Nginx routing is in the existing `kimai/kimai-timesheet-nginx` ConfigMap with
+  a separate `api.slotvibe.buzz` server block proxying to
+  `salone-api.salone.svc.cluster.local:3000`.
+- `/dev/sdc` is mounted at `/mnt/dbsa`; Postgres data was copied from
+  `/mnt/salone/postgres` to `/mnt/dbsa/salone`, and the live Postgres deployment
+  now uses PVC `salone-pvc` (PV `salone-pv`, 25Gi) for
+  `/var/lib/postgresql/data`.
+- Old PVC `salone-postgres-pvc`/PV `salone-postgres-pv` still exists as a
+  fallback copy on `/mnt/salone/postgres`; do not delete until we take a real
+  database backup and run the app for a few days.
+
+## 2026-07-08 launch-prep (commit b99df08) — NEEDS A BACKEND REDEPLOY
+- New backend route `GET /privacy` serves the Play Store privacy policy
+  (`backend/src/privacy.ts`). `/api/v2/app-config` store URL default changed to
+  `com.chairful.admin`. **These are code-only — the live image
+  `salone-backend:20260708-1` does NOT have them yet.** Rebuild the image (next
+  tag, e.g. `:20260708-2`), import to containerd, `kubectl -n salone set image`
+  the `salone-api` deploy (both the app container AND the `migrate` initContainer,
+  imagePullPolicy Never), then roll it. Then `https://api.slotvibe.buzz/privacy`
+  goes live.
+- **Before redeploy:** fill the 3 placeholders in `backend/src/privacy.ts`
+  (effective date, legal/business name, support email).
+- App is now `com.chairful.admin`, signed release AAB builds via
+  `android/key.properties` (gitignored). Signed AAB is Play-ready.
