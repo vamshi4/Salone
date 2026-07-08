@@ -124,6 +124,18 @@ async function main() {
     { phone: '8800000020', name: 'Priyanka', tags: ['VIP', 'Regular'], visits: [], daysAgo: [70, 56, 42] },
     { phone: '8800000021', name: 'Rahul', tags: ['Regular'], visits: [], daysAgo: [95, 63, 49] },
     { phone: '8800000022', name: 'Aisha', tags: ['VIP'], visits: [], daysAgo: [84, 56, 44] },
+    { phone: '8800000023', name: 'Kiran', tags: [], visits: [], daysAgo: [66, 52, 40] },
+    { phone: '8800000024', name: 'Deepa', tags: ['Regular'], visits: [], daysAgo: [78, 60, 46] },
+    { phone: '8800000025', name: 'Manoj', tags: [], visits: [], daysAgo: [50, 38, 29] },
+    // Extra churned (active last month, not this month) so the Churned cohort > 10.
+    { phone: '8800000030', name: 'Ramesh', tags: [], visits: [1] },
+    { phone: '8800000031', name: 'Sunita', tags: [], visits: [1] },
+    { phone: '8800000032', name: 'Vijay', tags: [], visits: [2, 1] },
+    { phone: '8800000033', name: 'Neha', tags: [], visits: [1] },
+    { phone: '8800000034', name: 'Amit', tags: [], visits: [2, 1] },
+    { phone: '8800000035', name: 'Kavya', tags: [], visits: [1] },
+    { phone: '8800000036', name: 'Rekha', tags: [], visits: [1] },
+    { phone: '8800000037', name: 'Sathya', tags: [], visits: [2, 1] },
   ];
 
   // Clear previously-seeded demo bookings so slot dates are recomputed for "today".
