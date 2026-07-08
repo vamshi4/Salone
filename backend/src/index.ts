@@ -7,6 +7,7 @@ import bookingRoutes from './routes/booking.routes';
 import salonRoutes from './routes/salon.routes';
 import authRoutes from './routes/auth.routes';
 import { authOptional } from './auth';
+import { privacyHtml } from './privacy';
 
 dotenv.config();
 export const prisma = new PrismaClient();
@@ -37,6 +38,11 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', version: '2.0.0' });
 });
 
+// Public privacy policy (used for the Play Store listing / Data Safety form).
+app.get('/privacy', (_req: Request, res: Response) => {
+  res.type('html').send(privacyHtml);
+});
+
 // Public app-config: minimum supported version per app (drives force-update).
 // Bump via env (e.g. SALON_ADMIN_MIN_VERSION=2.1.0) without shipping code.
 app.get('/api/v2/app-config', (_req: Request, res: Response) => {
@@ -46,7 +52,7 @@ app.get('/api/v2/app-config', (_req: Request, res: Response) => {
     stylistMinVersion: process.env.STYLIST_MIN_VERSION || '2.0.0',
     salonAdminStoreUrl:
       process.env.SALON_ADMIN_STORE_URL ||
-      'https://play.google.com/store/apps/details?id=com.example.salon_admin_app',
+      'https://play.google.com/store/apps/details?id=com.chairful.admin',
   });
 });
 
