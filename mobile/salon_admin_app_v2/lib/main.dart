@@ -781,7 +781,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       body: RefreshIndicator(
         onRefresh: _loadDashboard,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+          padding: EdgeInsets.fromLTRB(
+              16, 8, 16, 28 + MediaQuery.of(context).padding.bottom),
           children: [
             Row(
               children: [
@@ -3895,7 +3896,8 @@ class _RetentionScreenState extends State<RetentionScreen> {
       onRefresh: _load,
       child: ListView(
         key: const Key('retention_body'),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+            16, 16, 16, 24 + MediaQuery.of(context).padding.bottom),
         children: [
           _atRiskSection(),
           Text(
