@@ -8,6 +8,7 @@ import salonRoutes from './routes/salon.routes';
 import authRoutes from './routes/auth.routes';
 import { authOptional } from './auth';
 import { privacyHtml } from './privacy';
+import { deleteAccountHtml } from './delete-account';
 
 dotenv.config();
 export const prisma = new PrismaClient();
@@ -41,6 +42,11 @@ app.get('/health', (req: Request, res: Response) => {
 // Public privacy policy (used for the Play Store listing / Data Safety form).
 app.get('/privacy', (_req: Request, res: Response) => {
   res.type('html').send(privacyHtml);
+});
+
+// Public account-deletion instructions (required by Play Data safety).
+app.get('/delete-account', (_req: Request, res: Response) => {
+  res.type('html').send(deleteAccountHtml);
 });
 
 // Public app-config: minimum supported version per app (drives force-update).
