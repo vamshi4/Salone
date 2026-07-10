@@ -138,3 +138,15 @@ line here, (3) `graphify update .`. The next agent starts from this file + git l
 - If the GHCR package is private after first publish, either make it public in
   GitHub Packages or create a Kubernetes `imagePullSecret` for GHCR before
   syncing ArgoCD.
+
+## 2026-07-10 production auth incident fix
+- Rotated live `salone-secrets.jwt-secret`; all old JWTs are invalid and users
+  must sign in again.
+- Production API now runs with `NODE_ENV=production`, `AUTH_REQUIRED=true`, and
+  `DEMO_AUTH_ENABLED=false`.
+- Backend now fails closed: auth is required unless explicitly disabled outside
+  production; `/auth/demo-token` is hidden in production unless explicitly
+  enabled outside production; passwordless login returns false.
+- `GET /api/v2/salons` now requires auth. Anonymous check returns `401`.
+- Existing passwordless users were locked with a non-login marker; database
+  check returned zero users with `password is null`.

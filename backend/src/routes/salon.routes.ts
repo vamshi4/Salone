@@ -3,6 +3,7 @@ import { prisma } from '../index';
 import { requireRole } from '../auth';
 
 const router = Router();
+const disabledPassword = 'disabled';
 
 async function findOwnedSalon(salonId: string, user: any) {
   return prisma.salon.findFirst({
@@ -420,7 +421,12 @@ router.post('/:salonId/staff-setup', requireRole('SALON_OWNER', 'SUPER_ADMIN'), 
 
     const stylist = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
-        data: { phone: normalizedPhone, name: String(name).trim(), role: 'STYLIST' },
+        data: {
+          phone: normalizedPhone,
+          name: String(name).trim(),
+          role: 'STYLIST',
+          password: disabledPassword,
+        },
       });
 
       const createdStylist = await tx.stylist.create({

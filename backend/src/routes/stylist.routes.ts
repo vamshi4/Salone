@@ -3,6 +3,7 @@ import { prisma } from '../index';
 import { requireRole } from '../auth';
 
 const router = Router();
+const disabledPassword = 'disabled';
 
 const stylistInclude = {
   user: true,
@@ -422,7 +423,7 @@ router.post('/', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => 
     } = req.body;
 
     const user = await prisma.user.create({
-      data: { phone, name, role: 'STYLIST', lat, lng },
+      data: { phone, name, role: 'STYLIST', lat, lng, password: disabledPassword },
     });
 
     const stylist = await prisma.stylist.create({

@@ -3,6 +3,7 @@ import { prisma } from '../index';
 import { requireRole } from '../auth';
 
 const router = Router();
+const disabledPassword = 'disabled';
 
 const bookingInclude = {
   customer: true,
@@ -470,6 +471,7 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
           phone: normalizedPhone,
           name: customerName || 'Customer',
           role: 'CUSTOMER',
+          password: disabledPassword,
         },
       });
     }
