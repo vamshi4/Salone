@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chairful — for salon owners</title>
+<style>
+  @page { size: A4; margin: 0; }
+  :root {
+    --ink:#0F172A; --muted:#5B6B66; --accent:#0E7C6B; --accent-soft:#EAF4F1;
+    --gold:#C9A227; --border:#E4E9E7;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family:"Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    color:var(--ink); background:#fff; line-height:1.5;
+  }
+  .page {
+    width:210mm; height:297mm; padding:15mm 14mm;
+    page-break-after:always; position:relative; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .page:last-child { page-break-after:auto; }
+
+  /* ---------- header ---------- */
+  .brand { display:flex; align-items:center; gap:10px; }
+  .mark {
+    width:34px; height:34px; border-radius:9px; background:var(--accent);
+    color:#fff; font-weight:700; font-size:19px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand .name { font-size:22px; font-weight:700; letter-spacing:-.02em; }
+  .brand .tag { font-size:12.5px; color:var(--muted); margin-top:-2px; }
+
+  /* ---------- hero ---------- */
+  .hero { margin-top:11mm; }
+
+  /* ---------- how it works ---------- */
+  .steps { display:flex; gap:5mm; margin-top:9mm; }
+  .step {
+    flex:1; border:1px solid var(--border); border-radius:10px;
+    padding:4.5mm 4mm; background:#fff;
+  }
+  .step .n {
+    width:20px; height:20px; border-radius:50%; background:var(--accent); color:#fff;
+    font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  }
+  .step .t { font-size:13px; font-weight:700; margin:6px 0 3px; }
+  .step .d { font-size:11.5px; color:var(--muted); line-height:1.4; }
+  .arrowline { font-size:11px; color:var(--muted); text-align:center; margin-top:5mm; }
+  .kicker {
+    display:inline-block; font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--accent); background:var(--accent-soft);
+    padding:5px 11px; border-radius:20px; font-weight:600;
+  }
+  h1 {
+    font-size:33px; line-height:1.18; letter-spacing:-.028em;
+    margin:14px 0 12px; max-width:165mm; font-weight:700;
+  }
+  h1 em { font-style:normal; color:var(--accent); }
+  .lede { font-size:14.5px; color:var(--muted); max-width:150mm; }
+
+  /* ---------- shots ---------- */
+  .shots { display:flex; gap:9mm; margin-top:auto; padding-bottom:2mm; justify-content:center; }
+  .shot { width:48mm; text-align:center; }
+  .shot img {
+    width:100%; height:82mm; object-fit:cover; object-position:top;
+    border:1px solid var(--border); border-radius:9px;
+    display:block; box-shadow:0 5px 16px rgba(15,23,42,.10);
+  }
+  .shot .cap { font-size:11.5px; font-weight:600; margin-top:7px; }
+  .shot .sub { font-size:10.5px; color:var(--muted); line-height:1.35; margin-top:2px; }
+
+  /* ---------- page 2 ---------- */
+  h2 { font-size:20px; letter-spacing:-.02em; margin-bottom:3mm; font-weight:700; }
+  .feat { display:grid; grid-template-columns:1fr 1fr; gap:4mm 7mm; margin-top:2mm; }
+  .f { display:flex; gap:8px; }
+  .f .dot {
+    width:17px; height:17px; border-radius:50%; background:var(--accent-soft);
+    color:var(--accent); font-size:11px; font-weight:700; flex:0 0 17px;
+    display:flex; align-items:center; justify-content:center; margin-top:2px;
+  }
+  .f .t { font-size:13px; font-weight:600; }
+  .f .d { font-size:11.5px; color:var(--muted); line-height:1.4; }
+
+  .why { background:#F7FBFA; border:1px solid var(--border); border-radius:11px;
+    padding:6mm 6mm 5mm; margin-top:7mm; }
+  .why h3 { font-size:14px; margin-bottom:3mm; }
+  .why ul { list-style:none; }
+  .why li { font-size:12.5px; color:var(--muted); padding-left:17px; position:relative; margin-bottom:5px; }
+  .why li:before { content:"✓"; position:absolute; left:0; color:var(--accent); font-weight:700; }
+  .why li b { color:var(--ink); font-weight:600; }
+
+  .offer {
+    margin-top:auto; background:var(--accent); color:#fff; border-radius:12px;
+    padding:6mm 7mm; display:flex; align-items:center; justify-content:space-between; gap:6mm;
+  }
+  .offer .big { font-size:19px; font-weight:700; letter-spacing:-.02em; }
+  .offer .small { font-size:12px; opacity:.92; margin-top:3px; }
+  .offer .cta {
+    background:#fff; color:var(--accent); border-radius:8px; padding:9px 15px;
+    font-size:12.5px; font-weight:700; white-space:nowrap; text-align:center;
+  }
+  .foot { margin-top:5mm; font-size:10.5px; color:var(--muted); text-align:center; }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 ============ -->
+<section class="page">
+  <div class="brand">
+    <div class="mark">C</div>
+    <div>
+      <div class="name">Chairful</div>
+      <div class="tag">Keep your chairs full.</div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <span class="kicker">For salon owners</span>
+    <h1>Your best customers don't quit loudly.<br><em>They just stop coming.</em></h1>
+    <p class="lede">
+      A regular who visited every month suddenly hasn't been in for ten weeks — and you
+      only notice when the chair sits empty. Chairful watches your booking history and tells
+      you <strong>exactly who has slipped away</strong>, so you can bring them back with one
+      message on WhatsApp.
+    </p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="n">1</div>
+      <div class="t">Spot it</div>
+      <div class="d">Chairful reads your booking history and flags the regulars who have quietly stopped coming.</div>
+    </div>
+    <div class="step">
+      <div class="n">2</div>
+      <div class="t">Reach out</div>
+      <div class="d">One tap opens WhatsApp with a friendly message already written for that customer.</div>
+    </div>
+    <div class="step">
+      <div class="n">3</div>
+      <div class="t">They come back</div>
+      <div class="d">You fill a chair you didn't even know was empty — from customers you already have.</div>
+    </div>
+  </div>
+
+  <div class="shots">
+    <div class="shot">
+      <img src="../brand/screenshots/2-dashboard.png" alt="Chairful dashboard">
+      <div class="cap">See your salon at a glance</div>
+      <div class="sub">Today's bookings, staff and revenue in one clean screen.</div>
+    </div>
+    <div class="shot">
+      <img src="../brand/screenshots/3-reach-out.png" alt="Customers to reach out to">
+      <div class="cap">Know who to call today</div>
+      <div class="sub">Chairful ranks the regulars who are slipping away.</div>
+    </div>
+    <div class="shot">
+      <img src="../brand/screenshots/4-winback.png" alt="Win back customers on WhatsApp">
+      <div class="cap">Win them back in one tap</div>
+      <div class="sub">A ready-to-send WhatsApp message, already written.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PAGE 2 ============ -->
+<section class="page">
+  <div class="brand">
+    <div class="mark">C</div>
+    <div>
+      <div class="name">Chairful</div>
+      <div class="tag">Keep your chairs full.</div>
+    </div>
+  </div>
+
+  <div style="margin-top:12mm">
+    <h2>Everything you need to run the salon</h2>
+    <div class="feat">
+      <div class="f"><div class="dot">1</div><div>
+        <div class="t">Bookings in seconds</div>
+        <div class="d">Create and manage appointments with the right slots for your working hours.</div>
+      </div></div>
+      <div class="f"><div class="dot">2</div><div>
+        <div class="t">Staff &amp; working hours</div>
+        <div class="d">Add your stylists, set each person's days and timings, see everyone's schedule.</div>
+      </div></div>
+      <div class="f"><div class="dot">3</div><div>
+        <div class="t">Customer list</div>
+        <div class="d">Names, numbers, notes and tags — your whole client book, organised.</div>
+      </div></div>
+      <div class="f"><div class="dot">4</div><div>
+        <div class="t">Retention insights</div>
+        <div class="d">New, returning, at-risk and lost customers, updated automatically.</div>
+      </div></div>
+      <div class="f"><div class="dot">5</div><div>
+        <div class="t">One-tap WhatsApp win-backs</div>
+        <div class="d">Reach a customer who's gone quiet without typing a word.</div>
+      </div></div>
+      <div class="f"><div class="dot">6</div><div>
+        <div class="t">Your salon on the map</div>
+        <div class="d">Pin your exact location with GPS for an accurate address.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="why">
+    <h3>Why owners choose Chairful</h3>
+    <ul>
+      <li><b>It makes you money, not just charts.</b> Most salon apps only take bookings. Chairful tells you which customers to win back — that's revenue you already lost.</li>
+      <li><b>Simple enough for the whole team.</b> Clean, fast, no training needed. If you can use WhatsApp, you can use Chairful.</li>
+      <li><b>Built for real salons.</b> Made for independent salons in India — not for big corporate chains.</li>
+      <li><b>Your data stays yours.</b> We never sell your customers' details, and we don't show ads.</li>
+    </ul>
+  </div>
+
+  <div class="offer">
+    <div>
+      <div class="big">Free for your first 6 months</div>
+      <div class="small">Get set up in minutes. See which customers to bring back today.</div>
+    </div>
+    <div class="cta">Reply to this message<br>to get started</div>
+  </div>
+
+  <div class="foot">
+    Chairful · Salon management for Android · vamshikittu114@gmail.com
+  </div>
+</section>
+
+</body>
+</html>
