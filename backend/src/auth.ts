@@ -18,10 +18,18 @@ declare global {
 
 const tokenTtlSeconds = Number(process.env.AUTH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 7);
 
+function isProduction() {
+  return process.env.NODE_ENV === 'production';
+}
+
+function authRequired() {
+  return isProduction() || process.env.AUTH_REQUIRED !== 'false';
+}
+
 function secret() {
   const value = process.env.JWT_SECRET || '';
-  if (process.env.AUTH_REQUIRED === 'true' && value.length < 32) {
-    throw new Error('JWT_SECRET must be at least 32 characters when AUTH_REQUIRED=true');
+  if ((authRequired() || isProduction()) && value.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters when auth is required');
   }
   return value || 'local-demo-secret-not-for-production';
 }
@@ -90,7 +98,7 @@ export function authOptional(req: Request, res: Response, next: NextFunction) {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (process.env.AUTH_REQUIRED !== 'true') {
+  if (!authRequired()) {
     req.user ??= { id: 'demo-auth-bypass', role: 'SUPER_ADMIN' };
     next();
     return;

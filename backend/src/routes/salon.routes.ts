@@ -14,7 +14,7 @@ async function findOwnedSalon(salonId: string, user: any) {
 }
 
 // GET /api/v2/salons
-router.get('/', async (req, res) => {
+router.get('/', requireRole('CUSTOMER', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   const salons = await prisma.salon.findMany({
     where: req.user?.role === 'SALON_OWNER' ? { ownerId: req.user.id } : {},
     include: {

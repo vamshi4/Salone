@@ -14,7 +14,7 @@ function hashPassword(password: string) {
 }
 
 function verifyPassword(password: string, stored?: string | null) {
-  if (!stored) return true;
+  if (!stored) return false;
   const [prefix, salt, hash] = stored.split('$');
   if (prefix !== passwordPrefix || !salt || !hash) return false;
   const candidate = crypto.scryptSync(password, salt, 64);
@@ -237,7 +237,7 @@ router.post('/change-password', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async
 // Development helper. Keep disabled in production.
 router.post('/demo-token', async (req, res) => {
   try {
-    if (process.env.DEMO_AUTH_ENABLED === 'false') {
+    if (process.env.NODE_ENV === 'production' || process.env.DEMO_AUTH_ENABLED !== 'true') {
       return res.status(404).json({ error: 'Not found' });
     }
 
