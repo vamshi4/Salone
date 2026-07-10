@@ -117,7 +117,7 @@ spec:
         kubernetes.io/hostname: k8s-master
       initContainers:
         - name: migrate
-          image: ghcr.io/vamshi4/salone-backend:65bad44
+          image: ghcr.io/vamshi4/salone-backend:12bd3dd
           imagePullPolicy: Always
           env:
             - name: DATABASE_URL
@@ -136,7 +136,7 @@ spec:
               npx prisma db push --accept-data-loss
       containers:
         - name: api
-          image: ghcr.io/vamshi4/salone-backend:65bad44
+          image: ghcr.io/vamshi4/salone-backend:12bd3dd
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
