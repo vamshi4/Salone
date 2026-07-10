@@ -6,9 +6,11 @@ import stylistRoutes from './routes/stylist.routes';
 import bookingRoutes from './routes/booking.routes';
 import salonRoutes from './routes/salon.routes';
 import authRoutes from './routes/auth.routes';
+import adminRoutes from './routes/admin.routes';
 import { authOptional } from './auth';
 import { privacyHtml } from './privacy';
 import { deleteAccountHtml } from './delete-account';
+import { adminPageHtml } from './admin-page';
 
 dotenv.config();
 export const prisma = new PrismaClient();
@@ -49,6 +51,12 @@ app.get('/delete-account', (_req: Request, res: Response) => {
   res.type('html').send(deleteAccountHtml);
 });
 
+// Super-admin dashboard shell. The page is public but renders nothing until it
+// authenticates against /api/v2/admin, which is SUPER_ADMIN-only.
+app.get('/admin', (_req: Request, res: Response) => {
+  res.type('html').send(adminPageHtml);
+});
+
 // Public app-config: minimum supported version per app (drives force-update).
 // Bump via env (e.g. SALON_ADMIN_MIN_VERSION=2.1.0) without shipping code.
 app.get('/api/v2/app-config', (_req: Request, res: Response) => {
@@ -67,11 +75,19 @@ app.use('/api/v2/auth', authRoutes);
 app.use('/api/v2/stylists', stylistRoutes);
 app.use('/api/v2/bookings', bookingRoutes);
 app.use('/api/v2/salons', salonRoutes);
+app.use('/api/v2/admin', adminRoutes);
 app.use('/v2/bookings', bookingRoutes);
 
-app.use((err: Error, _req: Request, res: Response, _next: Function) => {
-  console.error(err);
-  res.status(500).json({ error: 'Internal server error' });
+app.use((err: any, _req: Request, res: Response, _next: Function) => {
+  // body-parser and friends tag client errors with a 4xx status. Reporting those
+  // as 500 makes a malformed request look like a server crash.
+  const status = Number(err?.status || err?.statusCode) || 500;
+  if (status >= 500) {
+    console.error(err);
+    res.status(status).json({ error: 'Internal server error' });
+    return;
+  }
+  res.status(status).json({ error: err?.message || 'Bad request' });
 });
 
 const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
