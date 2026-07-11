@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 class AppColors {
   static const bg = Color(0xFFFFFFFF); // page background
   static const surfaceAlt = Color(0xFFF7F8FA); // subtle section fill
-  static const border = Color(0xFFECEEF1); // hairline dividers/cards
-  static const ink = Color(0xFF0F172A); // primary text
-  static const inkMuted = Color(0xFF6B7280); // secondary text
-  static const inkFaint = Color(0xFF9AA3AF); // tertiary text
+  static const border = Color(0xFFDCE1E8); // hairline dividers/cards (visible)
+  static const ink = Color(0xFF0B1220); // primary text (near-black)
+  static const inkMuted = Color(0xFF44505F); // secondary text (WCAG AA on white)
+  static const inkFaint = Color(0xFF667080); // tertiary text (readable)
 
   static const accent = Color(0xFF0E7C6B); // calm teal
   static const accentSoft = Color(0xFFE7F3F1);
@@ -81,8 +81,8 @@ ThemeData buildAppTheme() {
           headlineSmall: t(22, FontWeight.w800, ls: -0.3),
           titleLarge: t(18, FontWeight.w700),
           titleMedium: t(15, FontWeight.w700),
-          bodyLarge: t(15, FontWeight.w500, h: 1.4),
-          bodyMedium: t(14, FontWeight.w500, c: AppColors.inkMuted, h: 1.4),
+          bodyLarge: t(15, FontWeight.w600, h: 1.4),
+          bodyMedium: t(14, FontWeight.w600, c: AppColors.inkMuted, h: 1.4),
           labelLarge: t(14, FontWeight.w700),
           labelMedium: t(12, FontWeight.w600, c: AppColors.inkMuted, ls: 0.2),
         ),
