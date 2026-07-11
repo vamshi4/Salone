@@ -1,115 +1,92 @@
-# Walk-in vs Pre-booking — Detailed Flow Design
+# Booking Flow Design — "Done service" (log after) vs "Schedule later"
 
-## The problem (in the owner's words)
-- Manual booking should default to **now** (current date + time) for a walk-in.
-- For a walk-in you **can't state an exact finish time** — the stylist doesn't know when they'll be done.
-- The current sheet forces the owner to pick an *availability slot*, which is wrong for someone
-  already sitting in the chair.
+## What the owner actually wants
+- The stylist is **busy during the service** and will NOT touch the phone at the start.
+- They record the service **once, AFTER it is finished**, when free.
+- At that point: just the **current time**. No time slot. No start time.
+- **One entry per customer** — they do not want to enter a customer twice (no "start" then "done").
+- Separately, they still want **pre-booking** for genuine future appointments.
 
-## Root cause in the current code
+## Root cause of the current bug
 `POST /v2/bookings/salon-manual` calls `validateStylistSlot(stylistId, serviceIds, start)`
-(`booking.routes.ts:452`). "Right now" is almost never an exact availability slot boundary, so a
-true walk-in gets rejected. The app also only lets you pick from availability `_slots`, so there's no
-way to say "start now." Meanwhile the backend **already** computes `end = start + totalDuration`
-(`:456`) — so an *estimated* end already exists; we just shouldn't treat it as a promise.
+(`booking.routes.ts:452`). "Now" is almost never an exact availability slot, so logging a just-finished
+service gets rejected. The app also forces choosing an availability slot, which is meaningless for a
+service that already happened.
 
 ---
 
 ## The design: one sheet, two modes
 
-Add a segmented toggle at the top of the New Booking sheet:
+Toggle at the top of the New Booking sheet:
 
 ```
-  [ Walk-in now ]   [ Schedule for later ]
+  [ Done service ]   [ Schedule later ]
 ```
 
-### Mode A — Walk-in now  (the new path)
-- **No date field, no slot picker.** They're hidden.
-- Start time = `DateTime.now()`, set automatically and sent as `dateTime`.
-- Send a new flag `walkIn: true` to the backend.
-- End time is the **estimate** (`now + sum(service durations)`) — used only to hold the chair and
-  show "~ done by 3:45". It is explicitly labelled an estimate in the UI, never asked of the owner.
-- Booking is created directly in an **in-progress** state (see status model below).
-- The owner does nothing else until the customer leaves.
+### Mode A — Done service (record AFTER the service; the new default)
+A single entry, made when the service is already over.
 
-### Mode B — Schedule for later  (today's flow, unchanged)
+- **No date field, no slot picker, no start time.** All hidden.
+- Asks only for what the owner knows at that moment: **customer name, phone, services** (Total shown).
+- Saved as already **COMPLETED**, timestamped with the **current time**. One save, done.
+- Sends flag `completed: true` to the backend.
+
+This is the key correction over the earlier draft: **no start step and no "mark done" step.** The owner
+touches the phone exactly once, after the customer is finished.
+
+### Mode B — Schedule later (future appointments; today's flow, unchanged)
 - Date + availability slot picker exactly as now.
-- `walkIn` omitted/false → slot validation still applies (correct for future bookings).
+- `completed` omitted/false, so slot validation still applies (correct for future bookings).
 
 ---
 
-## Status model — capturing the real finish without predicting it
+## Status model — one step, nothing to predict
 
-The uncertainty is solved by **recording the actual end on completion**, not by guessing up front.
+Because the service is only logged after it's over, the booking is born `COMPLETED`. Nothing to
+estimate, nothing to finish later.
 
-**Recommended (small schema change):** add `IN_PROGRESS` to the `BookingStatus` enum and a
-`completedAt DateTime?` column to `Booking`.
+**Tiny schema change:** add `completedAt DateTime?` to `Booking` so earnings/history have an accurate
+"when the money came in" timestamp. **No new enum value needed** — the existing `COMPLETED` covers it.
 
-Flow:
-1. Walk-in created → `status = IN_PROGRESS`, `slotStart = now`, `slotEnd = estimate`.
-2. Customer leaves → owner taps **"Mark done"** → `PATCH /:id/status { status: 'COMPLETED' }`.
-   The status handler, when moving to COMPLETED, sets `completedAt = now` and updates
-   `slotEnd = now` (the *real* finish). Earnings and history use `completedAt`.
+Single-step flow:
+1. Owner opens sheet, picks **Done service**, enters customer + services, taps **Save**.
+2. Backend creates the booking with `status = COMPLETED`, `completedAt = now`,
+   `slotStart = slotEnd = now` (time is just "now"; duration is irrelevant — it already happened).
 
-**No-migration alternative** (if you want zero schema change now): reuse `CONFIRMED` as the
-"in the salon now" state for walk-ins (a walk-in with `slotStart <= now <= slotEnd` is "in progress"),
-and on "Mark done" set `slotEnd = now`. Works, but "in progress" is then inferred rather than explicit.
-Recommend the enum value — it's cleaner and the dashboard query is trivial.
+No `IN_PROGRESS`, no "Mark done", no "in the salon now" list. Simpler for the owner and to build.
 
 ---
 
-## Backend changes (`booking.routes.ts`)
+## Backend changes (`booking.routes.ts` + `schema.prisma`)
 
-1. **`salon-manual`**: accept `walkIn: boolean`.
-   - If `walkIn`, **skip `validateStylistSlot`** (a walk-in is not bound by the availability grid).
-   - If `walkIn`, force `start = new Date()` server-side (don't trust client clock), status = `IN_PROGRESS`.
-   - Keep the existing `end = start + totalDuration` estimate.
-2. **`PATCH /:id/status`**: when new status is `COMPLETED`, also set `completedAt = new Date()` and,
-   for walk-ins, `slotEnd = new Date()`. (Only overwrite slotEnd if it's a walk-in / still in progress.)
-3. Add `IN_PROGRESS` to the validated status list.
-
-## Schema changes (`schema.prisma`)
-```prisma
-enum BookingStatus {
-  PENDING
-  PENDING_RESCHEDULE
-  CONFIRMED
-  IN_PROGRESS   // new: walk-in currently being served
-  COMPLETED
-  CANCELLED
-  NO_SHOW
-}
-
-model Booking {
-  // ...
-  completedAt DateTime?   // new: actual finish time, set when marked done
-}
-```
+1. `salon-manual`: accept `completed: boolean`.
+   - If `completed`: **skip `validateStylistSlot`**; set `start = new Date()` server-side (don't trust
+     client clock); `status = 'COMPLETED'`; `completedAt = start`; `slotEnd = start`.
+   - If not `completed`: unchanged (future booking, slot validated).
+2. `schema.prisma`: add `completedAt DateTime?` to `Booking`. Migrate via the project's deploy path
+   (mind the prior P3009 migration issue).
 
 ## App changes (`main.dart`, `_ManualBookingSheet`)
-1. Add the mode toggle (`SegmentedButton` or two `ChoiceChip`s) → `bool _walkIn`.
-2. When `_walkIn`: hide `_dateController` field + the "Available slots" section; skip `_loadSlots`.
-   Show instead a read-only line: **"Starting now · about {estimatedMinutes} min · est. done {time}"**.
-3. On save when `_walkIn`: `POST /v2/bookings/salon-manual` with `walkIn: true` and no `dateTime`
-   (or `dateTime = now`); don't require a selected slot.
-4. **Dashboard**: add an **"In the salon now"** section listing `IN_PROGRESS` bookings, each with a
-   **"Mark done"** button → `PATCH /:id/status { COMPLETED }` → refresh. This is where walk-ins live
-   until finished, and it's the satisfying "clear the chair" action.
+1. Add the mode toggle (two `ChoiceChip`s / `SegmentedButton`) -> `bool _completed` (default true).
+2. When `_completed`: hide the date field and the "Available slots" section; do not call `_loadSlots`;
+   do not require a selected slot. Show a small line: **"Recorded now"** with the current time.
+3. On save when `_completed`: POST `salon-manual` with `completed: true`, no `dateTime` needed
+   (backend stamps the time).
+4. Keep the customer name / phone / services / Total exactly as now.
 
-## Why this is the right shape
-- The owner never types or predicts a finish time — they tap **Walk-in now**, then **Mark done**.
-- The estimate holds the slot so scheduling still works; the **real** time is captured at completion,
-  so **earnings and history are accurate** (this is the hook for the daily-earnings feature — it sums
-  `price` of bookings with `status = COMPLETED`, by `completedAt`).
-- Pre-booking is untouched and still validates against availability.
+## Why this is right
+- The stylist touches the phone **once**, after the service, entering only what they know.
+- No slot, no start/finish juggling, no double entry.
+- Every logged service is `COMPLETED` with a real `completedAt`, which is exactly what the
+  **daily-earnings** feature needs (sum `price` of `COMPLETED` bookings grouped by `completedAt`).
+- Pre-booking (Mode B) is untouched for real future appointments.
 
 ## Build order
-1. Schema: `IN_PROGRESS` + `completedAt`; migrate.
-2. Backend: `walkIn` handling in `salon-manual`; `completedAt`/`slotEnd` on completion.
-3. App: mode toggle + "In the salon now" + Mark done.
-4. (Then) daily-earnings screen reads completed bookings by `completedAt`.
+1. Schema: add `completedAt`; migrate.
+2. Backend: `completed` handling in `salon-manual`.
+3. App: mode toggle + hide slot UI when logging a finished service.
+4. (Then) daily-earnings screen reads `COMPLETED` bookings by `completedAt`.
 
-## Note on where this can be built
-Backend booking changes have been buildable in-session; only auth/admin/credential code is blocked.
-This flow touches `booking.routes.ts` + `schema.prisma` + `main.dart` — all fair game — but the
-schema migration must go through the project's deploy path (mind the prior P3009 migration issue).
+## Where this can be built
+`booking.routes.ts`, `schema.prisma`, and `main.dart` are all buildable in-session (only auth/admin
+code is blocked). The schema migration must go through the deploy path.
