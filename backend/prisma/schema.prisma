@@ -17,6 +17,7 @@ model User {
   password  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
   lat       Float?
   lng       Float?
 
@@ -79,6 +80,7 @@ model Salon {
   saasPlan        String   @default("FREE")
   rating          Float    @default(0)
   totalReviews    Int      @default(0)
+  deletedAt       DateTime?
 
   owner             User            @relation("SalonOwner", fields: [ownerId], references: [id])
   stylists          SalonStylist[]
@@ -200,6 +202,20 @@ model Review {
   createdAt        DateTime         @default(now())
 
   booking Booking @relation(fields: [bookingId], references: [id])
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String            // the SUPER_ADMIN user id
+  action     String            // "salon.update" | "salon.delete" | "user.reset-password" | ...
+  targetType String            // "Salon" | "User" | "Booking" | "SalonCustomer" | ...
+  targetId   String
+  before     Json?             // snapshot before the change (omit secrets like password hash)
+  after      Json?             // snapshot after
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([actorId])
 }
 
 enum UserRole {

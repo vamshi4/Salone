@@ -150,3 +150,12 @@ line here, (3) `graphify update .`. The next agent starts from this file + git l
 - `GET /api/v2/salons` now requires auth. Anonymous check returns `401`.
 - Existing passwordless users were locked with a non-login marker; database
   check returned zero users with `password is null`.
+
+## 2026-07-11 super-admin dashboard / CRUD
+- Added `/admin` super-admin dashboard shell and `/api/v2/admin/*` APIs.
+- Admin APIs are guarded by `requireRole('SUPER_ADMIN')`; the public HTML shell
+  renders no platform data until a SUPER_ADMIN login succeeds.
+- Added soft-delete columns (`User.deletedAt`, `Salon.deletedAt`) and
+  `AdminAuditLog`; super-admin salon edits/deletes/restores are audited.
+- Deploy requires the backend image built from this commit and Prisma `db push`
+  to apply the new columns/table.

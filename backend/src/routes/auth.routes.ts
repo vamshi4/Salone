@@ -50,7 +50,12 @@ router.post('/login', async (req, res) => {
       where: { phone },
     });
 
-    if (!user || user.role !== role || !verifyPassword(String(password), user.password)) {
+    if (
+      !user ||
+      user.deletedAt ||
+      user.role !== role ||
+      !verifyPassword(String(password), user.password)
+    ) {
       return res.status(401).json({ error: 'Invalid login' });
     }
 

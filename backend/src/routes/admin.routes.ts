@@ -1,12 +1,28 @@
 import { Router } from 'express';
 import { requireRole } from '../auth';
 import { prisma } from '../index';
+import { writeAudit } from '../admin-audit';
 
 const router = Router();
 
 // Every route here is platform-wide across all salons. SUPER_ADMIN only.
 // Never widen this guard.
 router.use(requireRole('SUPER_ADMIN'));
+
+// No enum backs saasPlan (it's a plain String column), so validation lives here.
+const KNOWN_SAAS_PLANS = ['FREE', 'PREMIUM'] as const;
+
+// Fields we snapshot into the audit log and return from salon mutations.
+const salonAuditSelect = {
+  id: true,
+  name: true,
+  address: true,
+  saasPlan: true,
+  commissionRate: true,
+  lat: true,
+  lng: true,
+  deletedAt: true,
+} as const;
 
 function daysAgo(days: number) {
   const d = new Date();
@@ -28,13 +44,13 @@ router.get('/stats', async (_req, res) => {
 
     const [salons, owners, customers, bookings, bookings30, newSalons7, newSalons30, activeRows] =
       await Promise.all([
-        prisma.salon.count(),
-        prisma.user.count({ where: { role: 'SALON_OWNER' } }),
-        prisma.user.count({ where: { role: 'CUSTOMER' } }),
+        prisma.salon.count({ where: { deletedAt: null } }),
+        prisma.user.count({ where: { role: 'SALON_OWNER', deletedAt: null } }),
+        prisma.user.count({ where: { role: 'CUSTOMER', deletedAt: null } }),
         prisma.booking.count(),
         prisma.booking.count({ where: { createdAt: { gte: last30 } } }),
-        prisma.user.count({ where: { role: 'SALON_OWNER', createdAt: { gte: last7 } } }),
-        prisma.user.count({ where: { role: 'SALON_OWNER', createdAt: { gte: last30 } } }),
+        prisma.user.count({ where: { role: 'SALON_OWNER', deletedAt: null, createdAt: { gte: last7 } } }),
+        prisma.user.count({ where: { role: 'SALON_OWNER', deletedAt: null, createdAt: { gte: last30 } } }),
         prisma.booking.findMany({
           where: { createdAt: { gte: last30 }, salonId: { not: null } },
           select: { salonId: true },
@@ -65,6 +81,7 @@ router.get('/salons', async (_req, res) => {
   try {
     const [salons, lastBookings] = await Promise.all([
       prisma.salon.findMany({
+        where: { deletedAt: null },
         include: {
           owner: { select: ownerSelect },
           _count: { select: { bookings: true, customers: true, stylists: true } },
@@ -105,8 +122,8 @@ router.get('/salons', async (_req, res) => {
 
 router.get('/salons/:salonId', async (req, res) => {
   try {
-    const salon = await prisma.salon.findUnique({
-      where: { id: req.params.salonId },
+    const salon = await prisma.salon.findFirst({
+      where: { id: req.params.salonId, deletedAt: null },
       include: {
         owner: { select: ownerSelect },
         _count: { select: { bookings: true, customers: true, stylists: true } },
@@ -141,7 +158,7 @@ router.get('/growth', async (req, res) => {
 
     const [signups, bookings] = await Promise.all([
       prisma.user.findMany({
-        where: { role: 'SALON_OWNER', createdAt: { gte: since } },
+        where: { role: 'SALON_OWNER', deletedAt: null, createdAt: { gte: since } },
         select: { createdAt: true },
       }),
       prisma.booking.findMany({
@@ -164,6 +181,159 @@ router.get('/growth', async (req, res) => {
     }
 
     res.json([...buckets.entries()].map(([date, counts]) => ({ date, ...counts })));
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Salon mutations -------------------------------------------------------
+
+// PATCH /api/v2/admin/salons/:id — edit a salon's editable fields.
+router.patch('/salons/:id', async (req, res) => {
+  try {
+    const existing = await prisma.salon.findFirst({
+      where: { id: req.params.id, deletedAt: null },
+      select: salonAuditSelect,
+    });
+    if (!existing) return res.status(404).json({ error: 'Salon not found' });
+
+    const { name, address, saasPlan, commissionRate, lat, lng } = req.body ?? {};
+    const data: {
+      name?: string;
+      address?: string;
+      saasPlan?: string;
+      commissionRate?: number;
+      lat?: number;
+      lng?: number;
+    } = {};
+
+    if (name != null) {
+      const trimmed = String(name).trim();
+      if (!trimmed) return res.status(400).json({ error: 'name cannot be empty' });
+      data.name = trimmed;
+    }
+    if (address != null) {
+      const trimmed = String(address).trim();
+      if (!trimmed) return res.status(400).json({ error: 'address cannot be empty' });
+      data.address = trimmed;
+    }
+    if (saasPlan != null) {
+      const plan = String(saasPlan).trim().toUpperCase();
+      if (!KNOWN_SAAS_PLANS.includes(plan as (typeof KNOWN_SAAS_PLANS)[number])) {
+        return res
+          .status(400)
+          .json({ error: `saasPlan must be one of ${KNOWN_SAAS_PLANS.join(', ')}` });
+      }
+      data.saasPlan = plan;
+    }
+    if (commissionRate != null) {
+      const rate = Number(commissionRate);
+      if (!Number.isInteger(rate) || rate < 0 || rate > 100) {
+        return res
+          .status(400)
+          .json({ error: 'commissionRate must be an integer between 0 and 100' });
+      }
+      data.commissionRate = rate;
+    }
+    if (lat != null) {
+      const value = Number(lat);
+      if (!Number.isFinite(value)) return res.status(400).json({ error: 'lat must be a number' });
+      data.lat = value;
+    }
+    if (lng != null) {
+      const value = Number(lng);
+      if (!Number.isFinite(value)) return res.status(400).json({ error: 'lng must be a number' });
+      data.lng = value;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({ error: 'No editable fields provided' });
+    }
+
+    const salon = await prisma.$transaction(async (tx) => {
+      const updated = await tx.salon.update({
+        where: { id: existing.id },
+        data,
+        select: salonAuditSelect,
+      });
+      await writeAudit(tx, {
+        actorId: req.user!.id,
+        action: 'salon.update',
+        targetType: 'Salon',
+        targetId: existing.id,
+        before: existing,
+        after: updated,
+      });
+      return updated;
+    });
+
+    res.json(salon);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/v2/admin/salons/:id — soft delete (guardrail #1). The owner is
+// left untouched; only the salon is hidden.
+router.delete('/salons/:id', async (req, res) => {
+  try {
+    const existing = await prisma.salon.findFirst({
+      where: { id: req.params.id, deletedAt: null },
+      select: salonAuditSelect,
+    });
+    if (!existing) return res.status(404).json({ error: 'Salon not found' });
+
+    const salon = await prisma.$transaction(async (tx) => {
+      const updated = await tx.salon.update({
+        where: { id: existing.id },
+        data: { deletedAt: new Date() },
+        select: salonAuditSelect,
+      });
+      await writeAudit(tx, {
+        actorId: req.user!.id,
+        action: 'salon.delete',
+        targetType: 'Salon',
+        targetId: existing.id,
+        before: existing,
+        after: updated,
+      });
+      return updated;
+    });
+
+    res.json(salon);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/v2/admin/salons/:id/restore — clear the soft-delete timestamp.
+router.post('/salons/:id/restore', async (req, res) => {
+  try {
+    const existing = await prisma.salon.findUnique({
+      where: { id: req.params.id },
+      select: salonAuditSelect,
+    });
+    if (!existing) return res.status(404).json({ error: 'Salon not found' });
+    if (!existing.deletedAt) return res.status(400).json({ error: 'Salon is not deleted' });
+
+    const salon = await prisma.$transaction(async (tx) => {
+      const updated = await tx.salon.update({
+        where: { id: existing.id },
+        data: { deletedAt: null },
+        select: salonAuditSelect,
+      });
+      await writeAudit(tx, {
+        actorId: req.user!.id,
+        action: 'salon.restore',
+        targetType: 'Salon',
+        targetId: existing.id,
+        before: existing,
+        after: updated,
+      });
+      return updated;
+    });
+
+    res.json(salon);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

@@ -196,6 +196,7 @@ router.get(
             (await prisma.salon.findFirst({
               where: {
                 ownerId: req.user!.id,
+                deletedAt: null,
                 stylists: { some: { stylistId, status: 'ACTIVE' } },
               },
               select: { id: true },
@@ -416,6 +417,7 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
     const salon = await prisma.salon.findFirst({
       where: {
         id: salonId,
+        deletedAt: null,
         ...(req.user!.role === 'SUPER_ADMIN' ? {} : { ownerId: req.user!.id }),
       },
     });

@@ -9,6 +9,7 @@ async function findOwnedSalon(salonId: string, user: any) {
   return prisma.salon.findFirst({
     where: {
       id: salonId,
+      deletedAt: null,
       ...(user?.role === 'SUPER_ADMIN' ? {} : { ownerId: user?.id }),
     },
   });
@@ -17,7 +18,10 @@ async function findOwnedSalon(salonId: string, user: any) {
 // GET /api/v2/salons
 router.get('/', requireRole('CUSTOMER', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   const salons = await prisma.salon.findMany({
-    where: req.user?.role === 'SALON_OWNER' ? { ownerId: req.user.id } : {},
+    where: {
+      deletedAt: null,
+      ...(req.user?.role === 'SALON_OWNER' ? { ownerId: req.user.id } : {}),
+    },
     include: {
       services: true,
       owner: true,
