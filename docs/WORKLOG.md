@@ -34,6 +34,7 @@ If you must cross lanes, CLAIM the specific files and say so.
 
 ## Recently done (last ~10, newest first)
 
+- [2026-07-11] Chat A: `ADMIN-CRUD-VERIFY.md` operator runbook added (`337e607`) — create-admin + curl steps for the section-4 checklist + UI smoke. The super-admin console is now code-complete + documented; remaining work is ops (run create-admin on prod, walk the runbook). Claim released.
 - [2026-07-11] Chat A: services/staff/customers management wired into `/admin` drill-down (`bdea66f`) — `/salons/:id` now returns them; inline edit + delete/restore. **This closes STATUS.md backlog line ~65 ("Admin UI: services/stylists/customers edit controls").** A STATUS.md owner can drop that line. Claim released.
 - [2026-07-11] Chat A: `create-super-admin.ts` script added (`f795d69`) — idempotent create/promote for the `/admin` login account, credentials from operator, never hardcoded. Claim released. Still needs a human to run it against prod + do section-4 verification (STATUS.md item 3 stays open until then).
 - [2026-07-11] Chat A: super-admin full CRUD committed + pushed (`5f9ab33` backend+UI, `40e1d65` soft-delete read-filters). Claim released. Lane B route touches (auth/booking/stylist) were the small soft-delete guards only. `schema.prisma`/migration already committed (`0dd625a`) — not re-touched. Remaining: create first SUPER_ADMIN + run section-4 verification on prod (see `ADMIN-CRUD-STATUS.md`).
