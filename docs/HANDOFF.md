@@ -188,3 +188,5 @@ line here, (3) `graphify update .`. The next agent starts from this file + git l
   customer autocomplete).
 - Added feed posts, reel scripts, stories, asset prompts, and approval checklist; queued items
   `IG-B5-01` through `IG-B5-07` in `CONTENT_APPROVAL_QUEUE.md`.
+- Generated first draft image for `IG-B5-01`:
+  `docs/COMPANY_OS/CAMPAIGNS/2026-07-build-5-instagram/assets/IG-B5-01-stop-losing-walk-in-money-v1.png`.

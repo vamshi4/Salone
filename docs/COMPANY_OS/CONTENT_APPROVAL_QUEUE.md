@@ -16,7 +16,7 @@ Status values:
 
 | ID | Date | Source feature | Platform | Content type | Status | Owner notes | Posted link |
 |---|---|---|---|---|---|---|---|
-| IG-B5-01 | 2026-07-12 | Build 5: Done service | Instagram | Feed post | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/FEED_POSTS.md` |  |
+| IG-B5-01 | 2026-07-12 | Build 5: Done service | Instagram | Feed post | Needs owner review | Asset draft: `CAMPAIGNS/2026-07-build-5-instagram/assets/IG-B5-01-stop-losing-walk-in-money-v1.png` |  |
 | IG-B5-02 | 2026-07-12 | Build 5: Earnings | Instagram | Feed post | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/FEED_POSTS.md` |  |
 | IG-B5-03 | 2026-07-12 | Build 5: Customer autocomplete | Instagram | Feed post | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/FEED_POSTS.md` |  |
 | IG-B5-04 | 2026-07-12 | Build 5: Done service | Instagram | Reel | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/REEL_SCRIPTS.md` |  |
