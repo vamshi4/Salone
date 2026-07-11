@@ -119,6 +119,22 @@ live; only the front-end controls are pending.
 
 ---
 
+## 3a. Creating the first SUPER_ADMIN
+
+`/admin` is unusable until a SUPER_ADMIN account exists. Script:
+[`backend/prisma/create-super-admin.ts`](../backend/prisma/create-super-admin.ts) — idempotent
+(creates or promotes + resets password), scrypt hash matches auth login, min-12-char password,
+credentials come from the operator (never hardcoded), password never printed.
+
+```
+cd backend
+npx tsx prisma/create-super-admin.ts <phone> <password> [name]
+# or: SUPER_ADMIN_PHONE=... SUPER_ADMIN_PASSWORD=... npx tsx prisma/create-super-admin.ts
+```
+
+Run it against the target DB (prod uses `db push` for schema — see STATUS.md item 2), then sign in
+at `/admin` with that phone + password (role SUPER_ADMIN).
+
 ## 4. Verification checklist (run after deploy — from the spec)
 
 - [ ] `GET /api/v2/admin/salons` with no token → 401
