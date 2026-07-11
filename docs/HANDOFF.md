@@ -159,3 +159,9 @@ line here, (3) `graphify update .`. The next agent starts from this file + git l
   `AdminAuditLog`; super-admin salon edits/deletes/restores are audited.
 - Deploy requires the backend image built from this commit and Prisma `db push`
   to apply the new columns/table.
+
+## 2026-07-11 build 5 deploy fix
+- Build-5 CI failed because committed salon listing filtered nested stylists by
+  `deletedAt`, but `Stylist.deletedAt` was not committed in the Prisma schema.
+- Added `Stylist.deletedAt` to schema/admin CRUD migration so GHCR build and
+  prod `prisma db push` can apply it before build-5 deployment.

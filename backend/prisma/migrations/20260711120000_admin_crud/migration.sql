@@ -1,6 +1,7 @@
 -- Soft-delete columns. NULL means "live"; a timestamp means the row is hidden.
 ALTER TABLE "User" ADD COLUMN "deletedAt" TIMESTAMP(3);
 ALTER TABLE "Salon" ADD COLUMN "deletedAt" TIMESTAMP(3);
+ALTER TABLE "Stylist" ADD COLUMN "deletedAt" TIMESTAMP(3);
 
 -- Audit trail for every super-admin write/delete.
 CREATE TABLE "AdminAuditLog" (

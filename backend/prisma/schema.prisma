@@ -42,6 +42,7 @@ model Stylist {
   lng                       Float?
   rating                    Float    @default(0)
   totalReviews              Int      @default(0)
+  deletedAt                 DateTime?
 
   user          User            @relation(fields: [userId], references: [id])
   primarySalon  Salon?          @relation("PrimaryStylists", fields: [primarySalonId], references: [id])
