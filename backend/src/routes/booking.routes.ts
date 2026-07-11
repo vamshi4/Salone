@@ -400,6 +400,7 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
       dateTime,
       customerName,
       customerPhone,
+      completed = false, // "Done service": logged after the fact, no future slot
     } = req.body;
 
     const requestedServiceIds = Array.isArray(serviceIds)
@@ -408,9 +409,11 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
           ? [serviceId]
           : [];
 
-    if (!salonId || !stylistId || requestedServiceIds.length === 0 || !dateTime || !customerPhone) {
+    // dateTime is only required for a future (scheduled) booking. A completed
+    // walk-in is stamped with the server's current time.
+    if (!salonId || !stylistId || requestedServiceIds.length === 0 || !customerPhone || (!completed && !dateTime)) {
       return res.status(400).json({
-        error: 'salonId, stylistId, serviceId/serviceIds, dateTime and customerPhone are required',
+        error: 'salonId, stylistId, serviceId/serviceIds, customerPhone (and dateTime unless completed) are required',
       });
     }
 
@@ -448,12 +451,16 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
     });
     if (!stylist) return res.status(404).json({ error: 'Stylist not found for this salon' });
 
-    const start = new Date(dateTime);
-    const slotError = await validateStylistSlot(stylistId, requestedServiceIds, start);
-    if (slotError) return res.status(400).json({ error: slotError });
+    // A completed walk-in already happened: use the server's current time and
+    // skip availability validation (it isn't bound to the future slot grid).
+    const start = completed ? new Date() : new Date(dateTime);
+    if (!completed) {
+      const slotError = await validateStylistSlot(stylistId, requestedServiceIds, start);
+      if (slotError) return res.status(400).json({ error: slotError });
+    }
 
     const totalDuration = services.reduce((total, item) => total + item.duration, 0);
-    const end = new Date(start.getTime() + totalDuration * 60 * 1000);
+    const end = completed ? start : new Date(start.getTime() + totalDuration * 60 * 1000);
 
     // Look up by phone first instead of upserting: an upsert that always sets
     // role: 'CUSTOMER' would silently downgrade an existing STYLIST/SALON_OWNER
@@ -498,7 +505,8 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
         stylistPayout: Math.round(price * 0.7),
         salonPayout: Math.round(price * 0.3),
         commissionSnapshot: { stylist: 70, salon: 30, source: 'SALON_MANUAL' },
-        status: 'CONFIRMED',
+        status: completed ? 'COMPLETED' : 'CONFIRMED',
+        completedAt: completed ? start : null,
         services: {
           create: services.map((item, index) => ({
             serviceId: item.id,

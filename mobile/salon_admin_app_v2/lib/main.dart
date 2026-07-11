@@ -2747,13 +2747,16 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
   String? _slotError;
   bool _saving = false;
   String? _formError; // shown inline so it isn't hidden behind the sheet
+  // "Done service" = log a finished walk-in now (no slot). Default, since it's
+  // the common case. false = schedule a future appointment (pick a slot).
+  bool _completed = true;
 
   @override
   void initState() {
     super.initState();
     _stylist = _firstOrNull(_activeStylists);
     _resetSelectedServices();
-    _loadSlots();
+    if (!_completed) _loadSlots();
   }
 
   @override
@@ -2859,7 +2862,8 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
       setState(() => _formError = 'Enter customer phone');
       return;
     }
-    if (dateTime == null) {
+    // A scheduled booking needs a slot; a "Done service" is stamped now server-side.
+    if (!_completed && dateTime == null) {
       setState(() => _formError = 'Choose an available slot');
       return;
     }
@@ -2875,7 +2879,10 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
         'serviceIds': selectedServices.map((service) => service['id']).toList(),
         'customerName': _nameController.text.trim(),
         'customerPhone': phone,
-        'dateTime': dateTime.toUtc().toIso8601String(),
+        if (_completed)
+          'completed': true
+        else
+          'dateTime': dateTime!.toUtc().toIso8601String(),
       });
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -2918,6 +2925,30 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
               const Text(
                 'New booking',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 14),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(
+                    value: true,
+                    icon: Icon(Icons.check_circle_outline),
+                    label: Text('Done service'),
+                  ),
+                  ButtonSegment(
+                    value: false,
+                    icon: Icon(Icons.event_outlined),
+                    label: Text('Schedule later'),
+                  ),
+                ],
+                selected: {_completed},
+                showSelectedIcon: false,
+                onSelectionChanged: (sel) {
+                  setState(() {
+                    _completed = sel.first;
+                    _formError = null;
+                  });
+                  if (!_completed) _loadSlots();
+                },
               ),
               const SizedBox(height: 14),
               TextField(
@@ -3018,22 +3049,48 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
                 ),
               ],
               const SizedBox(height: 10),
-              TextField(
-                key: const Key('booking_date'),
-                controller: _dateController,
-                decoration: const InputDecoration(
-                  labelText: 'Date',
-                  helperText: 'YYYY-MM-DD',
+              if (_completed)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceAlt,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.schedule,
+                          size: 18, color: AppColors.inkMuted),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Recorded now — ${_dateInput(DateTime.now())}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.inkMuted),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else ...[
+                TextField(
+                  key: const Key('booking_date'),
+                  controller: _dateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Date',
+                    helperText: 'YYYY-MM-DD',
+                  ),
+                  onChanged: (_) => _loadSlots(),
                 ),
-                onChanged: (_) => _loadSlots(),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Available slots',
-                style: TextStyle(fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 8),
-              if (_loadingSlots)
+                const SizedBox(height: 12),
+                const Text(
+                  'Available slots',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 8),
+                if (_loadingSlots)
                 const LinearProgressIndicator(minHeight: 3)
               else if (_slotError != null)
                 Column(
@@ -3070,6 +3127,7 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
                     );
                   }).toList(),
                 ),
+              ],
               const SizedBox(height: 16),
               if (_formError != null) ...[
                 Container(

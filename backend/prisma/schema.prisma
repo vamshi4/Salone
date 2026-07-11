@@ -164,6 +164,7 @@ model Booking {
   paymentId           String?
   noShowCharged       Boolean       @default(false)
   createdAt           DateTime      @default(now())
+  completedAt         DateTime?     // set when a service is logged as done; drives earnings
 
   customer  User      @relation("CustomerBookings", fields: [customerId], references: [id])
   salon     Salon?    @relation(fields: [salonId], references: [id])
