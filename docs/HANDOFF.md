@@ -180,3 +180,11 @@ line here, (3) `graphify update .`. The next agent starts from this file + git l
 - Added release-to-marketing workflow, content approval queue, marketing asset guide, and n8n
   automation plan. First version drafts content automatically but requires owner approval before
   posting or messaging real leads.
+
+## 2026-07-12 Build 5 Instagram campaign
+- Added first Instagram-only campaign pack at
+  `docs/COMPANY_OS/CAMPAIGNS/2026-07-build-5-instagram/`.
+- Campaign theme: "Stop losing walk-in money" for build 5 features (Done service, earnings,
+  customer autocomplete).
+- Added feed posts, reel scripts, stories, asset prompts, and approval checklist; queued items
+  `IG-B5-01` through `IG-B5-07` in `CONTENT_APPROVAL_QUEUE.md`.

@@ -16,9 +16,13 @@ Status values:
 
 | ID | Date | Source feature | Platform | Content type | Status | Owner notes | Posted link |
 |---|---|---|---|---|---|---|---|
-| Q-0001 | 2026-07-12 | Build 5: Done service | Instagram | Feature post | Draft |  |  |
-| Q-0002 | 2026-07-12 | Build 5: Earnings | WhatsApp Status | Short copy | Draft |  |  |
-| Q-0003 | 2026-07-12 | Build 5: Customer autocomplete | Reel | Script | Draft |  |  |
+| IG-B5-01 | 2026-07-12 | Build 5: Done service | Instagram | Feed post | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/FEED_POSTS.md` |  |
+| IG-B5-02 | 2026-07-12 | Build 5: Earnings | Instagram | Feed post | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/FEED_POSTS.md` |  |
+| IG-B5-03 | 2026-07-12 | Build 5: Customer autocomplete | Instagram | Feed post | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/FEED_POSTS.md` |  |
+| IG-B5-04 | 2026-07-12 | Build 5: Done service | Instagram | Reel | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/REEL_SCRIPTS.md` |  |
+| IG-B5-05 | 2026-07-12 | Build 5: Earnings | Instagram | Reel | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/REEL_SCRIPTS.md` |  |
+| IG-B5-06 | 2026-07-12 | Build 5: Done service | Instagram | Stories | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/STORIES.md` |  |
+| IG-B5-07 | 2026-07-12 | Build 5: Earnings | Instagram | Stories | Draft | See `CAMPAIGNS/2026-07-build-5-instagram/STORIES.md` |  |
 
 ## Review Checklist
 
@@ -39,4 +43,3 @@ The owner can approve with:
 - "rewrite Q-0001 simpler"
 - "reject Q-0001"
 - "schedule Q-0001 for Monday"
-
