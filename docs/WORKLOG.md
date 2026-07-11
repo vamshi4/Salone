@@ -34,6 +34,7 @@ If you must cross lanes, CLAIM the specific files and say so.
 
 ## Recently done (last ~10, newest first)
 
+- [2026-07-11] Chat A: `create-super-admin.ts` script added (`f795d69`) — idempotent create/promote for the `/admin` login account, credentials from operator, never hardcoded. Claim released. Still needs a human to run it against prod + do section-4 verification (STATUS.md item 3 stays open until then).
 - [2026-07-11] Chat A: super-admin full CRUD committed + pushed (`5f9ab33` backend+UI, `40e1d65` soft-delete read-filters). Claim released. Lane B route touches (auth/booking/stylist) were the small soft-delete guards only. `schema.prisma`/migration already committed (`0dd625a`) — not re-touched. Remaining: create first SUPER_ADMIN + run section-4 verification on prod (see `ADMIN-CRUD-STATUS.md`).
 - [2026-07-11] Chat B: build 5 shipped (walk-in Done-service, autocomplete, earnings, darker UI) — committed through `269a265`, backend deployed `e2caeba`.
 - [2026-07-11] Chat A: super-admin CRUD backend + admin-page UI — in progress (uncommitted at time of writing; commit + claim-release needed).
