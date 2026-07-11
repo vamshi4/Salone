@@ -9,6 +9,14 @@ intelligence* (show owners which regulars stopped coming, win them back over Wha
 Repo: `D:\vamshi\Salone` (the active one — **not** `Salone2`). Package `com.chairful.admin`.
 Active app: `mobile/salon_admin_app_v2`. Backend: Node/Express + Prisma + Postgres.
 
+## Working efficiently (low token — read first)
+To make quota last: **one short chat per task, not one giant chat.** Every message re-reads the whole
+history, so long chats get expensive fast.
+- **New chat per feature**, point it at this file. Use `/compact` when a chat gets long, `/clear` between unrelated tasks.
+- **Model:** Sonnet for routine coding/edits; Opus only for hard debugging/design.
+- **Avoid screenshots** — images cost ~100× text. The user tests on the phone and reports results in words; verify via logs/`curl`, not screencaps.
+- **Read specific line ranges**, not whole files. Don't re-explain what's already in this doc.
+
 ## Key URLs & credentials
 - Prod API: **https://api.slotvibe.buzz** (k8s / ArgoCD / GHCR). `/privacy`, `/delete-account`, `/admin` live.
 - Play review login (prod): **9999900000 / Review@2026** (role SALON_OWNER).
