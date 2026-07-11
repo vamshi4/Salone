@@ -30,7 +30,8 @@ If you must cross lanes, CLAIM the specific files and say so.
 
 <!-- Format: [CHAT-ID | YYYY-MM-DD HH:MM] STATUS: files — what you're doing -->
 
-- _(none — add yours here)_
+- [Chat A | 2026-07-11 22:07] CLAIMING: `backend/src/admin-page.ts`, `backend/src/routes/admin.routes.ts`, `backend/src/password.ts`, `docs/ADMIN-CRUD-STATUS.md`, `docs/ADMIN-CRUD-SPEC.md` — committing the rest of the super-admin full-CRUD backend (users/bookings/services/customers/stylists + audit + deleted-items reads) and the admin-page CRUD UI. Lane A.
+- [Chat A | 2026-07-11 22:07] CLAIMING (cross-lane B, coordinated): `backend/src/routes/auth.routes.ts`, `backend/src/routes/booking.routes.ts`, `backend/src/routes/stylist.routes.ts` — small soft-delete read-filters the admin feature depends on (login rejects soft-deleted user; deleted stylist drops out of discovery/booking). Additive, no overlap with Chat B's mobile/build-5 work. Will release immediately after commit.
 
 ## Recently done (last ~10, newest first)
 

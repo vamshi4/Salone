@@ -1,5 +1,8 @@
 # Super-Admin Full-CRUD — Build Spec & Handoff
 
+> **Live status:** see [`ADMIN-CRUD-STATUS.md`](./ADMIN-CRUD-STATUS.md). Sections 1–3 (schema,
+> backend endpoints, admin-page UI) are implemented; only deploy + the section-4 verification remain.
+
 **Goal:** extend the existing read-only super-admin dashboard into a full read / edit / delete
 console over every salon, user, booking, customer, staff member, and service on the platform.
 
