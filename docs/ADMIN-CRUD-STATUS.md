@@ -144,6 +144,9 @@ at `/admin` with that phone + password (role SUPER_ADMIN).
 
 ## 4. Verification checklist (run after deploy — from the spec)
 
+> **Runbook:** [`ADMIN-CRUD-VERIFY.md`](./ADMIN-CRUD-VERIFY.md) turns every box below into copy-paste
+> `curl` steps (create the admin → log in → check each item). Run pre-prod first, then prod.
+
 - [ ] `GET /api/v2/admin/salons` with no token → 401
 - [ ] Edit a salon's plan → reflected in `/salons` **and** an `AdminAuditLog` row exists
 - [ ] Soft-delete a salon → gone from `/salons` and app-facing `/api/v2/salons`; Restore → reappears
