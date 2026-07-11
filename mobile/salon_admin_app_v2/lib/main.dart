@@ -2780,6 +2780,10 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
       .where((service) => _selectedServiceIds.contains('${service['id']}'))
       .toList();
 
+  // Prices are stored in paise (x100), matching the per-service labels above.
+  int get _selectedServicesTotal => _selectedServices
+      .fold<int>(0, (sum, service) => sum + ((service['basePrice'] ?? 0) as int));
+
   void _resetSelectedServices() {
     _selectedServiceIds
       ..clear()
@@ -2989,6 +2993,30 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
                   }).toList(),
                 ),
               ),
+              if (_selectedServices.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentSoft,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 15)),
+                      Text('Rs ${_selectedServicesTotal ~/ 100}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18,
+                              color: AppColors.accent)),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 10),
               TextField(
                 key: const Key('booking_date'),
@@ -3092,7 +3120,7 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
                               ),
                             )
                           : const Icon(Icons.check_circle_outline),
-                      label: Text(_saving ? 'Saving...' : 'Create'),
+                      label: Text(_saving ? 'Saving...' : 'Done'),
                     ),
                   ),
                 ],
