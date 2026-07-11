@@ -77,7 +77,7 @@ model Salon {
   lng             Float
   noShowPenalty   Int      @default(0)
   noShowSplit     Json     @default("{\"stylist\": 70, \"salon\": 30}")
-  commissionRate  Int      @default(15)
+  commissionRate  Int      @default(0)
   saasPlan        String   @default("FREE")
   rating          Float    @default(0)
   totalReviews    Int      @default(0)
