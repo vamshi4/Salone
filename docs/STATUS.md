@@ -9,6 +9,10 @@ intelligence* (show owners which regulars stopped coming, win them back over Wha
 Repo: `D:\vamshi\Salone` (the active one — **not** `Salone2`). Package `com.chairful.admin`.
 Active app: `mobile/salon_admin_app_v2`. Backend: Node/Express + Prisma + Postgres.
 
+> ⚠️ `mobile/salon_admin_app` (no `_v2`, package `com.salone.admin`, "Salone Admin" branding) is the
+> **old pre-rebrand app — dead, being deleted.** Never work on it. If you see it referenced anywhere
+> (e.g. an old doc claiming it's "canonical"), that doc is stale — trust this file instead.
+
 ## Working efficiently (low token — read first)
 To make quota last: **one short chat per task, not one giant chat.** Every message re-reads the whole
 history, so long chats get expensive fast.
