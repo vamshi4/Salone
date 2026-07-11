@@ -84,6 +84,8 @@ All built & verified on local pre-prod:
 - `WALKIN-FLOW-DESIGN.md` — Done-service design.
 - `DEPLOY-BUILD5.md` — build-5 deploy steps + verification.
 - `ADMIN-CRUD-SPEC.md` / `ADMIN-CRUD-STATUS.md` — super-admin console.
+- `COMPANY_OS/` — release-synced marketing, social media agents, approval queue, asset guide,
+  and n8n automation plan.
 - `HANDOFF.md`, `STRATEGY.md`, `PRODUCTION_READINESS.md` — earlier context.
 - Memory (auto-loaded): `chairful-launch-status`, `backend-auth-hardening`, `dev-workflow-envs`,
   `positioning-and-naming`, `retention-feature-and-demo`.

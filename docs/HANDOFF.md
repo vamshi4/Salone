@@ -172,3 +172,11 @@ line here, (3) `graphify update .`. The next agent starts from this file + git l
   passes on throwaway prod salon `cmrgm1p1u00038v9q42ni4udk`.
 - SUPER_ADMIN login exists for `vamshi`; the `create-super-admin.ts` runbook remains the preferred
   way to create/promote future admins with a 12+ character password.
+
+## 2026-07-12 Company OS / marketing agents
+- Added `docs/COMPANY_OS/` as the operating system for release-synced marketing and automation.
+- Defined Product/Engineering, QA/Compliance, Feature Marketing, Social Media, and Sales/CRM agent
+  roles with approval gates.
+- Added release-to-marketing workflow, content approval queue, marketing asset guide, and n8n
+  automation plan. First version drafts content automatically but requires owner approval before
+  posting or messaging real leads.
