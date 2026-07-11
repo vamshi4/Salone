@@ -276,6 +276,42 @@ router.get('/:salonId/at-risk', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async
 });
 
 // GET /api/v2/salons/:salonId/customers/:customerId - Salon-owned customer notes/tags.
+// GET /api/v2/salons/:salonId/customers - Distinct customers this salon has served,
+// most recent first. Powers customer autocomplete in the manual-booking sheet.
+router.get('/:salonId/customers', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { salonId } = req.params;
+    const salon = await findOwnedSalon(salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const bookings = await prisma.booking.findMany({
+      where: { salonId },
+      select: {
+        customerId: true,
+        createdAt: true,
+        customer: { select: { name: true, phone: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const seen = new Set<string>();
+    const customers: { id: string; name: string | null; phone: string }[] = [];
+    for (const b of bookings) {
+      if (seen.has(b.customerId)) continue;
+      seen.add(b.customerId);
+      customers.push({
+        id: b.customerId,
+        name: b.customer?.name ?? null,
+        phone: b.customer?.phone ?? '',
+      });
+    }
+
+    res.json(customers);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.get('/:salonId/customers/:customerId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { salonId, customerId } = req.params;

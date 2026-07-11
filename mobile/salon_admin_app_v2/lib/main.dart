@@ -2750,6 +2750,9 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
   // "Done service" = log a finished walk-in now (no slot). Default, since it's
   // the common case. false = schedule a future appointment (pick a slot).
   bool _completed = true;
+  // Past customers for autocomplete (most recent first), and whether to show them.
+  List<Map<String, dynamic>> _customers = [];
+  bool _showSuggestions = false;
 
   @override
   void initState() {
@@ -2757,6 +2760,43 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
     _stylist = _firstOrNull(_activeStylists);
     _resetSelectedServices();
     if (!_completed) _loadSlots();
+    _loadCustomers();
+  }
+
+  Future<void> _loadCustomers() async {
+    try {
+      final res =
+          await _api().get('/api/v2/salons/${widget.salon['id']}/customers');
+      if (!mounted) return;
+      setState(() {
+        _customers = List<Map<String, dynamic>>.from(res.data as List);
+      });
+    } catch (_) {
+      // Autocomplete is a convenience; a failure here shouldn't block booking.
+    }
+  }
+
+  // Match past customers by phone (primary) or name against what's typed.
+  List<Map<String, dynamic>> get _customerSuggestions {
+    final phoneQ = _phoneController.text.trim();
+    final nameQ = _nameController.text.trim();
+    final q = phoneQ.isNotEmpty ? phoneQ : nameQ;
+    if (q.length < 2) return const [];
+    final lower = q.toLowerCase();
+    return _customers.where((c) {
+      final name = '${c['name'] ?? ''}'.toLowerCase();
+      final phone = '${c['phone'] ?? ''}';
+      return phone.contains(q) || name.contains(lower);
+    }).take(5).toList();
+  }
+
+  void _pickCustomer(Map<String, dynamic> customer) {
+    setState(() {
+      _nameController.text = '${customer['name'] ?? ''}';
+      _phoneController.text = '${customer['phone'] ?? ''}';
+      _showSuggestions = false;
+      _formError = null;
+    });
   }
 
   @override
@@ -2956,6 +2996,7 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
                 controller: _nameController,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Customer name'),
+                onChanged: (_) => setState(() => _showSuggestions = true),
               ),
               const SizedBox(height: 10),
               TextField(
@@ -2963,7 +3004,32 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(labelText: 'Customer phone'),
+                onChanged: (_) => setState(() => _showSuggestions = true),
               ),
+              if (_showSuggestions && _customerSuggestions.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(top: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceAlt,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: _customerSuggestions.map((customer) {
+                      final name = '${customer['name'] ?? ''}'.trim();
+                      return ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.person_outline,
+                            color: AppColors.accent),
+                        title: Text(name.isEmpty ? 'Customer' : name,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: Text('${customer['phone'] ?? ''}'),
+                        onTap: () => _pickCustomer(customer),
+                      );
+                    }).toList(),
+                  ),
+                ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 key: const Key('booking_staff'),
