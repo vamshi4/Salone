@@ -30,10 +30,10 @@ If you must cross lanes, CLAIM the specific files and say so.
 
 <!-- Format: [CHAT-ID | YYYY-MM-DD HH:MM] STATUS: files — what you're doing -->
 
-- [Chat A | 2026-07-11 22:07] CLAIMING: `backend/src/admin-page.ts`, `backend/src/routes/admin.routes.ts`, `backend/src/password.ts`, `docs/ADMIN-CRUD-STATUS.md`, `docs/ADMIN-CRUD-SPEC.md` — committing the rest of the super-admin full-CRUD backend (users/bookings/services/customers/stylists + audit + deleted-items reads) and the admin-page CRUD UI. Lane A.
-- [Chat A | 2026-07-11 22:07] CLAIMING (cross-lane B, coordinated): `backend/src/routes/auth.routes.ts`, `backend/src/routes/booking.routes.ts`, `backend/src/routes/stylist.routes.ts` — small soft-delete read-filters the admin feature depends on (login rejects soft-deleted user; deleted stylist drops out of discovery/booking). Additive, no overlap with Chat B's mobile/build-5 work. Will release immediately after commit.
+- _(none — add yours here)_
 
 ## Recently done (last ~10, newest first)
 
+- [2026-07-11] Chat A: super-admin full CRUD committed + pushed (`5f9ab33` backend+UI, `40e1d65` soft-delete read-filters). Claim released. Lane B route touches (auth/booking/stylist) were the small soft-delete guards only. `schema.prisma`/migration already committed (`0dd625a`) — not re-touched. Remaining: create first SUPER_ADMIN + run section-4 verification on prod (see `ADMIN-CRUD-STATUS.md`).
 - [2026-07-11] Chat B: build 5 shipped (walk-in Done-service, autocomplete, earnings, darker UI) — committed through `269a265`, backend deployed `e2caeba`.
 - [2026-07-11] Chat A: super-admin CRUD backend + admin-page UI — in progress (uncommitted at time of writing; commit + claim-release needed).
