@@ -113,9 +113,16 @@ flows need a super-admin account + DB to click through.)
 - Reuses `esc()` for all user strings; every call goes through `api()` which bounces to login on 401/403
   and surfaces server `{ error }` messages as toasts.
 
-### Not in the UI yet (endpoints exist, wire-up is a follow-up)
-Direct edit/delete UI for **services, stylists, and customers** inside the drill-down. The APIs are
-live; only the front-end controls are pending.
+### Drill-down management (added)
+The `/salons/:id` detail response now also returns the salon's **services, staff roster (incl.
+soft-deleted, for restore), and customers**, and the drill-down renders each as an editable table:
+- **Services** — inline edit (name/category/duration/price) + hard-delete.
+- **Staff** — inline edit (base price / home-service / independent-booking toggles), soft-delete,
+  and **Restore** for already-deleted stylists.
+- **Customers** — inline edit (name/phone via the linked User; notes; comma-separated tags) + remove
+  the salon link (account + bookings untouched).
+
+The console now covers every value in a salon end to end.
 
 ---
 

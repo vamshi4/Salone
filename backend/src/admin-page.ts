@@ -154,6 +154,36 @@ export const adminPageHtml = `<!doctype html>
             </table>
           </div>
         </div>
+
+        <div class="subcard">
+          <h4>Services</h4>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Name</th><th>Category</th><th>Duration (min)</th><th>Price</th><th></th></tr></thead>
+              <tbody id="serviceRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subcard">
+          <h4>Staff</h4>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Name</th><th>Phone</th><th>Base price</th><th>Home svc</th><th>Indep. booking</th><th></th></tr></thead>
+              <tbody id="staffRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subcard">
+          <h4>Customers</h4>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Name</th><th>Phone</th><th>Notes</th><th>Tags (comma-sep)</th><th></th></tr></thead>
+              <tbody id="customerRows"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -480,6 +510,133 @@ export const adminPageHtml = `<!doctype html>
     });
   }
 
+  function rowVal(tr, cls) {
+    var el = tr.querySelector('.' + cls);
+    return el ? el.value : '';
+  }
+  function rowChecked(tr, cls) {
+    var el = tr.querySelector('.' + cls);
+    return !!(el && el.checked);
+  }
+
+  function renderServices(services) {
+    if (!services || !services.length) {
+      $('serviceRows').innerHTML = '<tr><td colspan="5" class="muted">No services.</td></tr>';
+      return;
+    }
+    $('serviceRows').innerHTML = services.map(function (s) {
+      return '<tr data-id="' + esc(s.id) + '">' +
+        '<td><input class="svc-name" style="min-width:150px" value="' + esc(s.name) + '"></td>' +
+        '<td><input class="svc-cat" style="min-width:120px" value="' + esc(s.category) + '"></td>' +
+        '<td><input class="svc-dur" type="number" style="min-width:90px" value="' + esc(s.duration) + '"></td>' +
+        '<td><input class="svc-price" type="number" style="min-width:90px" value="' + esc(s.basePrice) + '"></td>' +
+        '<td><button class="small svc-save">Save</button> <button class="danger small svc-del">Delete</button></td>' +
+        '</tr>';
+    }).join('');
+
+    Array.prototype.forEach.call($('serviceRows').querySelectorAll('tr[data-id]'), function (tr) {
+      var id = tr.getAttribute('data-id');
+      tr.querySelector('.svc-save').addEventListener('click', function () {
+        api('/services/' + encodeURIComponent(id), 'PATCH', {
+          name: rowVal(tr, 'svc-name').trim(),
+          category: rowVal(tr, 'svc-cat').trim(),
+          duration: Number(rowVal(tr, 'svc-dur')),
+          basePrice: Number(rowVal(tr, 'svc-price'))
+        }).then(function () { toast('Service saved'); }).catch(fail);
+      });
+      tr.querySelector('.svc-del').addEventListener('click', function () {
+        if (!window.confirm('Delete this service? This cannot be undone.')) return;
+        api('/services/' + encodeURIComponent(id), 'DELETE')
+          .then(function () { toast('Service deleted'); refreshDashboard(); reloadDetail(currentSalon.id); }).catch(fail);
+      });
+    });
+  }
+
+  function renderStaff(roster) {
+    if (!roster || !roster.length) {
+      $('staffRows').innerHTML = '<tr><td colspan="6" class="muted">No staff.</td></tr>';
+      return;
+    }
+    $('staffRows').innerHTML = roster.map(function (r) {
+      var s = r.stylist;
+      var deleted = !!s.deletedAt;
+      var name = (s.user && s.user.name) ? s.user.name : '-';
+      var phone = (s.user && s.user.phone) ? s.user.phone : '-';
+      var actions = deleted
+        ? '<button class="ghost small stf-restore">Restore</button>'
+        : '<button class="small stf-save">Save</button> <button class="danger small stf-del">Delete</button>';
+      return '<tr data-id="' + esc(s.id) + '"' + (deleted ? ' class="muted"' : '') + '>' +
+        '<td>' + esc(name) + (deleted ? ' <span class="badge">(deleted)</span>' : '') + '</td>' +
+        '<td>' + esc(phone) + '</td>' +
+        '<td><input class="stf-price" type="number" style="min-width:90px" value="' + esc(s.basePrice == null ? '' : s.basePrice) + '"' + (deleted ? ' disabled' : '') + '></td>' +
+        '<td><input class="stf-home" type="checkbox"' + (s.homeServiceEnabled ? ' checked' : '') + (deleted ? ' disabled' : '') + '></td>' +
+        '<td><input class="stf-indep" type="checkbox"' + (s.independentBookingEnabled ? ' checked' : '') + (deleted ? ' disabled' : '') + '></td>' +
+        '<td>' + actions + '</td>' +
+        '</tr>';
+    }).join('');
+
+    Array.prototype.forEach.call($('staffRows').querySelectorAll('tr[data-id]'), function (tr) {
+      var id = tr.getAttribute('data-id');
+      var save = tr.querySelector('.stf-save');
+      var del = tr.querySelector('.stf-del');
+      var restore = tr.querySelector('.stf-restore');
+      if (save) save.addEventListener('click', function () {
+        var priceRaw = rowVal(tr, 'stf-price').trim();
+        api('/stylists/' + encodeURIComponent(id), 'PATCH', {
+          basePrice: priceRaw === '' ? null : Number(priceRaw),
+          homeServiceEnabled: rowChecked(tr, 'stf-home'),
+          independentBookingEnabled: rowChecked(tr, 'stf-indep')
+        }).then(function () { toast('Staff saved'); }).catch(fail);
+      });
+      if (del) del.addEventListener('click', function () {
+        if (!window.confirm('Soft-delete this staff member? They drop out of discovery and new bookings.')) return;
+        api('/stylists/' + encodeURIComponent(id), 'DELETE')
+          .then(function () { toast('Staff deleted'); reloadDetail(currentSalon.id); }).catch(fail);
+      });
+      if (restore) restore.addEventListener('click', function () {
+        api('/stylists/' + encodeURIComponent(id) + '/restore', 'POST')
+          .then(function () { toast('Staff restored'); reloadDetail(currentSalon.id); }).catch(fail);
+      });
+    });
+  }
+
+  function renderCustomers(customers) {
+    if (!customers || !customers.length) {
+      $('customerRows').innerHTML = '<tr><td colspan="5" class="muted">No customers.</td></tr>';
+      return;
+    }
+    $('customerRows').innerHTML = customers.map(function (c) {
+      var name = (c.customer && c.customer.name) ? c.customer.name : '';
+      var phone = (c.customer && c.customer.phone) ? c.customer.phone : '';
+      var tags = Array.isArray(c.tags) ? c.tags.join(', ') : '';
+      return '<tr data-id="' + esc(c.id) + '">' +
+        '<td><input class="cus-name" style="min-width:130px" value="' + esc(name) + '"></td>' +
+        '<td><input class="cus-phone" style="min-width:120px" value="' + esc(phone) + '"></td>' +
+        '<td><input class="cus-notes" style="min-width:160px" value="' + esc(c.notes || '') + '"></td>' +
+        '<td><input class="cus-tags" style="min-width:150px" value="' + esc(tags) + '"></td>' +
+        '<td><button class="small cus-save">Save</button> <button class="danger small cus-del">Remove</button></td>' +
+        '</tr>';
+    }).join('');
+
+    Array.prototype.forEach.call($('customerRows').querySelectorAll('tr[data-id]'), function (tr) {
+      var id = tr.getAttribute('data-id');
+      tr.querySelector('.cus-save').addEventListener('click', function () {
+        var tags = rowVal(tr, 'cus-tags').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+        api('/customers/' + encodeURIComponent(id), 'PATCH', {
+          name: rowVal(tr, 'cus-name').trim(),
+          phone: rowVal(tr, 'cus-phone').trim(),
+          notes: rowVal(tr, 'cus-notes'),
+          tags: tags
+        }).then(function () { toast('Customer saved'); }).catch(fail);
+      });
+      tr.querySelector('.cus-del').addEventListener('click', function () {
+        if (!window.confirm('Remove this customer from the salon? (Their account and bookings stay.)')) return;
+        api('/customers/' + encodeURIComponent(id), 'DELETE')
+          .then(function () { toast('Customer removed'); refreshDashboard(); reloadDetail(currentSalon.id); }).catch(fail);
+      });
+    });
+  }
+
   function loadDetail(id) {
     api('/salons/' + encodeURIComponent(id)).then(function (data) {
       $('detailCard').classList.remove('hidden');
@@ -487,6 +644,9 @@ export const adminPageHtml = `<!doctype html>
       renderSalonEdit(data.salon);
       renderOwner(data.salon.owner);
       renderDetailBookings(data.bookings);
+      renderServices(data.salon.services);
+      renderStaff(data.salon.stylists);
+      renderCustomers(data.salon.customers);
       $('detailCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }).catch(fail);
   }

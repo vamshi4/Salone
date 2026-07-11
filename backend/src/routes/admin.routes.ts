@@ -188,6 +188,36 @@ router.get('/salons/:salonId', async (req, res) => {
       include: {
         owner: { select: ownerDetailSelect },
         _count: { select: { bookings: true, customers: true, stylists: true } },
+        services: {
+          orderBy: { name: 'asc' },
+          select: { id: true, name: true, category: true, duration: true, basePrice: true },
+        },
+        // Roster incl. soft-deleted stylists so staff can be restored from here.
+        stylists: {
+          orderBy: { joinedAt: 'asc' },
+          select: {
+            status: true,
+            stylist: {
+              select: {
+                id: true,
+                basePrice: true,
+                homeServiceEnabled: true,
+                independentBookingEnabled: true,
+                deletedAt: true,
+                user: { select: { name: true, phone: true } },
+              },
+            },
+          },
+        },
+        customers: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            notes: true,
+            tags: true,
+            customer: { select: { name: true, phone: true } },
+          },
+        },
       },
     });
     if (!salon) return res.status(404).json({ error: 'Salon not found' });
