@@ -39,13 +39,16 @@ All built & verified on local pre-prod:
 - **Build-5 backend deployed to prod** by Codex (`e2caeba deploy: roll build 5 backend`).
   → Confirm the [`DEPLOY-BUILD5.md`](./DEPLOY-BUILD5.md) verification passed: `/earnings?period=day`
   200, `/customers` 200, unauth `/salons` 401, a `completed:true` walk-in → 201 COMPLETED.
+- **Super-admin console backend deployed to prod** by Codex (`46b10b2 deploy: roll super-admin console backend`)
+  on image `ghcr.io/vamshi4/salone-backend:43452f7`.
 - **App build 5 (AAB/APK) is ready to publish** once that verification is green.
 
 ## Super-admin dashboard (`/admin`)
 - Read dashboard + full CRUD implemented (Codex). Status/detail: [`ADMIN-CRUD-STATUS.md`](./ADMIN-CRUD-STATUS.md),
   spec: [`ADMIN-CRUD-SPEC.md`](./ADMIN-CRUD-SPEC.md).
 - Guardrails: soft-delete + restore, typed-confirm deletes, audit log, can't delete/demote self.
-- **Pending:** create the first SUPER_ADMIN (`prisma/create-super-admin.ts`) and run section-4 verification on prod.
+- **Prod verified:** SUPER_ADMIN login exists (`vamshi`), `/admin` serves the full console shell, and
+  [`ADMIN-CRUD-VERIFY.md`](./ADMIN-CRUD-VERIFY.md) API checks passed on a throwaway prod salon.
 
 ## Open items (need a human / not done)
 1. **Breach access-log check** — the 2026-07-09 open-API incident exposed all salons' customer
@@ -54,8 +57,7 @@ All built & verified on local pre-prod:
 2. **Migration reconcile** — `Booking.completedAt` and the `20260711120000_admin_crud` migration have
    no clean migration backing; prod applies schema via `prisma db push` (P3009 history gap). Reconcile
    before ever switching to `migrate deploy`.
-3. **Super-admin account** not created yet; `/admin` unverified end to end on prod.
-4. Marketing: competitor brief (ReSpark/Fresha) → campaign → outreach; one-pager PDF at
+3. Marketing: competitor brief (ReSpark/Fresha) → campaign → outreach; one-pager PDF at
    `marketing/Chairful-for-salons.pdf` (CTA is "reply", swap to Play link once listing is public).
 
 ## Deferred / backlog

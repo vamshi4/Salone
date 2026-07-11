@@ -6,23 +6,25 @@ Keep this file current so every chat/session starts from the same picture.
 **Last updated:** 2026-07-11
 **Branch:** `feature/retention-and-redesign` · started from `e2caeba`
 **Backend build:** ✅ `npm run build` clean · TypeScript ✅ · embedded admin JS passes `node --check`
-**Not yet run:** the Prisma migration (no DB reachable in the build env) and the section-4
-post-deploy verification checklist.
+**Prod deploy:** done - `46b10b2` rolled image `ghcr.io/vamshi4/salone-backend:43452f7`.
+**Prod verification:** done - API runbook checks passed on throwaway salon `cmrgm1p1u00038v9q42ni4udk`;
+`/admin` page shell returns 200 and contains Dashboard/Deleted/Audit/Services/Staff/Customers.
 
 ---
 
 ## TL;DR — where we are
 
 The **entire backend (spec section 2)** and the **admin-page UI (spec section 3)** are implemented.
-What remains is operational: run the migration, deploy, and walk the section-4 checklist against a
-real database. Nothing is blocked.
+The backend, admin-page UI, prod rollout, and section-4 API checklist are complete. Remaining work
+is normal operational use and any future migration-history reconcile before switching away from
+the current `db push` deploy flow.
 
 | Spec area | Status |
 |---|---|
 | 1 · Schema (`deletedAt`, `AdminAuditLog`) + read-query filtering | ✅ done |
 | 2 · Backend endpoints (salons, users, bookings, services, customers, stylists, audit) | ✅ done |
 | 3 · Admin-page UI (edit/delete, owner panel, booking actions, deleted tab, audit tab) | ✅ done |
-| 4 · Post-deploy verification checklist | ⏳ pending (needs deploy + DB) |
+| 4 · Post-deploy verification checklist | done - passed on prod API runbook |
 | 5 · Sequencing | followed 1→5 |
 
 ---
@@ -34,8 +36,7 @@ real database. Nothing is blocked.
   indexed on `(targetType, targetId)` and `(actorId)`.
 - Migration: [`backend/prisma/migrations/20260711120000_admin_crud/migration.sql`](../backend/prisma/migrations/20260711120000_admin_crud/migration.sql)
   — hand-authored to match the repo's existing SQL-migration convention.
-- **This migration has NOT been applied anywhere.** Run `prisma migrate deploy` (or the project's
-  `db push` flow) on deploy.
+- Prod applies this schema through the project's `prisma db push` initContainer on deploy.
 - ⚠️ Separate pre-existing drift: `Booking.completedAt` appears in `schema.prisma` with **no migration
   backing it**. Reconcile that before/with the next `migrate deploy` or it will drift.
 
@@ -147,13 +148,18 @@ at `/admin` with that phone + password (role SUPER_ADMIN).
 > **Runbook:** [`ADMIN-CRUD-VERIFY.md`](./ADMIN-CRUD-VERIFY.md) turns every box below into copy-paste
 > `curl` steps (create the admin → log in → check each item). Run pre-prod first, then prod.
 
-- [ ] `GET /api/v2/admin/salons` with no token → 401
-- [ ] Edit a salon's plan → reflected in `/salons` **and** an `AdminAuditLog` row exists
-- [ ] Soft-delete a salon → gone from `/salons` and app-facing `/api/v2/salons`; Restore → reappears
-- [ ] Reset an owner's password → new works, old fails
-- [ ] Change your **own** role → refused; delete your **own** admin → refused
-- [ ] Hard-delete a booking → gone, its `BookingServiceItem` rows gone (cascade)
-- [ ] Malformed/oversized request → 4xx, not 500
+- [x] `GET /api/v2/admin/salons` with no token -> 401
+- [x] Edit a salon's plan -> reflected in `/salons` **and** an `AdminAuditLog` row exists
+- [x] Soft-delete a salon -> gone from `/salons` and app-facing `/api/v2/salons`; Restore -> reappears
+- [x] Reset an owner's password -> new works, old fails
+- [x] Change your **own** role -> refused; delete your **own** admin -> refused
+- [x] Hard-delete a booking -> gone, its `BookingServiceItem` rows gone (cascade)
+- [x] Malformed/oversized request -> 4xx, not 500
+
+Prod result snapshot (2026-07-11): guard no-token `401`, guard with token `200`, plan `PREMIUM`,
+audit `salon.update`, soft-delete hidden in admin/app-facing lists, restore back, owner new login
+`200`, owner old login `401`, self-role/self-delete `400`, booking hard-delete ok, malformed JSON
+`400`, bad plan `400`.
 
 ---
 

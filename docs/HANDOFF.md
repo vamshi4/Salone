@@ -165,3 +165,10 @@ line here, (3) `graphify update .`. The next agent starts from this file + git l
   `deletedAt`, but `Stylist.deletedAt` was not committed in the Prisma schema.
 - Added `Stylist.deletedAt` to schema/admin CRUD migration so GHCR build and
   prod `prisma db push` can apply it before build-5 deployment.
+
+## 2026-07-11 super-admin console prod verification
+- Rolled prod backend to `ghcr.io/vamshi4/salone-backend:43452f7` via deploy commit `46b10b2`.
+- Verified `/admin` serves the full console shell and the `ADMIN-CRUD-VERIFY.md` API checklist
+  passes on throwaway prod salon `cmrgm1p1u00038v9q42ni4udk`.
+- SUPER_ADMIN login exists for `vamshi`; the `create-super-admin.ts` runbook remains the preferred
+  way to create/promote future admins with a 12+ character password.
