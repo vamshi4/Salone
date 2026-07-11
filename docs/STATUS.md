@@ -1,0 +1,75 @@
+# Chairful — Project Status (START HERE)
+
+Single source of truth across all chats (Claude, Codex, future sessions). Update this when state
+changes. Last updated: **2026-07-11**.
+
+## What it is
+**Chairful** — salon-management Android app for India SMB salons. Positioning: *retention
+intelligence* (show owners which regulars stopped coming, win them back over WhatsApp).
+Repo: `D:\vamshi\Salone` (the active one — **not** `Salone2`). Package `com.chairful.admin`.
+Active app: `mobile/salon_admin_app_v2`. Backend: Node/Express + Prisma + Postgres.
+
+## Key URLs & credentials
+- Prod API: **https://api.slotvibe.buzz** (k8s / ArgoCD / GHCR). `/privacy`, `/delete-account`, `/admin` live.
+- Play review login (prod): **9999900000 / Review@2026** (role SALON_OWNER).
+- Local demo login (pre-prod seed): **9000000001 / glamour123**.
+- Signing: upload keystore `mobile/salon_admin_app_v2/android/` (CN=Chairful), password **Chairful@2026** (gitignored — back it up).
+
+## Environments & workflow (do this every time)
+See [`ENVIRONMENTS.md`](./ENVIRONMENTS.md). **Test on local pre-prod first, then deploy to prod.**
+- Pre-prod = local: `cd backend`, `docker compose up -d postgres redis`, `npm run dev` (:3000). Phone
+  via `adb reverse tcp:3000 tcp:3000` + app built `--dart-define=API_URL=http://localhost:3000`.
+- Prod = live: fail-closed auth required (`AUTH_REQUIRED=true`, `DEMO_AUTH_ENABLED=false`,
+  `JWT_SECRET` 32+). See memory `backend-auth-hardening`.
+
+## Play Store launch state
+- On **Internal testing**. Opt-in link exists. App content: **10/10 declarations done** (data safety,
+  content rating Everyone/3+, target 18+, no ads, privacy + delete-account URLs).
+- Next gate: **Closed testing 12 testers × 14 days** → then apply for Production.
+
+## Shipped features (app build 5, `Chairful-2.0.0-b5.aab` / `-arm64.apk`)
+All built & verified on local pre-prod:
+- **"Done service" walk-in** — log a finished service in one step: current time, no slot, status
+  COMPLETED + `completedAt`. Toggle vs "Schedule later". (`61a4d62`) — [`WALKIN-FLOW-DESIGN.md`](./WALKIN-FLOW-DESIGN.md)
+- **Customer autocomplete** in the booking sheet (`b910fbe`).
+- **Daily/weekly/monthly earnings** screen + `/earnings` endpoint (`3ac2e39`).
+- **Live total** under selected services; **"Done" button**; **darker UI** (WCAG AA); **show/hide password**.
+
+## Backend deploy state
+- **Build-5 backend deployed to prod** by Codex (`e2caeba deploy: roll build 5 backend`).
+  → Confirm the [`DEPLOY-BUILD5.md`](./DEPLOY-BUILD5.md) verification passed: `/earnings?period=day`
+  200, `/customers` 200, unauth `/salons` 401, a `completed:true` walk-in → 201 COMPLETED.
+- **App build 5 (AAB/APK) is ready to publish** once that verification is green.
+
+## Super-admin dashboard (`/admin`)
+- Read dashboard + full CRUD implemented (Codex). Status/detail: [`ADMIN-CRUD-STATUS.md`](./ADMIN-CRUD-STATUS.md),
+  spec: [`ADMIN-CRUD-SPEC.md`](./ADMIN-CRUD-SPEC.md).
+- Guardrails: soft-delete + restore, typed-confirm deletes, audit log, can't delete/demote self.
+- **Pending:** create the first SUPER_ADMIN (`prisma/create-super-admin.ts`) and run section-4 verification on prod.
+
+## Open items (need a human / not done)
+1. **Breach access-log check** — the 2026-07-09 open-API incident exposed all salons' customer
+   phone numbers unauth. Check nginx/ingress logs for third-party access before onboarding salons.
+   (Legal: DPDP reportable if accessed.) Memory: `backend-auth-hardening`.
+2. **Migration reconcile** — `Booking.completedAt` and the `20260711120000_admin_crud` migration have
+   no clean migration backing; prod applies schema via `prisma db push` (P3009 history gap). Reconcile
+   before ever switching to `migrate deploy`.
+3. **Super-admin account** not created yet; `/admin` unverified end to end on prod.
+4. Marketing: competitor brief (ReSpark/Fresha) → campaign → outreach; one-pager PDF at
+   `marketing/Chairful-for-salons.pdf` (CTA is "reply", swap to Play link once listing is public).
+
+## Deferred / backlog
+- WhatsApp **automatic** reminders need the WhatsApp Business API (cost + template approval) — current
+  win-back is one-tap `wa.me`. Interim: a "reminders due today" batch screen.
+- Per-salon timezone + currency (foundation for targeting countries beyond India).
+- Admin UI: services/stylists/customers edit controls (endpoints exist; UI wiring remains).
+
+## Doc map
+- `STATUS.md` (this file) — start here.
+- `ENVIRONMENTS.md` — pre-prod/prod + workflow.
+- `WALKIN-FLOW-DESIGN.md` — Done-service design.
+- `DEPLOY-BUILD5.md` — build-5 deploy steps + verification.
+- `ADMIN-CRUD-SPEC.md` / `ADMIN-CRUD-STATUS.md` — super-admin console.
+- `HANDOFF.md`, `STRATEGY.md`, `PRODUCTION_READINESS.md` — earlier context.
+- Memory (auto-loaded): `chairful-launch-status`, `backend-auth-hardening`, `dev-workflow-envs`,
+  `positioning-and-naming`, `retention-feature-and-demo`.
