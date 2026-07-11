@@ -271,7 +271,7 @@ router.post('/', requireRole('CUSTOMER'), async (req, res) => {
       include: { primarySalon: true, services: true },
     });
 
-    if (!stylist) return res.status(404).json({ error: 'Stylist not found' });
+    if (!stylist || stylist.deletedAt) return res.status(404).json({ error: 'Stylist not found' });
 
     if (isHomeService) {
       if (!stylist.homeServiceEnabled || stylist.registrationType === 'SALON_EXCLUSIVE') {
@@ -443,6 +443,7 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
     const stylist = await prisma.stylist.findFirst({
       where: {
         id: stylistId,
+        deletedAt: null,
         OR: [
           { primarySalonId: salonId },
           { salonStylists: { some: { salonId, status: 'ACTIVE' } } },

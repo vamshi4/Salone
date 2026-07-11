@@ -239,6 +239,7 @@ async function validateAvailabilityRule({
 router.get('/', async (_req, res) => {
   try {
     const stylists = await prisma.stylist.findMany({
+      where: { deletedAt: null },
       include: stylistInclude,
       orderBy: {
         user: {
