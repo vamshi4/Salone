@@ -2,6 +2,13 @@
 
 Use these prompts to create assets. All assets must avoid real customer names, phone numbers, and real salon data.
 
+## Campaign Face Rule
+
+For all Build 5 Instagram assets, use the owner-provided reference person as the recurring campaign
+face. Match the approved `IG-B5-01` v4 styling: reference face, tied-back hair, black professional
+kurta/dress, phone-in-hand salon-owner pose, and the real Chairful app UI style. Do not use the saree
+look unless specifically requested.
+
 ## Feed Creative 1 - Walk-In Tracking
 
 Goal: Make salon owners notice forgotten walk-ins.
@@ -80,4 +87,3 @@ Text overlays:
 - "Still calculating?"
 - "Daily earnings in Chairful"
 - "DM CHAIRFUL"
-

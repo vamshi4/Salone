@@ -73,7 +73,13 @@ Secondary:
 - 5 story frames (`1080x1920`)
 - Optional: app screenshots using demo data only
 
+## Visual Consistency Rule
+
+Use the owner-provided reference person as the recurring campaign face across the Build 5 Instagram
+assets. Preferred styling: the approved `IG-B5-01` v4 look with the reference face, tied-back hair,
+black professional kurta/dress, and the Chairful app UI matched to the real app. Do not switch back
+to the saree look unless specifically requested.
+
 ## Approval Notes
 
 Needs owner approval before posting. Do not claim guaranteed revenue increase. Do not show real customer phone numbers or real salon data.
-

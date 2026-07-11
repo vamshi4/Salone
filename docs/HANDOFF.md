@@ -192,3 +192,7 @@ line here, (3) `graphify update .`. The next agent starts from this file + git l
   `docs/COMPANY_OS/CAMPAIGNS/2026-07-build-5-instagram/assets/IG-B5-01-stop-losing-walk-in-money-v1.png`.
 - Added v2 after owner feedback to match the actual app UI more closely:
   `docs/COMPANY_OS/CAMPAIGNS/2026-07-build-5-instagram/assets/IG-B5-01-stop-losing-walk-in-money-v2.png`.
+- Added and owner-approved v4 with the provided reference face but previous black dress/app-post style:
+  `docs/COMPANY_OS/CAMPAIGNS/2026-07-build-5-instagram/assets/IG-B5-01-stop-losing-walk-in-money-v4-reference-face-black-dress.png`.
+- Owner asked to use the same reference person across all Build 5 Instagram images; campaign docs now
+  define this as the visual consistency rule.
