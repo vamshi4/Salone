@@ -851,6 +851,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             tooltip: 'New booking',
           ),
           IconButton(
+            key: const Key('dashboard_open_earnings'),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => EarningsScreen(salon: salon),
+                ),
+              );
+            },
+            icon: const Icon(Icons.payments_outlined),
+            tooltip: 'Earnings',
+          ),
+          IconButton(
             key: const Key('dashboard_open_retention'),
             onPressed: () {
               Navigator.of(context).push(
@@ -4060,6 +4072,269 @@ class _EmptyCard extends StatelessWidget {
 BoxDecoration _boxDecoration() => cardDecoration();
 
 const _brand = AppColors.accent;
+
+String _rupees(int paise) {
+  final rupees = paise ~/ 100;
+  final s = rupees.toString();
+  // Indian grouping: last 3 digits, then pairs.
+  final buf = StringBuffer();
+  final digits = s.length;
+  for (var i = 0; i < digits; i++) {
+    final fromEnd = digits - i;
+    buf.write(s[i]);
+    if (fromEnd > 1 && (fromEnd == 4 || (fromEnd > 4 && fromEnd % 2 == 1))) {
+      buf.write(',');
+    }
+  }
+  return 'Rs ${buf.toString()}';
+}
+
+class EarningsScreen extends StatefulWidget {
+  const EarningsScreen({super.key, required this.salon});
+
+  final Map<String, dynamic> salon;
+
+  @override
+  State<EarningsScreen> createState() => _EarningsScreenState();
+}
+
+class _EarningsScreenState extends State<EarningsScreen> {
+  String _period = 'day';
+  bool _loading = true;
+  String? _error;
+  Map<String, dynamic>? _data;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final id = widget.salon['id'];
+      final res =
+          await _api().get('/api/v2/salons/$id/earnings?period=$_period');
+      if (mounted) setState(() => _data = Map<String, dynamic>.from(res.data));
+    } catch (e) {
+      if (kDebugMode) debugPrint('Earnings load failed: $e');
+      if (mounted) setState(() => _error = 'Could not load earnings.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _setPeriod(String p) {
+    if (p == _period) return;
+    setState(() => _period = p);
+    _load();
+  }
+
+  String get _periodLabel => _period == 'day'
+      ? 'Today'
+      : _period == 'week'
+          ? 'Last 7 days'
+          : 'Last 30 days';
+
+  @override
+  Widget build(BuildContext context) {
+    final total = (_data?['total'] ?? 0) as int;
+    final count = (_data?['count'] ?? 0) as int;
+    final daily = List<Map<String, dynamic>>.from(_data?['daily'] ?? []);
+    final bookings = List<Map<String, dynamic>>.from(_data?['bookings'] ?? []);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Earnings')),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(
+              16, 12, 16, 28 + MediaQuery.of(context).padding.bottom),
+          children: [
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'day', label: Text('Today')),
+                ButtonSegment(value: 'week', label: Text('Week')),
+                ButtonSegment(value: 'month', label: Text('Month')),
+              ],
+              selected: {_period},
+              showSelectedIcon: false,
+              onSelectionChanged: (s) => _setPeriod(s.first),
+            ),
+            const SizedBox(height: 16),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.only(top: 40),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 40),
+                child: Column(
+                  children: [
+                    Text(_error!,
+                        style: const TextStyle(
+                            color: AppColors.danger,
+                            fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: _load,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_periodLabel,
+                        style: const TextStyle(
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14)),
+                    const SizedBox(height: 6),
+                    Text(_rupees(total),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 34,
+                            letterSpacing: -0.5)),
+                    const SizedBox(height: 4),
+                    Text('$count ${count == 1 ? 'service' : 'services'}',
+                        style: const TextStyle(
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              if (_period != 'day' && daily.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                _EarningsBars(daily: daily),
+              ],
+              const SizedBox(height: 20),
+              const Text('Completed services',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+              const SizedBox(height: 8),
+              if (bookings.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Text('No completed services in this period yet.',
+                      style: TextStyle(color: AppColors.inkMuted)),
+                )
+              else
+                ...bookings.map((b) => _EarningRow(booking: b)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EarningsBars extends StatelessWidget {
+  const _EarningsBars({required this.daily});
+  final List<Map<String, dynamic>> daily;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxTotal = daily.fold<int>(
+        1, (m, d) => ((d['total'] ?? 0) as int) > m ? (d['total'] as int) : m);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Daily',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 90,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: daily.map((d) {
+                final total = (d['total'] ?? 0) as int;
+                final h = maxTotal == 0 ? 0.0 : (total / maxTotal) * 78.0;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          height: h < 2 && total > 0 ? 2 : h,
+                          decoration: BoxDecoration(
+                            color: total > 0
+                                ? AppColors.accent
+                                : AppColors.border,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EarningRow extends StatelessWidget {
+  const _EarningRow({required this.booking});
+  final Map<String, dynamic> booking;
+
+  @override
+  Widget build(BuildContext context) {
+    final at = DateTime.tryParse('${booking['at'] ?? ''}')?.toLocal();
+    final when = at == null
+        ? ''
+        : '${at.day}/${at.month} ${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${booking['customerName'] ?? 'Customer'}',
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(
+                    [
+                      if ('${booking['serviceName'] ?? ''}'.isNotEmpty)
+                        '${booking['serviceName']}',
+                      when,
+                    ].where((s) => s.isNotEmpty).join(' · '),
+                    style: const TextStyle(
+                        color: AppColors.inkMuted, fontSize: 13)),
+              ],
+            ),
+          ),
+          Text(_rupees((booking['price'] ?? 0) as int),
+              style: const TextStyle(fontWeight: FontWeight.w900)),
+        ],
+      ),
+    );
+  }
+}
 
 class RetentionScreen extends StatefulWidget {
   const RetentionScreen({super.key, required this.salon});

@@ -26,7 +26,7 @@ router.get('/', requireRole('CUSTOMER', 'SALON_OWNER', 'SUPER_ADMIN'), async (re
       services: true,
       owner: true,
       stylists: {
-        where: { status: 'ACTIVE' },
+        where: { status: 'ACTIVE', stylist: { deletedAt: null } },
         include: {
           stylist: {
             include: {
@@ -269,6 +269,87 @@ router.get('/:salonId/at-risk', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async
       count: atRisk.length,
       atRiskRevenue: atRisk.reduce((t, c) => t + c.totalSpend, 0),
       customers: atRisk.slice(0, 40),
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/v2/salons/:salonId/earnings?period=day|week|month
+// Sums COMPLETED bookings by their earned date (completedAt, falling back to
+// createdAt for older records). Day buckets are computed in IST (India).
+const IST_OFFSET_MS = 330 * 60 * 1000;
+function istDayKey(d: Date) {
+  return new Date(d.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
+}
+function istStartOfDay(d: Date) {
+  const shifted = new Date(d.getTime() + IST_OFFSET_MS);
+  shifted.setUTCHours(0, 0, 0, 0);
+  return new Date(shifted.getTime() - IST_OFFSET_MS);
+}
+router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { salonId } = req.params;
+    const salon = await findOwnedSalon(salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const period = ['day', 'week', 'month'].includes(String(req.query.period))
+      ? String(req.query.period)
+      : 'day';
+    const days = period === 'day' ? 1 : period === 'week' ? 7 : 30;
+
+    const now = new Date();
+    const from = istStartOfDay(now);
+    from.setUTCDate(from.getUTCDate() - (days - 1));
+
+    const completed = await prisma.booking.findMany({
+      where: { salonId, status: 'COMPLETED' },
+      select: {
+        id: true,
+        price: true,
+        completedAt: true,
+        createdAt: true,
+        customer: { select: { name: true, phone: true } },
+        service: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const earnedAt = (b: { completedAt: Date | null; createdAt: Date }) =>
+      b.completedAt ?? b.createdAt;
+    const inRange = completed.filter((b) => {
+      const d = earnedAt(b);
+      return d >= from && d <= now;
+    });
+
+    // Seed every day in the range so the chart has no gaps.
+    const byDay = new Map<string, { total: number; count: number }>();
+    for (let i = days - 1; i >= 0; i -= 1) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      byDay.set(istDayKey(d), { total: 0, count: 0 });
+    }
+    for (const b of inRange) {
+      const bucket = byDay.get(istDayKey(earnedAt(b)));
+      if (bucket) {
+        bucket.total += b.price;
+        bucket.count += 1;
+      }
+    }
+
+    res.json({
+      period,
+      from,
+      to: now,
+      total: inRange.reduce((sum, b) => sum + b.price, 0),
+      count: inRange.length,
+      daily: [...byDay.entries()].map(([date, v]) => ({ date, ...v })),
+      bookings: inRange.slice(0, 50).map((b) => ({
+        id: b.id,
+        at: earnedAt(b),
+        customerName: b.customer?.name ?? b.customer?.phone ?? 'Customer',
+        serviceName: b.service?.name ?? '',
+        price: b.price,
+      })),
     });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
