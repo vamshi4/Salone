@@ -73,6 +73,15 @@ All built & verified on local pre-prod:
    `marketing/Chairful-for-salons.pdf` (CTA is "reply", swap to Play link once listing is public).
 
 ## Deferred / backlog
+- **QR self-service ordering (NEXT RELEASE, not now).** Customer scans a per-salon QR → picks
+  services → submits name/phone themselves (a lightweight public web page, not an app install, is
+  the right approach for a one-time walk-in scan). Creates a pending booking the salon master just
+  confirms/completes — or the customer can complete the whole loop themselves. Fully replaces manual
+  entry instead of speeding it up. Explicitly deferred until after the quick-tap fix ships and is
+  validated with real usage.
+- **Rejected:** face recognition for customer identification — technically feasible on-device, but
+  biometric consent/DPDP + Play Data-safety risk and salon-environment accuracy problems (lighting,
+  haircuts changing appearance) outweigh the benefit versus the QR approach above.
 - WhatsApp **automatic** reminders need the WhatsApp Business API (cost + template approval) — current
   win-back is one-tap `wa.me`. Interim: a "reminders due today" batch screen.
 - Per-salon timezone + currency (foundation for targeting countries beyond India).
