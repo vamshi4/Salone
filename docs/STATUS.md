@@ -33,7 +33,24 @@ history, so long chats get expensive fast.
 - Prod API: **https://api.slotvibe.buzz** (k8s / ArgoCD / GHCR). `/privacy`, `/delete-account`, `/admin` live.
 - Play review login (prod): **9999900000 / Review@2026** (role SALON_OWNER).
 - Local demo login (pre-prod seed): **9000000001 / glamour123**.
-- Signing: upload keystore `mobile/salon_admin_app_v2/android/` (CN=Chairful), password **Chairful@2026** (gitignored — back it up).
+- Owner's real test account (seeded data, see `backend/prisma/seed-owner-salon.ts`): **7989698923**,
+  password known to the owner; Google account `vamshikittu114@gmail.com` linked to it as an
+  alternate login (no password needed via "Continue with Google").
+- Signing: upload keystore `mobile/salon_admin_app_v3/android/app/upload-keystore.jks` (also
+  present under `salon_admin_app_v2/`, identical file — **shared key**, required since both use
+  `com.chairful.admin`), alias `upload`, password **Chairful@2026** (gitignored — back it up).
+  `keytool` isn't on PATH on this dev machine; use
+  `"C:\Program Files\Android\Android Studio\jbr\bin\keytool"`.
+- Google Cloud project `mystical-banner-157112` (console.cloud.google.com → APIs & Services →
+  Credentials). **Web OAuth client** (used as backend `GOOGLE_CLIENT_ID` env var *and* app
+  `--dart-define=GOOGLE_SERVER_CLIENT_ID`, must match exactly):
+  `562611122778-qip8n4i7q2a1ad2fpo85l1g8ngt1u17d.apps.googleusercontent.com`. Two **Android**
+  OAuth clients also exist (never referenced in code — Play Services matches them automatically
+  by package + SHA-1): one for the debug keystore (SHA-1
+  `81:B3:55:87:0F:26:66:D6:64:28:54:9C:82:26:74:2C:40:18:A4:1B`), one for the release/upload
+  keystore (SHA-1 `97:97:6E:59:34:30:EF:CA:7D:A6:C5:22:67:58:DF:EA:25:78:BA:DA`). **If the app
+  is ever signed with a different key (e.g. Play App Signing re-signing), Google Sign-In breaks
+  until a matching Android client is added for that new SHA-1.**
 
 ## Environments & workflow (do this every time)
 See [`ENVIRONMENTS.md`](./ENVIRONMENTS.md). **Test on local pre-prod first, then deploy to prod.**
@@ -46,16 +63,18 @@ See [`ENVIRONMENTS.md`](./ENVIRONMENTS.md). **Test on local pre-prod first, then
 - On **Internal testing**. Opt-in link exists. App content: **10/10 declarations done** (data safety,
   content rating Everyone/3+, target 18+, no ads, privacy + delete-account URLs).
 - Next gate: **Closed testing 12 testers × 14 days** → then apply for Production.
-- **In progress (2026-07-14): switching the published app from v2's build 5 to v3.** v3 has
-  everything build 5 shipped plus 25-language localization, real per-salon currency/country,
-  and "Continue with Google" sign-in. Same release keystore as v2 (`upload-keystore.jks`, shared
-  since both use `com.chairful.admin`) — a second Android OAuth client (release SHA-1) was added
-  in Google Cloud Console alongside the existing debug one so Google Sign-In survives the signed
-  build. `GOOGLE_CLIENT_ID` was added to `deploy/k8s/salone-api.yaml`. **Not yet done:** backend
-  code (forgot-password, google-auth, googleId/currency/countryCode schema fields) still needs to
-  be deployed to prod via the normal GHCR/ArgoCD path (see `docs/DEPLOY-BUILD5.md` for the
-  pattern), then the v3 release AAB built against `https://api.slotvibe.buzz` and uploaded to
-  Play Console.
+- **Done (2026-07-14): switched the published app from v2's build 5 to v3.** Backend commits
+  `1d13bfd` (forgot-password OTP, Google sign-in, currency/country fields) and `ad7d37f` (pin
+  image) deployed to prod via GHCR/ArgoCD, verified green (`/earnings` 200, `/customers` 200,
+  unauth `/salons` 401, `/forgot-password` and `/google-login` respond — the former correctly
+  500s "not configured" since no WhatsApp Business account exists yet, the latter correctly
+  attempts real Google token verification). A second Android OAuth client (release SHA-1
+  `97:97:6E:59:34:30:EF:CA:7D:A6:C5:22:67:58:DF:EA:25:78:BA:DA`) was added in Google Cloud
+  Console alongside the debug one so Google Sign-In survives the signed build.
+  **`Chairful-3.0.0-b6.aab`** (versionCode bumped 1→6 to stay above v2's last upload of 5) built
+  signed with the shared `upload-keystore.jks` against `https://api.slotvibe.buzz`, uploaded to
+  Play Console → Internal testing → live as release "Redesigned app", version code 6.
+  `mobile/salon_admin_app_v2` is now fully retired from the release pipeline.
 
 ## Shipped features (app build 5, `Chairful-2.0.0-b5.aab` / `-arm64.apk`, v2 — superseded by v3)
 All built & verified on local pre-prod:
