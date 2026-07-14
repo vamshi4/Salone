@@ -14,7 +14,10 @@ Salone/GlamBook is a salon and stylist marketplace with:
 - Backend: `backend/`
 - Customer app: `mobile/customer_app/`
 - Stylist app: `mobile/stylist_app/`
-- Salon admin app: `mobile/salon_admin_app/`
+- Salon admin app: `mobile/salon_admin_app_v3/` (currently primary/installed —
+  redesign + rebuild verified end-to-end on device 2026-07-13; see
+  `docs/HANDOFF-SALON-ADMIN-V3.md`) and `mobile/salon_admin_app_v2/` (legacy,
+  superseded by v3, kept only as reference — do not build new features on it)
 
 Do not create a new app or restart the project. Continue from the existing code.
 

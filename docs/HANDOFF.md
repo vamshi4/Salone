@@ -57,7 +57,7 @@ Device: `ed083e3d` (Redmi/MIUI). Backend on the PC, reached via adb reverse.
 ```bash
 # 1. backend running on :3000, then:
 adb -s ed083e3d reverse tcp:3000 tcp:3000
-cd mobile/salon_admin_app_v2   # or salon_admin_app for v1
+cd mobile/salon_admin_app_v3   # primary app since 2026-07-13; v2 is legacy/reference only
 flutter run -d ed083e3d --dart-define=API_URL=http://127.0.0.1:3000
 ```
 
@@ -82,11 +82,14 @@ Other gotchas:
   password, don't tap the second field blindly.
 
 ## Next / backlog (priority-ish)
-1. **Finish v2 redesign** — layout pass on bookings queue, staff cards, account
-   settings sheet, retention details; then swap v2 in as the primary app.
+1. ~~Finish v2 redesign, then swap v2 in as the primary app.~~ Superseded: v2
+   was replaced by a full redesign+rebuild, **`salon_admin_app_v3`, which is
+   now the primary/installed app (2026-07-13)**. See
+   `docs/HANDOFF-SALON-ADMIN-V3.md` for what changed and its own backlog
+   (integration test rewrite, native-speaker translation review).
 2. **Day-of booking statuses** (agreed, deferred): `WAITING → IN_PROGRESS →
    COMPLETED` with per-transition timestamps → unlocks duration/wait/utilization
-   analytics. Build in v2.
+   analytics. Build in v3.
 3. **Easy-but-useful features** (low owner effort, high value): auto customer
    profiles, quick-rebook ("book usual"), auto appointment reminders (reuse the
    wa.me plumbing), auto review requests, end-of-day summary.
@@ -196,3 +199,17 @@ line here, (3) `graphify update .`. The next agent starts from this file + git l
   `docs/COMPANY_OS/CAMPAIGNS/2026-07-build-5-instagram/assets/IG-B5-01-stop-losing-walk-in-money-v4-reference-face-black-dress.png`.
 - Owner asked to use the same reference person across all Build 5 Instagram images; campaign docs now
   define this as the visual consistency rule.
+
+## 2026-07-12 Salon admin app v3 — full redesign + rebuild
+- New parallel app folder `mobile/salon_admin_app_v3/` (v2 untouched), same pattern as v1 → v2.
+- Redesigned IA: bottom nav (Home, Bookings, Staff, Insights, Account) replaces the six-icon app bar
+  and segmented tabs. Earnings + Retention merged into Insights. Home leads with "New booking" and a
+  log of today's completed walk-ins instead of a schedule, since there's no pre-booking in the common
+  case; the rare pending/reschedule item moved to a banner on Bookings.
+- Added a 5-color theme picker (signup step 3 + Account → Appearance) and a country/currency/language
+  step in signup — all three are **device-local prefs only**, no backend fields yet.
+- Full details, file map, what's wired to the real backend vs. local-only, and known gaps (not yet
+  compiled — no Flutter toolchain in the build environment; integration tests need rewriting for the
+  new nav) are in **`docs/HANDOFF-SALON-ADMIN-V3.md`**. Read that before touching v3.
+- Related: `docs/GLOBAL-READINESS.md` (added same session) covers what real backend support for
+  country/currency/language would need.

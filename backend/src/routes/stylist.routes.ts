@@ -463,7 +463,9 @@ router.post('/:id/services', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'
 
     if (!stylist) return res.status(404).json({ error: 'Stylist not found' });
 
-    const priceAllowed = canSetServicePrice(stylist);
+    // canSetServicePrice gates whether the STYLIST's own app may set a
+    // price; a salon owner/admin setting it directly is always allowed.
+    const priceAllowed = req.user!.role !== 'STYLIST' || canSetServicePrice(stylist);
     const servicePrice = priceAllowed
       ? Math.max(0, Number(basePrice ?? stylist.basePrice ?? 50000))
       : stylist.basePrice ?? Number(basePrice ?? 50000);
@@ -508,7 +510,7 @@ router.patch('/:id/services/:serviceId', requireRole('STYLIST', 'SALON_OWNER', '
     if (name != null) data.name = String(name).trim();
     if (category != null) data.category = String(category || 'Salon').trim();
     if (duration != null) data.duration = Math.max(15, Number(duration));
-    if (basePrice != null && canSetServicePrice(stylist)) {
+    if (basePrice != null && (req.user!.role !== 'STYLIST' || canSetServicePrice(stylist))) {
       data.basePrice = Math.max(0, Number(basePrice));
     }
 

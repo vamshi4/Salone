@@ -21,6 +21,20 @@ model User {
   lat       Float?
   lng       Float?
 
+  // Forgot-password OTP (sent via WhatsApp). Hash format matches `password`
+  // (scrypt$salt$hash, see src/password.ts) so the same verify helper works
+  // for both. Cleared after a successful reset or on expiry.
+  resetOtpHash      String?
+  resetOtpExpiresAt DateTime?
+  resetOtpAttempts  Int       @default(0)
+  resetOtpSentAt    DateTime?
+
+  // Google's stable per-account "sub" claim, set the first time someone
+  // signs in or links via "Continue with Google" (free — no per-message
+  // cost like the WhatsApp OTP above, so this is the escape hatch for
+  // owners who don't want to depend on a paid channel to recover access).
+  googleId String? @unique
+
   stylist       Stylist?
   salonOwned    Salon?        @relation("SalonOwner")
   bookings      Booking[]     @relation("CustomerBookings")
@@ -81,6 +95,8 @@ model Salon {
   saasPlan        String   @default("FREE")
   rating          Float    @default(0)
   totalReviews    Int      @default(0)
+  currency        String   @default("INR")
+  countryCode     String   @default("IN")
   deletedAt       DateTime?
 
   owner             User            @relation("SalonOwner", fields: [ownerId], references: [id])

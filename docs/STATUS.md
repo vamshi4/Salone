@@ -1,13 +1,21 @@
 # Chairful — Project Status (START HERE)
 
 Single source of truth across all chats (Claude, Codex, future sessions). Update this when state
-changes. Last updated: **2026-07-11**.
+changes. Last updated: **2026-07-14**.
 
 ## What it is
-**Chairful** — salon-management Android app for India SMB salons. Positioning: *retention
-intelligence* (show owners which regulars stopped coming, win them back over WhatsApp).
-Repo: `D:\vamshi\Salone` (the active one — **not** `Salone2`). Package `com.chairful.admin`.
-Active app: `mobile/salon_admin_app_v2`. Backend: Node/Express + Prisma + Postgres.
+**Chairful** — salon-management Android app for India SMB salons, now expanding to 25 languages
+and 24 countries. Positioning: *retention intelligence* (show owners which regulars stopped
+coming, win them back over WhatsApp). Repo: `D:\vamshi\Salone` (the active one — **not**
+`Salone2`). Package `com.chairful.admin`. Backend: Node/Express + Prisma + Postgres.
+
+**Active app: `mobile/salon_admin_app_v3`** (switched from v2 on 2026-07-14 — full redesign,
+bottom-nav shell, 25-language localization, real `Salon.currency`/`countryCode`, WhatsApp-OTP
+forgot-password (built but hidden this release — no WhatsApp Business API account yet), and
+"Continue with Google" sign-in/signup. Verified to have full feature parity with v2's build 5
+(walk-in "Done service" logging, customer autocomplete, earnings). `mobile/salon_admin_app_v2` is
+now legacy/reference only — do not build new features on it. See
+`docs/HANDOFF-SALON-ADMIN-V3.md` for what changed.
 
 > ⚠️ `mobile/salon_admin_app` (no `_v2`, package `com.salone.admin`, "Salone Admin" branding) is the
 > **old pre-rebrand app — dead, being deleted.** Never work on it. If you see it referenced anywhere
@@ -38,8 +46,18 @@ See [`ENVIRONMENTS.md`](./ENVIRONMENTS.md). **Test on local pre-prod first, then
 - On **Internal testing**. Opt-in link exists. App content: **10/10 declarations done** (data safety,
   content rating Everyone/3+, target 18+, no ads, privacy + delete-account URLs).
 - Next gate: **Closed testing 12 testers × 14 days** → then apply for Production.
+- **In progress (2026-07-14): switching the published app from v2's build 5 to v3.** v3 has
+  everything build 5 shipped plus 25-language localization, real per-salon currency/country,
+  and "Continue with Google" sign-in. Same release keystore as v2 (`upload-keystore.jks`, shared
+  since both use `com.chairful.admin`) — a second Android OAuth client (release SHA-1) was added
+  in Google Cloud Console alongside the existing debug one so Google Sign-In survives the signed
+  build. `GOOGLE_CLIENT_ID` was added to `deploy/k8s/salone-api.yaml`. **Not yet done:** backend
+  code (forgot-password, google-auth, googleId/currency/countryCode schema fields) still needs to
+  be deployed to prod via the normal GHCR/ArgoCD path (see `docs/DEPLOY-BUILD5.md` for the
+  pattern), then the v3 release AAB built against `https://api.slotvibe.buzz` and uploaded to
+  Play Console.
 
-## Shipped features (app build 5, `Chairful-2.0.0-b5.aab` / `-arm64.apk`)
+## Shipped features (app build 5, `Chairful-2.0.0-b5.aab` / `-arm64.apk`, v2 — superseded by v3)
 All built & verified on local pre-prod:
 - **"Done service" walk-in** — log a finished service in one step: current time, no slot, status
   COMPLETED + `completedAt`. Toggle vs "Schedule later". (`61a4d62`) — [`WALKIN-FLOW-DESIGN.md`](./WALKIN-FLOW-DESIGN.md)

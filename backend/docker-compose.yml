@@ -26,7 +26,19 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:localpass@postgres:5432/salon_db
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: changeme
+      JWT_SECRET: local-dev-jwt-secret-not-for-production-0123456789abcdef
+      # Forgot-password OTP delivery (Meta WhatsApp Business Cloud API). Unset
+      # in dev on purpose — the OTP is logged to the container's stdout
+      # instead of sent. Fill these in once you have a WhatsApp Business
+      # account (see docs/HANDOFF.md).
+      WHATSAPP_ACCESS_TOKEN: ""
+      WHATSAPP_PHONE_NUMBER_ID: ""
+      WHATSAPP_OTP_TEMPLATE_NAME: "otp_login"
+      WHATSAPP_OTP_TEMPLATE_LANG: "en_US"
+      # "Continue with Google" (free, unlike the WhatsApp OTP above). This is
+      # the Web OAuth client ID from Google Cloud Console — not a secret, but
+      # sign-in fails until it's set (see docs/HANDOFF.md).
+      GOOGLE_CLIENT_ID: "562611122778-qip8n4i7q2a1ad2fpo85l1g8ngt1u17d.apps.googleusercontent.com"
     depends_on:
       postgres:
         condition: service_healthy

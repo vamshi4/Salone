@@ -151,6 +151,8 @@ spec:
               value: "false"
             - name: CORS_ORIGIN
               value: "https://api.slotvibe.buzz"
+            - name: GOOGLE_CLIENT_ID
+              value: "562611122778-qip8n4i7q2a1ad2fpo85l1g8ngt1u17d.apps.googleusercontent.com"
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:

@@ -311,6 +311,8 @@ router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asyn
         createdAt: true,
         customer: { select: { name: true, phone: true } },
         service: { select: { name: true } },
+        stylistId: true,
+        stylist: { select: { user: { select: { name: true } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -320,6 +322,15 @@ router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asyn
     const inRange = completed.filter((b) => {
       const d = earnedAt(b);
       return d >= from && d <= now;
+    });
+
+    // Same-length window immediately before `from`, so the owner can see
+    // "am I growing?" at a glance instead of just a raw total in isolation.
+    const previousFrom = new Date(from);
+    previousFrom.setUTCDate(previousFrom.getUTCDate() - days);
+    const previousRange = completed.filter((b) => {
+      const d = earnedAt(b);
+      return d >= previousFrom && d < from;
     });
 
     // Seed every day in the range so the chart has no gaps.
@@ -336,13 +347,48 @@ router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asyn
       }
     }
 
+    // Which services actually make money — guides what to promote/staff for.
+    const serviceTotals = new Map<string, { total: number; count: number }>();
+    for (const b of inRange) {
+      const name = b.service?.name ?? 'Service';
+      const bucket = serviceTotals.get(name) ?? { total: 0, count: 0 };
+      bucket.total += b.price;
+      bucket.count += 1;
+      serviceTotals.set(name, bucket);
+    }
+    const topServices = [...serviceTotals.entries()]
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+
+    // Per-stylist leaderboard for the selected period (staff cards on the
+    // Staff tab only ever show "today").
+    const stylistTotals = new Map<string, { name: string; total: number; count: number }>();
+    for (const b of inRange) {
+      if (!b.stylistId) continue;
+      const bucket = stylistTotals.get(b.stylistId) ?? {
+        name: b.stylist?.user?.name ?? 'Staff',
+        total: 0,
+        count: 0,
+      };
+      bucket.total += b.price;
+      bucket.count += 1;
+      stylistTotals.set(b.stylistId, bucket);
+    }
+    const byStylist = [...stylistTotals.entries()]
+      .map(([stylistId, v]) => ({ stylistId, ...v }))
+      .sort((a, b) => b.total - a.total);
+
     res.json({
       period,
       from,
       to: now,
       total: inRange.reduce((sum, b) => sum + b.price, 0),
       count: inRange.length,
+      previousTotal: previousRange.reduce((sum, b) => sum + b.price, 0),
       daily: [...byDay.entries()].map(([date, v]) => ({ date, ...v })),
+      topServices,
+      byStylist,
       bookings: inRange.slice(0, 50).map((b) => ({
         id: b.id,
         at: earnedAt(b),
