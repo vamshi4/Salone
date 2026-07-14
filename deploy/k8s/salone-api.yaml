@@ -153,6 +153,12 @@ spec:
               value: "https://api.slotvibe.buzz"
             - name: GOOGLE_CLIENT_ID
               value: "562611122778-qip8n4i7q2a1ad2fpo85l1g8ngt1u17d.apps.googleusercontent.com"
+            # Forces anyone still on v2 (versionCode <= 5, appVersion 2.x) to the
+            # UpdateRequiredScreen / Play Store on next launch, now that v3 (3.0.0+6) is
+            # the published release. AuthGate in both apps compares appVersion against
+            # this on every launch and fails open if the check errors.
+            - name: SALON_ADMIN_MIN_VERSION
+              value: "3.0.0"
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
