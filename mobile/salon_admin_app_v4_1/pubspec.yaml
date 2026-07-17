@@ -1,0 +1,67 @@
+name: salon_admin_app
+version: 3.0.0+6
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  dio: ^5.4.3
+  shared_preferences: ^2.2.3
+  url_launcher: ^6.3.0
+  geolocator: ^13.0.1
+  intl: ^0.20.2
+  google_sign_in: ^6.2.1
+  share_plus: ^13.2.1
+  qr_flutter: ^4.1.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.1
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon_full.png"
+  adaptive_icon_background: "#E91E76"
+  adaptive_icon_foreground: "assets/icon/icon_fg.png"
+  min_sdk_android: 21
+flutter:
+  generate: true
+  uses-material-design: true
+  assets:
+    - assets/icon/
+  fonts:
+    - family: AppSans
+      fonts:
+        - asset: assets/fonts/AppSans.ttf
+    # v4 "Open Design" cream/terracotta redesign: Playfair Display (serif
+    # headlines) + Inter (sans body), both OFL-licensed variable fonts from
+    # https://github.com/google/fonts — one file per family, multiple weight
+    # entries pointing at the same variable asset (Flutter/Skia resolves the
+    # requested weight via the font's wght axis at render time).
+    - family: PlayfairDisplay
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay-Variable.ttf
+          weight: 400
+        - asset: assets/fonts/PlayfairDisplay-Variable.ttf
+          weight: 600
+        - asset: assets/fonts/PlayfairDisplay-Variable.ttf
+          weight: 700
+        - asset: assets/fonts/PlayfairDisplay-Variable.ttf
+          weight: 800
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Variable.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-Variable.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Variable.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-Variable.ttf
+          weight: 800

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../index';
 import { requireRole } from '../auth';
+import { commissionSplit } from '../commission';
 
 const router = Router();
 const disabledPassword = 'disabled';
@@ -349,6 +350,7 @@ router.post('/', requireRole('CUSTOMER'), async (req, res) => {
     );
     const travelFee = isHomeService ? 10000 : 0;
     const platformFee = 2000;
+    const { stylistPct, salonPct } = await commissionSplit(prisma, stylist.primarySalonId, stylist.id);
 
     const booking = await prisma.booking.create({
       data: {
@@ -366,11 +368,11 @@ router.post('/', requireRole('CUSTOMER'), async (req, res) => {
         price,
         travelFee,
         platformFee,
-        stylistPayout: Math.round(price * 0.7),
-        salonPayout: stylist.primarySalonId ? Math.round(price * 0.3) : 0,
+        stylistPayout: Math.round(price * (stylistPct / 100)),
+        salonPayout: Math.round(price * (salonPct / 100)),
         commissionSnapshot: {
-          stylist: 70,
-          salon: stylist.primarySalonId ? 30 : 0,
+          stylist: stylistPct,
+          salon: salonPct,
         },
         status: 'PENDING',
         services: {
@@ -401,6 +403,7 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
       customerName,
       customerPhone,
       completed = false, // "Done service": logged after the fact, no future slot
+      paymentMethod,
     } = req.body;
 
     const requestedServiceIds = Array.isArray(serviceIds)
@@ -415,6 +418,10 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
       return res.status(400).json({
         error: 'salonId, stylistId, serviceId/serviceIds, customerPhone (and dateTime unless completed) are required',
       });
+    }
+
+    if (paymentMethod != null && !['CASH', 'CARD', 'UPI'].includes(paymentMethod)) {
+      return res.status(400).json({ error: 'paymentMethod must be one of CASH, CARD, UPI' });
     }
 
     const salon = await prisma.salon.findFirst({
@@ -488,6 +495,7 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
 
     const primaryService = services[0];
     const price = services.reduce((total, item) => total + item.basePrice, 0);
+    const { stylistPct, salonPct } = await commissionSplit(prisma, salonId, stylistId);
     const booking = await prisma.booking.create({
       data: {
         customerId: customer.id,
@@ -503,11 +511,14 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
         price,
         platformFee: 0,
         travelFee: 0,
-        stylistPayout: Math.round(price * 0.7),
-        salonPayout: Math.round(price * 0.3),
-        commissionSnapshot: { stylist: 70, salon: 30, source: 'SALON_MANUAL' },
+        stylistPayout: Math.round(price * (stylistPct / 100)),
+        salonPayout: Math.round(price * (salonPct / 100)),
+        commissionSnapshot: { stylist: stylistPct, salon: salonPct, source: 'SALON_MANUAL' },
         status: completed ? 'COMPLETED' : 'CONFIRMED',
         completedAt: completed ? start : null,
+        // Only meaningful when payment was actually collected at logging time;
+        // a "Schedule later" booking hasn't been paid for yet.
+        paymentMethod: completed ? (paymentMethod ?? null) : null,
         services: {
           create: services.map((item, index) => ({
             serviceId: item.id,
@@ -527,9 +538,12 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
 // PATCH /api/v2/bookings/:id/status - Confirm/cancel a booking request.
 router.patch('/:id/status', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
-    const { status } = req.body;
-    if (!['PENDING', 'PENDING_RESCHEDULE', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(status)) {
+    const { status, paymentMethod } = req.body;
+    if (!['PENDING', 'PENDING_RESCHEDULE', 'CONFIRMED', 'IN_PROGRESS', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(status)) {
       return res.status(400).json({ error: 'Invalid booking status' });
+    }
+    if (paymentMethod != null && !['CASH', 'CARD', 'UPI'].includes(paymentMethod)) {
+      return res.status(400).json({ error: 'paymentMethod must be one of CASH, CARD, UPI' });
     }
 
     const existing = await prisma.booking.findUnique({
@@ -541,9 +555,29 @@ router.patch('/:id/status', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN')
       return res.status(404).json({ error: 'Booking not found' });
     }
 
+    // A stylist cancelling their own booking needs the salon's explicit
+    // go-ahead (SalonStylist.canCancelBooking) — previously unenforced, any
+    // STYLIST who owned the booking could cancel unconditionally. Owners/
+    // admins are unaffected; this only gates the STYLIST-initiated path.
+    if (status === 'CANCELLED' && req.user!.role === 'STYLIST' && existing.salonId) {
+      const relation = await prisma.salonStylist.findUnique({
+        where: { salonId_stylistId: { salonId: existing.salonId, stylistId: existing.stylistId! } },
+      });
+      if (!relation?.canCancelBooking) {
+        return res.status(403).json({ error: 'You are not allowed to cancel bookings at this salon' });
+      }
+    }
+
     const booking = await prisma.booking.update({
       where: { id: req.params.id },
-      data: { status },
+      data: {
+        status,
+        // Earnings are keyed off completedAt; without this a booking marked
+        // done via this endpoint (rather than created already-completed via
+        // /salon-manual) would be mis-dated to createdAt in the earnings report.
+        ...(status === 'COMPLETED' && !existing.completedAt ? { completedAt: new Date() } : {}),
+        ...(status === 'COMPLETED' && paymentMethod != null ? { paymentMethod } : {}),
+      },
       include: bookingInclude,
     });
 

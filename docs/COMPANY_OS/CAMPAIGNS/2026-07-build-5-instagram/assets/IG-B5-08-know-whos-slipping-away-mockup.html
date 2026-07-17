@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1350px; }
+  body {
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    background: linear-gradient(160deg, #FBF8F3 0%, #F3EFE6 55%, #EDE7D9 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .headline {
+    position: absolute;
+    top: 90px;
+    left: 70px;
+    right: 70px;
+    font-size: 68px;
+    font-weight: 800;
+    line-height: 1.08;
+    color: #0E7C6B;
+    letter-spacing: -1px;
+  }
+  .sub {
+    position: absolute;
+    top: 300px;
+    left: 72px;
+    right: 100px;
+    font-size: 30px;
+    font-weight: 600;
+    color: #4B4038;
+  }
+  .phone {
+    position: absolute;
+    top: 400px;
+    left: 90px;
+    width: 900px;
+    background: #FFFFFF;
+    border-radius: 40px;
+    box-shadow: 0 40px 80px rgba(43,33,28,0.18);
+    padding: 44px 44px 56px;
+    border: 2px solid #EFE6DC;
+  }
+  .appbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .logo {
+    width: 40px; height: 40px;
+    background: #0E7C6B;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 800; font-size: 20px;
+  }
+  .appbar-title { font-size: 30px; font-weight: 800; color: #14100D; }
+  .alert-card {
+    background: #EAF0FF;
+    border-radius: 28px;
+    padding: 36px 40px;
+    border: 2px solid #D6E0FA;
+  }
+  .alert-title { display:flex; align-items:center; gap:14px; font-size:34px; font-weight: 800; color: #14100D; margin-bottom: 10px; }
+  .alert-sub { font-size: 24px; font-weight: 600; color: #4B4038; margin-bottom: 28px; }
+  .row { display: flex; align-items: center; justify-content: space-between; background: #FFFFFF; border-radius: 22px; padding: 24px 28px; margin-bottom: 20px; }
+  .row:last-child { margin-bottom: 0; }
+  .cust-name { font-size: 28px; font-weight: 800; color: #14100D; display:flex; align-items:center; gap:12px;}
+  .overdue-pill { background: #FDECEC; color: #DC2626; font-size: 18px; font-weight: 800; padding: 6px 14px; border-radius: 999px; }
+  .cust-meta { font-size: 20px; color: #6B5C54; font-weight: 600; margin-top: 6px; }
+  .remind-btn { background: #25D366; color: white; font-weight: 800; font-size: 22px; padding: 18px 32px; border-radius: 999px; display:flex; align-items:center; gap:10px; white-space: nowrap;}
+  .footer {
+    position: absolute;
+    bottom: 90px;
+    left: 70px;
+    right: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cta {
+    background: #0E7C6B;
+    color: white;
+    font-weight: 800;
+    font-size: 28px;
+    padding: 24px 44px;
+    border-radius: 999px;
+  }
+  .brand {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0E7C6B;
+  }
+</style>
+</head>
+<body>
+  <div class="headline">Know who's<br>slipping away.</div>
+  <div class="sub">Chairful shows you exactly who's overdue &mdash; and lets you win them back in one tap.</div>
+
+  <div class="phone">
+    <div class="appbar">
+      <div class="logo">C</div>
+      <div class="appbar-title">Insights</div>
+    </div>
+    <div class="alert-card">
+      <div class="alert-title">🔔 Reach out now</div>
+      <div class="alert-sub">6 regulars are slipping &middot; &#8377;18,500 at risk</div>
+
+      <div class="row">
+        <div>
+          <div class="cust-name">Demo Customer <span class="overdue-pill">3.2&times; overdue</span></div>
+          <div class="cust-meta">Usually every 10d &middot; 22d overdue</div>
+        </div>
+        <div class="remind-btn">&#128172; Remind</div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="cust-name">Demo Customer <span class="overdue-pill">2.2&times; overdue</span></div>
+          <div class="cust-meta">Usually every 20d &middot; 24d overdue</div>
+        </div>
+        <div class="remind-btn">&#128172; Remind</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="cta">DM "CHAIRFUL"</div>
+    <div class="brand">Chairful</div>
+  </div>
+</body>
+</html>

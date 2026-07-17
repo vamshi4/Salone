@@ -24,9 +24,15 @@ router.get('/', requireRole('CUSTOMER', 'SALON_OWNER', 'SUPER_ADMIN'), async (re
     },
     include: {
       services: true,
+      products: { where: { deletedAt: null } },
       owner: true,
       stylists: {
-        where: { status: 'ACTIVE', stylist: { deletedAt: null } },
+        // Include TERMINATED relations too — the admin app's Staff tab needs
+        // them to let owners re-activate a deactivated stylist (that toggle
+        // only lives inside the staff card, so hiding terminated relations
+        // here made them permanently unreachable). Consumers that must stay
+        // active-only (booking/service staff pickers) filter client-side.
+        where: { stylist: { deletedAt: null } },
         include: {
           stylist: {
             include: {
@@ -39,7 +45,109 @@ router.get('/', requireRole('CUSTOMER', 'SALON_OWNER', 'SUPER_ADMIN'), async (re
       },
     },
   });
-  res.json(salons);
+
+  // Cheap per-branch "today" summary so the branch switcher can show a real
+  // comparison (revenue/bookings) between branches without the client
+  // fetching each branch's full bookings list just to render the switcher.
+  const salonIds = salons.map((s) => s.id);
+  const todayStart = istStartOfDay(new Date());
+  const todaysBookings = salonIds.length
+    ? await prisma.booking.findMany({
+        where: {
+          salonId: { in: salonIds },
+          status: 'COMPLETED',
+          OR: [
+            { completedAt: { gte: todayStart } },
+            { completedAt: null, createdAt: { gte: todayStart } },
+          ],
+        },
+        select: { salonId: true, price: true },
+      })
+    : [];
+  const statsBySalon = new Map<string, { count: number; revenue: number }>();
+  for (const b of todaysBookings) {
+    if (!b.salonId) continue;
+    const existing = statsBySalon.get(b.salonId) ?? { count: 0, revenue: 0 };
+    existing.count += 1;
+    existing.revenue += b.price;
+    statsBySalon.set(b.salonId, existing);
+  }
+
+  const withStats = salons.map((s) => ({
+    ...s,
+    todayStats: statsBySalon.get(s.id) ?? { count: 0, revenue: 0 },
+  }));
+
+  res.json(withStats);
+});
+
+// POST /api/v2/salons - Add a branch to the current owner's account. Sibling
+// to /api/v2/auth/salon-signup's salon-creation half (same required fields),
+// but for an owner who already has a User row — no transaction needed here
+// since there's no User to create alongside it.
+router.post('/', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { name, address, lat = 0, lng = 0, countryCode, currency } = req.body;
+    if (!name || !address) {
+      return res.status(400).json({ error: 'name and address are required' });
+    }
+
+    const salon = await prisma.salon.create({
+      data: {
+        ownerId: req.user!.id,
+        name: String(name).trim(),
+        address: String(address).trim(),
+        lat: Number(lat) || 0,
+        lng: Number(lng) || 0,
+        ...(countryCode ? { countryCode: String(countryCode).trim().toUpperCase() } : {}),
+        ...(currency ? { currency: String(currency).trim().toUpperCase() } : {}),
+      },
+    });
+
+    res.status(201).json(salon);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/v2/salons/:salonId - Update one specific branch's profile.
+// Mirrors the salon-scoped PATCH pattern used everywhere else in this file.
+// This is what v4_1+ calls for salon fields instead of the legacy combined
+// PATCH /api/v2/auth/me body (see the compatibility shim there for why that
+// endpoint still accepts these fields too, for single-salon v3 accounts).
+router.patch('/:salonId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { salonId } = req.params;
+    const { name, address, lat, lng, countryCode, currency, dailyRevenueGoal } = req.body;
+
+    const salon = await findOwnedSalon(salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const nextName = name == null ? salon.name : String(name).trim();
+    const nextAddress = address == null ? salon.address : String(address).trim();
+    if (!nextName || !nextAddress) {
+      return res.status(400).json({ error: 'Salon name and address are required' });
+    }
+
+    const updated = await prisma.salon.update({
+      where: { id: salonId },
+      data: {
+        name: nextName,
+        address: nextAddress,
+        ...(lat != null && Number.isFinite(Number(lat)) ? { lat: Number(lat) } : {}),
+        ...(lng != null && Number.isFinite(Number(lng)) ? { lng: Number(lng) } : {}),
+        ...(countryCode ? { countryCode: String(countryCode).trim().toUpperCase() } : {}),
+        ...(currency ? { currency: String(currency).trim().toUpperCase() } : {}),
+        ...(dailyRevenueGoal != null && Number.isFinite(Number(dailyRevenueGoal))
+          ? { dailyRevenueGoal: Math.max(0, Math.round(Number(dailyRevenueGoal))) }
+          : {}),
+      },
+    });
+
+    res.json(updated);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // GET /api/v2/salons/:salonId/bookings - Salon admin booking dashboard.
@@ -287,51 +395,66 @@ function istStartOfDay(d: Date) {
   shifted.setUTCHours(0, 0, 0, 0);
   return new Date(shifted.getTime() - IST_OFFSET_MS);
 }
+// Shared by /earnings and /earnings/export: the full (unsliced) set of
+// completed bookings within the requested period, plus the same-length
+// prior window for a growth comparison. /earnings aggregates+truncates this
+// for the dashboard payload; /earnings/export maps the full `inRange` to CSV
+// rows so exports aren't silently capped at the dashboard's 50-row display
+// limit.
+async function getEarningsRange(salonId: string, periodParam: unknown) {
+  const period = ['day', 'week', 'month'].includes(String(periodParam)) ? String(periodParam) : 'day';
+  const days = period === 'day' ? 1 : period === 'week' ? 7 : 30;
+
+  const now = new Date();
+  const from = istStartOfDay(now);
+  from.setUTCDate(from.getUTCDate() - (days - 1));
+
+  const completed = await prisma.booking.findMany({
+    where: { salonId, status: 'COMPLETED' },
+    select: {
+      id: true,
+      price: true,
+      completedAt: true,
+      createdAt: true,
+      paymentMethod: true,
+      customer: { select: { name: true, phone: true } },
+      service: { select: { name: true } },
+      stylistId: true,
+      stylist: { select: { user: { select: { name: true } } } },
+      stylistPayout: true,
+      payoutId: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const earnedAt = (b: { completedAt: Date | null; createdAt: Date }) => b.completedAt ?? b.createdAt;
+  const inRange = completed.filter((b) => {
+    const d = earnedAt(b);
+    return d >= from && d <= now;
+  });
+
+  // Same-length window immediately before `from`, so the owner can see
+  // "am I growing?" at a glance instead of just a raw total in isolation.
+  const previousFrom = new Date(from);
+  previousFrom.setUTCDate(previousFrom.getUTCDate() - days);
+  const previousRange = completed.filter((b) => {
+    const d = earnedAt(b);
+    return d >= previousFrom && d < from;
+  });
+
+  return { period, days, now, from, inRange, previousRange, earnedAt };
+}
+
 router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { salonId } = req.params;
     const salon = await findOwnedSalon(salonId, req.user);
     if (!salon) return res.status(404).json({ error: 'Salon not found' });
 
-    const period = ['day', 'week', 'month'].includes(String(req.query.period))
-      ? String(req.query.period)
-      : 'day';
-    const days = period === 'day' ? 1 : period === 'week' ? 7 : 30;
-
-    const now = new Date();
-    const from = istStartOfDay(now);
-    from.setUTCDate(from.getUTCDate() - (days - 1));
-
-    const completed = await prisma.booking.findMany({
-      where: { salonId, status: 'COMPLETED' },
-      select: {
-        id: true,
-        price: true,
-        completedAt: true,
-        createdAt: true,
-        customer: { select: { name: true, phone: true } },
-        service: { select: { name: true } },
-        stylistId: true,
-        stylist: { select: { user: { select: { name: true } } } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const earnedAt = (b: { completedAt: Date | null; createdAt: Date }) =>
-      b.completedAt ?? b.createdAt;
-    const inRange = completed.filter((b) => {
-      const d = earnedAt(b);
-      return d >= from && d <= now;
-    });
-
-    // Same-length window immediately before `from`, so the owner can see
-    // "am I growing?" at a glance instead of just a raw total in isolation.
-    const previousFrom = new Date(from);
-    previousFrom.setUTCDate(previousFrom.getUTCDate() - days);
-    const previousRange = completed.filter((b) => {
-      const d = earnedAt(b);
-      return d >= previousFrom && d < from;
-    });
+    const { period, days, now, from, inRange, previousRange, earnedAt } = await getEarningsRange(
+      salonId,
+      req.query.period,
+    );
 
     // Seed every day in the range so the chart has no gaps.
     const byDay = new Map<string, { total: number; count: number }>();
@@ -395,8 +518,51 @@ router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asyn
         customerName: b.customer?.name ?? b.customer?.phone ?? 'Customer',
         serviceName: b.service?.name ?? '',
         price: b.price,
+        paymentMethod: b.paymentMethod,
       })),
     });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+function csvCell(value: string | number): string {
+  const s = String(value);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// GET /api/v2/salons/:salonId/earnings/export?period=day|week|month - Same
+// range as /earnings, but the FULL (unsliced) completed-bookings list as a
+// downloadable CSV — /earnings truncates its `bookings` field to 50 rows for
+// the in-app list, which would silently under-report any period with more
+// completed bookings than that.
+router.get('/:salonId/earnings/export', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { salonId } = req.params;
+    const salon = await findOwnedSalon(salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const { period, inRange, earnedAt } = await getEarningsRange(salonId, req.query.period);
+
+    const header = ['Date', 'Time', 'Customer', 'Stylist', 'Service', 'Price', 'Payment method'];
+    const rows = inRange.map((b) => {
+      const at = new Date(earnedAt(b).getTime() + IST_OFFSET_MS);
+      const date = at.toISOString().slice(0, 10);
+      const time = at.toISOString().slice(11, 16);
+      return [
+        date,
+        time,
+        b.customer?.name ?? b.customer?.phone ?? 'Customer',
+        b.stylist?.user?.name ?? '',
+        b.service?.name ?? '',
+        (b.price / 100).toFixed(2),
+        b.paymentMethod ?? '',
+      ];
+    });
+
+    const csv = [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
+    const filename = `earnings-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
+    res.type('text/csv').attachment(filename).send(csv);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -492,11 +658,17 @@ router.post('/:salonId/stylists/:stylistId/make-exclusive', requireRole('SALON_O
     const { salonId, stylistId } = req.params;
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Update SalonStylist
+      // 1. Update SalonStylist — same salon-default-commission fallback as
+      // the add-staff flow (see there for why): use the salon's own
+      // admin-set default if one exists, else the long-standing 70%.
+      const salonForDefault = await tx.salon.findUnique({ where: { id: salonId }, select: { commissionRate: true } });
+      const defaultCommissionRate =
+        salonForDefault && salonForDefault.commissionRate > 0 ? salonForDefault.commissionRate : 70;
+
       await tx.salonStylist.upsert({
         where: { salonId_stylistId: { salonId, stylistId } },
         update: { exclusive: true, status: 'ACTIVE' },
-        create: { salonId, stylistId, exclusive: true, status: 'ACTIVE' },
+        create: { salonId, stylistId, exclusive: true, status: 'ACTIVE', commissionRate: defaultCommissionRate },
       });
 
       // 2. Update Stylist - disable independent + home service
@@ -530,14 +702,30 @@ router.post('/:salonId/stylists/:stylistId/make-exclusive', requireRole('SALON_O
 router.patch('/:salonId/stylists/:stylistId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { salonId, stylistId } = req.params;
-    const { canSetOwnPrice } = req.body;
+    const { canSetOwnPrice, canCancelBooking, status, payType, commissionRate, salaryAmount } = req.body;
+
+    // Only ACTIVE<->TERMINATED is an owner-facing toggle (an "active/inactive"
+    // switch on the Staff screen) — PENDING is system-set when a relationship
+    // is first created and isn't something the owner flips to directly.
+    if (status != null && !['ACTIVE', 'TERMINATED'].includes(status)) {
+      return res.status(400).json({ error: 'status must be ACTIVE or TERMINATED' });
+    }
+    if (payType != null && !['COMMISSION', 'SALARY', 'BOTH'].includes(payType)) {
+      return res.status(400).json({ error: 'payType must be COMMISSION, SALARY, or BOTH' });
+    }
+    if (commissionRate != null && (typeof commissionRate !== 'number' || commissionRate < 0 || commissionRate > 100)) {
+      return res.status(400).json({ error: 'commissionRate must be a number between 0 and 100' });
+    }
+    if (salaryAmount != null && (typeof salaryAmount !== 'number' || salaryAmount < 0)) {
+      return res.status(400).json({ error: 'salaryAmount must be a non-negative number' });
+    }
 
     const salon = await findOwnedSalon(salonId, req.user);
     if (!salon) return res.status(404).json({ error: 'Salon not found' });
 
     const updated = await prisma.salonStylist.update({
       where: { salonId_stylistId: { salonId, stylistId } },
-      data: { canSetOwnPrice },
+      data: { canSetOwnPrice, canCancelBooking, status, payType, commissionRate, salaryAmount },
     });
 
     res.json(updated);
@@ -545,6 +733,188 @@ router.patch('/:salonId/stylists/:stylistId', requireRole('SALON_OWNER', 'SUPER_
     res.status(500).json({ error: e.message });
   }
 });
+
+// GET /api/v2/salons/:salonId/stylists/:stylistId/earnings?period=day|week|month
+// Per-stylist view of the same range /earnings computes salon-wide, plus
+// unpaidTotal — the real gap this fills: /earnings' byStylist leaderboard
+// sums gross price, never stylistPayout, so nothing previously showed what a
+// stylist is actually owed. unpaidTotal is intentionally NOT period-filtered
+// (it's "everything unpaid right now," which can span period boundaries).
+router.get(
+  '/:salonId/stylists/:stylistId/earnings',
+  requireRole('SALON_OWNER', 'SUPER_ADMIN'),
+  async (req, res) => {
+    try {
+      const { salonId, stylistId } = req.params;
+      const salon = await findOwnedSalon(salonId, req.user);
+      if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+      const { period, from, now, inRange } = await getEarningsRange(salonId, req.query.period);
+      const stylistRange = inRange.filter((b) => b.stylistId === stylistId);
+
+      const unpaid = await prisma.booking.aggregate({
+        where: { salonId, stylistId, status: 'COMPLETED', payoutId: null },
+        _sum: { stylistPayout: true },
+        _count: true,
+      });
+
+      const relation = await prisma.salonStylist.findUnique({
+        where: { salonId_stylistId: { salonId, stylistId } },
+      });
+      const salaryMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const salaryPaid = relation
+        ? await prisma.stylistPayout.findFirst({
+            where: { salonId, stylistId, isSalaryPayout: true, salaryMonth },
+          })
+        : null;
+
+      res.json({
+        period,
+        from,
+        to: now,
+        grossRevenue: stylistRange.reduce((sum, b) => sum + b.price, 0),
+        totalPayout: stylistRange.reduce((sum, b) => sum + b.stylistPayout, 0),
+        count: stylistRange.length,
+        unpaidTotal: unpaid._sum.stylistPayout ?? 0,
+        unpaidCount: unpaid._count,
+        payType: relation?.payType ?? 'COMMISSION',
+        salaryAmount: relation?.salaryAmount ?? 0,
+        salaryPaidThisMonth: !!salaryPaid,
+      });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  },
+);
+
+// POST /api/v2/salons/:salonId/stylists/:stylistId/payouts - Settle a batch
+// of unpaid commission: sums COMPLETED bookings for this stylist with
+// payoutId null in [periodStart, periodEnd], creates a StylistPayout, and
+// links those bookings to it (payoutId set) so they drop out of "unpaid."
+router.post(
+  '/:salonId/stylists/:stylistId/payouts',
+  requireRole('SALON_OWNER', 'SUPER_ADMIN'),
+  async (req, res) => {
+    try {
+      const { salonId, stylistId } = req.params;
+      const { type } = req.body ?? {};
+
+      const salon = await findOwnedSalon(salonId, req.user);
+      if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+      // Fixed-salary settlement — separate from the bookings-based path
+      // below: no bookings are involved, it's just "pay this month's
+      // salary," settled once per calendar month.
+      if (type === 'SALARY') {
+        const relation = await prisma.salonStylist.findUnique({
+          where: { salonId_stylistId: { salonId, stylistId } },
+        });
+        if (!relation || relation.salaryAmount <= 0) {
+          return res.status(400).json({ error: 'This stylist has no salary amount set' });
+        }
+        const now = new Date();
+        const salaryMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const alreadyPaid = await prisma.stylistPayout.findFirst({
+          where: { salonId, stylistId, isSalaryPayout: true, salaryMonth },
+        });
+        if (alreadyPaid) {
+          return res.status(400).json({ error: 'Salary already paid for this month' });
+        }
+        const payout = await prisma.stylistPayout.create({
+          data: {
+            salonId,
+            stylistId,
+            periodStart: new Date(now.getFullYear(), now.getMonth(), 1),
+            periodEnd: now,
+            grossRevenue: 0,
+            totalPayout: relation.salaryAmount,
+            bookingCount: 0,
+            paidBy: req.user!.id,
+            note: `Salary — ${salaryMonth}`,
+            isSalaryPayout: true,
+            salaryMonth,
+          },
+        });
+        return res.status(201).json(payout);
+      }
+
+      const { periodStart, periodEnd, note } = req.body ?? {};
+
+      const start = new Date(periodStart);
+      const end = new Date(periodEnd);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+        return res.status(400).json({ error: 'Valid periodStart and periodEnd are required' });
+      }
+
+      const eligible = await prisma.booking.findMany({
+        where: {
+          salonId,
+          stylistId,
+          status: 'COMPLETED',
+          payoutId: null,
+          OR: [
+            { completedAt: { gte: start, lte: end } },
+            { completedAt: null, createdAt: { gte: start, lte: end } },
+          ],
+        },
+        select: { id: true, price: true, stylistPayout: true },
+      });
+
+      if (eligible.length === 0) {
+        return res.status(400).json({ error: 'No unpaid bookings in this period' });
+      }
+
+      const grossRevenue = eligible.reduce((sum, b) => sum + b.price, 0);
+      const totalPayout = eligible.reduce((sum, b) => sum + b.stylistPayout, 0);
+
+      const payout = await prisma.$transaction(async (tx) => {
+        const created = await tx.stylistPayout.create({
+          data: {
+            salonId,
+            stylistId,
+            periodStart: start,
+            periodEnd: end,
+            grossRevenue,
+            totalPayout,
+            bookingCount: eligible.length,
+            paidBy: req.user!.id,
+            note: note ? String(note).trim() : null,
+          },
+        });
+        await tx.booking.updateMany({
+          where: { id: { in: eligible.map((b) => b.id) } },
+          data: { payoutId: created.id },
+        });
+        return created;
+      });
+
+      res.status(201).json(payout);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  },
+);
+
+// GET /api/v2/salons/:salonId/stylists/:stylistId/payouts - Settlement history, newest first.
+router.get(
+  '/:salonId/stylists/:stylistId/payouts',
+  requireRole('SALON_OWNER', 'SUPER_ADMIN'),
+  async (req, res) => {
+    try {
+      const { salonId, stylistId } = req.params;
+      const salon = await findOwnedSalon(salonId, req.user);
+      if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+      const payouts = await prisma.stylistPayout.findMany({
+        where: { salonId, stylistId },
+        orderBy: { paidAt: 'desc' },
+      });
+      res.json(payouts);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  },
+);
 
 // POST /api/v2/salons/:salonId/staff-setup - Create a staff member with a
 // starter service and default Mon-Sat hours in one atomic step. Replaces a
@@ -607,8 +977,21 @@ router.post('/:salonId/staff-setup', requireRole('SALON_OWNER', 'SUPER_ADMIN'), 
         },
       });
 
+      // Salon.commissionRate (super-admin-editable) is the salon's own default
+      // for newly-added staff, when an admin has actually set one — falls back
+      // to the same 70% every SalonStylist relation has always defaulted to
+      // otherwise, so this is behavior-neutral for every salon that's never
+      // had this field touched.
+      const defaultCommissionRate = salon.commissionRate > 0 ? salon.commissionRate : 70;
+
       await tx.salonStylist.create({
-        data: { salonId, stylistId: createdStylist.id, exclusive: true, status: 'ACTIVE' },
+        data: {
+          salonId,
+          stylistId: createdStylist.id,
+          exclusive: true,
+          status: 'ACTIVE',
+          commissionRate: defaultCommissionRate,
+        },
       });
 
       await tx.service.create({
@@ -635,6 +1018,226 @@ router.post('/:salonId/staff-setup', requireRole('SALON_OWNER', 'SUPER_ADMIN'), 
     });
 
     res.status(201).json(stylist);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Validates that stylistId (if given) is an active stylist of this salon,
+// so a service can't be assigned to staff from a different salon. Returns
+// true if stylistId is null/empty (unassigned is always valid) or valid.
+async function isActiveStylistOfSalon(salonId: string, stylistId: unknown) {
+  if (stylistId == null || stylistId === '') return true;
+  const membership = await prisma.salonStylist.findFirst({
+    where: { salonId, stylistId: String(stylistId), status: 'ACTIVE' },
+  });
+  return membership != null;
+}
+
+// GET /api/v2/salons/:salonId/services - Salon-wide service catalog (v4
+// Services tab). Distinct from the existing stylist-scoped
+// /api/v2/stylists/:id/services routes: those manage what one stylist
+// personally offers, this manages the salon's catalog independent of staff.
+// Optionally assigned to one staff member (stylistId) so the owner can see
+// who a given service belongs to; unassigned services are usable by any
+// stylist as a booking fallback (see mobile new_booking_sheet.dart).
+router.get('/:salonId/services', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const services = await prisma.service.findMany({
+      where: { salonId: req.params.salonId },
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+      include: { stylist: { include: { user: true } } },
+    });
+
+    res.json(services);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/v2/salons/:salonId/services - Add a salon-wide service.
+router.post('/:salonId/services', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const { name, category = 'Salon', duration = 60, basePrice, stylistId } = req.body ?? {};
+    if (!name || String(name).trim().length < 2) {
+      return res.status(400).json({ error: 'Service name is required' });
+    }
+    if (!(await isActiveStylistOfSalon(req.params.salonId, stylistId))) {
+      return res.status(400).json({ error: 'Selected staff member is not active at this salon' });
+    }
+
+    const service = await prisma.service.create({
+      data: {
+        salonId: req.params.salonId,
+        stylistId: stylistId || null,
+        name: String(name).trim(),
+        category: String(category || 'Salon').trim(),
+        duration: Math.max(15, Number(duration || 60)),
+        basePrice: Math.max(0, Number(basePrice ?? 0)),
+      },
+      include: { stylist: { include: { user: true } } },
+    });
+
+    res.status(201).json(service);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/v2/salons/:salonId/services/:serviceId - Update a catalog service.
+router.patch('/:salonId/services/:serviceId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const service = await prisma.service.findFirst({
+      where: { id: req.params.serviceId, salonId: req.params.salonId },
+    });
+    if (!service) return res.status(404).json({ error: 'Service not found' });
+
+    const { name, category, duration, basePrice, stylistId } = req.body ?? {};
+    if (stylistId !== undefined && !(await isActiveStylistOfSalon(req.params.salonId, stylistId))) {
+      return res.status(400).json({ error: 'Selected staff member is not active at this salon' });
+    }
+
+    const data: any = {};
+    if (name != null) data.name = String(name).trim();
+    if (category != null) data.category = String(category || 'Salon').trim();
+    if (duration != null) data.duration = Math.max(15, Number(duration));
+    if (basePrice != null) data.basePrice = Math.max(0, Number(basePrice));
+    if (stylistId !== undefined) data.stylistId = stylistId || null;
+
+    const updated = await prisma.service.update({
+      where: { id: req.params.serviceId },
+      data,
+      include: { stylist: { include: { user: true } } },
+    });
+    res.json(updated);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/v2/salons/:salonId/services/:serviceId - Remove a catalog service.
+router.delete('/:salonId/services/:serviceId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const service = await prisma.service.findFirst({
+      where: { id: req.params.serviceId, salonId: req.params.salonId },
+    });
+    if (!service) return res.status(404).json({ error: 'Service not found' });
+
+    await prisma.service.delete({ where: { id: req.params.serviceId } });
+    res.json({ ok: true });
+  } catch (e: any) {
+    if (e.code === 'P2003') {
+      return res.status(400).json({
+        error: 'This service already has bookings, so edit it instead of deleting.',
+      });
+    }
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/v2/salons/:salonId/products - Retail inventory catalog.
+router.get('/:salonId/products', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const products = await prisma.product.findMany({
+      where: { salonId: req.params.salonId, deletedAt: null },
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    });
+
+    res.json(products);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/v2/salons/:salonId/products - Add a retail product.
+router.post('/:salonId/products', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const { name, category = 'Retail', sku, retailPrice, stockQty = 0, lowStockThreshold = 5 } = req.body ?? {};
+    if (!name || String(name).trim().length < 2) {
+      return res.status(400).json({ error: 'Product name is required' });
+    }
+    if (typeof retailPrice !== 'number' || retailPrice < 0) {
+      return res.status(400).json({ error: 'retailPrice is required' });
+    }
+
+    const product = await prisma.product.create({
+      data: {
+        salonId: req.params.salonId,
+        name: String(name).trim(),
+        category: String(category || 'Retail').trim(),
+        sku: sku ? String(sku).trim() : null,
+        retailPrice: Math.max(0, Number(retailPrice)),
+        stockQty: Math.max(0, Number(stockQty || 0)),
+        lowStockThreshold: Math.max(0, Number(lowStockThreshold ?? 5)),
+      },
+    });
+
+    res.status(201).json(product);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/v2/salons/:salonId/products/:productId - Update a product (incl. restocking).
+router.patch('/:salonId/products/:productId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const product = await prisma.product.findFirst({
+      where: { id: req.params.productId, salonId: req.params.salonId, deletedAt: null },
+    });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    const { name, category, sku, retailPrice, stockQty, lowStockThreshold } = req.body ?? {};
+    const data: any = {};
+    if (name != null) data.name = String(name).trim();
+    if (category != null) data.category = String(category || 'Retail').trim();
+    if (sku !== undefined) data.sku = sku ? String(sku).trim() : null;
+    if (retailPrice != null) data.retailPrice = Math.max(0, Number(retailPrice));
+    if (stockQty != null) data.stockQty = Math.max(0, Number(stockQty));
+    if (lowStockThreshold != null) data.lowStockThreshold = Math.max(0, Number(lowStockThreshold));
+
+    const updated = await prisma.product.update({ where: { id: req.params.productId }, data });
+    res.json(updated);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/v2/salons/:salonId/products/:productId - Soft-delete a product
+// (unlike Service's hard delete — stock/sales history will reference
+// products later, so start soft to avoid a second migration for that).
+router.delete('/:salonId/products/:productId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const product = await prisma.product.findFirst({
+      where: { id: req.params.productId, salonId: req.params.salonId, deletedAt: null },
+    });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    await prisma.product.update({ where: { id: req.params.productId }, data: { deletedAt: new Date() } });
+    res.json({ ok: true });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

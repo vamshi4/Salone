@@ -3003,6 +3003,60 @@ class _ManualBookingSheetState extends State<_ManualBookingSheet> {
                 },
               ),
               const SizedBox(height: 14),
+              if (_nameController.text.isEmpty &&
+                  _phoneController.text.isEmpty &&
+                  _customers.isNotEmpty) ...[
+                const Text('Recent customers — tap to fill',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.inkMuted)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _customers.take(8).map((customer) {
+                    final name = '${customer['name'] ?? ''}'.trim();
+                    final label = name.isEmpty ? 'Customer' : name;
+                    final initial =
+                        label.isNotEmpty ? label[0].toUpperCase() : '?';
+                    return InkWell(
+                      key: Key('booking_recent_customer_$label'),
+                      onTap: () => _pickCustomer(customer),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      child: Container(
+                        padding: const EdgeInsets.only(
+                            left: 6, right: 12, top: 6, bottom: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceAlt,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircleAvatar(
+                              radius: 13,
+                              backgroundColor: AppColors.accentSoft,
+                              child: Text(initial,
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.accent)),
+                            ),
+                            const SizedBox(width: 7),
+                            Text(label,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
+              ],
               TextField(
                 key: const Key('booking_customer_name'),
                 controller: _nameController,

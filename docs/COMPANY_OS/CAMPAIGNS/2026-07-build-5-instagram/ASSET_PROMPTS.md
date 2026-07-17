@@ -46,6 +46,20 @@ Prompt:
 Create a simple Instagram square graphic showing a salon owner quickly selecting a repeat customer on a phone app. Use fake customer names only like "Demo Customer". Text overlay: "Book repeat customers faster". Style should be modern, clean, Indian salon business focused, not flashy, with teal brand accent and strong readable text.
 ```
 
+## Feed Creative 4 - Retention Win-Back
+
+Goal: Show the retention/at-risk feature — the flagship "pay-for" differentiator.
+Platform: Instagram feed
+Aspect ratio: 4:5
+
+Prompt:
+
+```text
+Create a clean Instagram graphic (4:5) for Chairful, a salon management app, following the same reference face, pose, and salon-interior style as the approved IG-B5-01 v4 asset. Show a salon owner reviewing a phone card labeled "Reach out now" with fake/demo customer names only, an overdue badge, and a green WhatsApp-style "Remind" button. Text overlay: "Know who's slipping away." Teal brand accent, warm Indian salon interior background, practical and trustworthy, not flashy.
+```
+
+A placeholder mockup (flat HTML, no photo background) is at `assets/IG-B5-08-know-whos-slipping-away-mockup.html` — open it in a browser and screenshot/print to get a usable PNG until the photorealistic version above is generated.
+
 ## Reel 1 - Forgotten Walk-In
 
 Goal: Short demo-style video.

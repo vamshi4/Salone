@@ -206,29 +206,40 @@ router.get('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) =>
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      include: { salonOwned: true },
+      // cuids are creation-ordered, so this approximates "oldest branch
+      // first" without needing a createdAt column on Salon.
+      include: { salonOwned: { orderBy: { id: 'asc' } } },
     });
     if (!user) return res.status(404).json({ error: 'Account not found' });
 
     res.json({
       user: publicUser(user),
-      salon: user.salonOwned,
+      // Legacy singular field, kept exactly as before multi-branch.
+      // DO NOT REMOVE: mobile/salon_admin_app_v3 (live on Play Store) reads
+      // this as one object and has no branch-switching UI to need `salons`.
+      salon: user.salonOwned[0] ?? null,
+      // New field: the full branch list, for clients built for multi-branch.
+      salons: user.salonOwned,
     });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
 });
 
+// Fields that only make sense scoped to a specific branch. Present in the
+// body here only via the v3-compatibility shim below — v4_1+ should call
+// PATCH /api/v2/salons/:salonId instead, which this shim redirects to
+// internally for single-salon owners.
+const LEGACY_SALON_FIELDS = ['salonName', 'address', 'lat', 'lng', 'countryCode', 'currency', 'dailyRevenueGoal'];
+
 router.patch('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
-    const { ownerName, phone, email, salonName, address, lat, lng, countryCode, currency } = req.body;
+    const { ownerName, phone, email } = req.body;
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      include: { salonOwned: true },
+      include: { salonOwned: { orderBy: { id: 'asc' } } },
     });
-    if (!user || !user.salonOwned) {
-      return res.status(404).json({ error: 'Salon owner account not found' });
-    }
+    if (!user) return res.status(404).json({ error: 'Account not found' });
 
     const nextPhone = phone == null ? user.phone : String(phone).trim();
     if (nextPhone.length < 6) {
@@ -239,13 +250,35 @@ router.patch('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) 
       email == null || String(email).trim() === '' ? null : String(email).trim();
     const nextOwnerName =
       ownerName == null ? user.name : String(ownerName).trim();
-    const nextSalonName =
-      salonName == null ? user.salonOwned.name : String(salonName).trim();
-    const nextAddress =
-      address == null ? user.salonOwned.address : String(address).trim();
 
-    if (!nextOwnerName || !nextSalonName || !nextAddress) {
-      return res.status(400).json({ error: 'Owner, salon name and address are required' });
+    if (!nextOwnerName) {
+      return res.status(400).json({ error: 'Owner name is required' });
+    }
+
+    // v3 compatibility shim: v3's AccountScreen sends salon fields in this
+    // same request and has no branch-creation UI, so any v3 caller always
+    // has exactly one salon — safe to apply legacy fields to it here. A
+    // caller with more than one salon must use the new endpoint instead,
+    // since "which branch" is ambiguous from this route alone.
+    const legacyBody = req.body as Record<string, unknown>;
+    const hasLegacySalonFields = LEGACY_SALON_FIELDS.some((f) => legacyBody[f] != null);
+    if (hasLegacySalonFields && user.salonOwned.length > 1) {
+      return res.status(400).json({
+        error: 'This account has multiple salons — update a specific one via PATCH /api/v2/salons/:salonId',
+      });
+    }
+    const { salonName, address, lat, lng, countryCode, currency, dailyRevenueGoal } = legacyBody as any;
+    const targetSalon = user.salonOwned[0];
+    if (hasLegacySalonFields && !targetSalon) {
+      return res.status(404).json({ error: 'No salon found for this account' });
+    }
+
+    const nextSalonName =
+      salonName == null ? targetSalon?.name : String(salonName).trim();
+    const nextAddress =
+      address == null ? targetSalon?.address : String(address).trim();
+    if (targetSalon && (!nextSalonName || !nextAddress)) {
+      return res.status(400).json({ error: 'Salon name and address are required' });
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -257,17 +290,22 @@ router.patch('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) 
           email: nextEmail,
         },
       });
-      const updatedSalon = await tx.salon.update({
-        where: { id: user.salonOwned!.id },
-        data: {
-          name: nextSalonName,
-          address: nextAddress,
-          ...(lat != null && Number.isFinite(Number(lat)) ? { lat: Number(lat) } : {}),
-          ...(lng != null && Number.isFinite(Number(lng)) ? { lng: Number(lng) } : {}),
-          ...(countryCode ? { countryCode: String(countryCode).trim().toUpperCase() } : {}),
-          ...(currency ? { currency: String(currency).trim().toUpperCase() } : {}),
-        },
-      });
+      const updatedSalon = targetSalon
+        ? await tx.salon.update({
+            where: { id: targetSalon.id },
+            data: {
+              name: nextSalonName,
+              address: nextAddress,
+              ...(lat != null && Number.isFinite(Number(lat)) ? { lat: Number(lat) } : {}),
+              ...(lng != null && Number.isFinite(Number(lng)) ? { lng: Number(lng) } : {}),
+              ...(countryCode ? { countryCode: String(countryCode).trim().toUpperCase() } : {}),
+              ...(currency ? { currency: String(currency).trim().toUpperCase() } : {}),
+              ...(dailyRevenueGoal != null && Number.isFinite(Number(dailyRevenueGoal))
+                ? { dailyRevenueGoal: Math.max(0, Math.round(Number(dailyRevenueGoal))) }
+                : {}),
+            },
+          })
+        : null;
       return { user: updatedUser, salon: updatedSalon };
     });
 
@@ -368,7 +406,10 @@ router.post('/forgot-password', async (req, res) => {
 
     const user = await prisma.user.findFirst({
       where: { phone: String(phone).trim(), role, deletedAt: null },
-      include: { salonOwned: { select: { countryCode: true } } },
+      // "Oldest branch's country" once an owner can have several — a
+      // deliberate simplification, not a real fix, for owners whose
+      // branches span countries. Revisit only if that becomes a real issue.
+      include: { salonOwned: { select: { countryCode: true }, orderBy: { id: 'asc' }, take: 1 } },
     });
     if (!user) return res.json(generic);
 
@@ -387,7 +428,7 @@ router.post('/forgot-password', async (req, res) => {
       },
     });
 
-    const dialCode = dialCodeFor(user.salonOwned?.countryCode);
+    const dialCode = dialCodeFor(user.salonOwned[0]?.countryCode);
     await sendWhatsAppOtp(`${dialCode}${user.phone}`, otp);
 
     res.json(generic);

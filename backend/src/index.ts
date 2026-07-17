@@ -11,6 +11,7 @@ import { authOptional } from './auth';
 import { privacyHtml } from './privacy';
 import { deleteAccountHtml } from './delete-account';
 import { adminPageHtml } from './admin-page';
+import { registerPublicBookingRoutes } from './public-booking';
 
 dotenv.config();
 export const prisma = new PrismaClient();
@@ -56,6 +57,12 @@ app.get('/delete-account', (_req: Request, res: Response) => {
 app.get('/admin', (_req: Request, res: Response) => {
   res.type('html').send(adminPageHtml);
 });
+
+// Public client self-booking page (GET /book/:salonId) and its submit
+// endpoint (POST /api/v2/public/salons/:salonId/bookings) — unlike every
+// other route in this file these render per-salon dynamic data, so the
+// handlers live in public-booking.ts rather than as a static HTML string.
+registerPublicBookingRoutes(app);
 
 // Public app-config: minimum supported version per app (drives force-update).
 // Bump via env (e.g. SALON_ADMIN_MIN_VERSION=2.1.0) without shipping code.

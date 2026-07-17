@@ -36,7 +36,7 @@ model User {
   googleId String? @unique
 
   stylist       Stylist?
-  salonOwned    Salon?        @relation("SalonOwner")
+  salonOwned    Salon[]       @relation("SalonOwner")
   bookings      Booking[]     @relation("CustomerBookings")
   salonCustomers SalonCustomer[]
 }
@@ -64,6 +64,7 @@ model Stylist {
   bookings      Booking[]
   services      Service[]
   availability  StylistAvailability[]
+  payouts       StylistPayout[]
 }
 
 model StylistAvailability {
@@ -84,7 +85,7 @@ model StylistAvailability {
 
 model Salon {
   id              String   @id @default(cuid())
-  ownerId         String   @unique
+  ownerId         String   // no longer @unique — an owner can have multiple branches
   name            String
   address         String
   lat             Float
@@ -97,6 +98,7 @@ model Salon {
   totalReviews    Int      @default(0)
   currency        String   @default("INR")
   countryCode     String   @default("IN")
+  dailyRevenueGoal Int?
   deletedAt       DateTime?
 
   owner             User            @relation("SalonOwner", fields: [ownerId], references: [id])
@@ -105,6 +107,10 @@ model Salon {
   bookings          Booking[]
   services          Service[]
   customers         SalonCustomer[]
+  stylistPayouts    StylistPayout[]
+  products          Product[]
+
+  @@index([ownerId])
 }
 
 model SalonCustomer {
@@ -133,6 +139,8 @@ model SalonStylist {
   canCancelBooking Boolean           @default(false)
   priceOverrides  Json?
   commissionRate  Int                @default(70)
+  payType         StaffPayType       @default(COMMISSION)
+  salaryAmount    Int                @default(0) // monthly, in paise/cents — only meaningful for SALARY/BOTH
   joinedAt        DateTime           @default(now())
 
   salon   Salon   @relation(fields: [salonId], references: [id])
@@ -154,6 +162,27 @@ model Service {
   stylist Stylist? @relation(fields: [stylistId], references: [id])
   bookings Booking[]
   bookingItems BookingServiceItem[]
+}
+
+// Retail inventory — deliberately minimal v1 (mirrors Service's flat shape):
+// no supplier/cost tracking, no stock-movement ledger, no variants. stockQty
+// is a plain mutable count, not derived from a transaction history, same
+// tradeoff Service.basePrice already makes. Soft-delete (unlike Service's
+// hard delete) since stock/sales history will reference products later.
+model Product {
+  id                String    @id @default(cuid())
+  salonId           String
+  name              String
+  category          String
+  sku               String?
+  retailPrice       Int
+  stockQty          Int       @default(0)
+  lowStockThreshold Int       @default(5)
+  deletedAt         DateTime?
+
+  salon Salon @relation(fields: [salonId], references: [id])
+
+  @@index([salonId])
 }
 
 model Booking {
@@ -179,9 +208,11 @@ model Booking {
   commissionSnapshot  Json
   status              BookingStatus @default(PENDING)
   paymentId           String?
+  paymentMethod       PaymentMethod?
   noShowCharged       Boolean       @default(false)
   createdAt           DateTime      @default(now())
   completedAt         DateTime?     // set when a service is logged as done; drives earnings
+  payoutId            String?       // set once this booking's stylistPayout has been settled
 
   customer  User      @relation("CustomerBookings", fields: [customerId], references: [id])
   salon     Salon?    @relation(fields: [salonId], references: [id])
@@ -189,8 +220,46 @@ model Booking {
   service   Service   @relation(fields: [serviceId], references: [id])
   services  BookingServiceItem[]
   review    Review?
+  payout    StylistPayout? @relation(fields: [payoutId], references: [id])
 
   @@index([stylistId, slotStart])
+  @@index([salonId, status])
+  @@index([payoutId])
+}
+
+// A settled batch of commission payouts to one stylist at one salon for a
+// date range — created by summing that stylist's COMPLETED, not-yet-paid
+// bookings (Booking.payoutId == null) in the range. Bookings are linked via
+// the Booking.payoutId FK (not a Json snapshot) so "what's still unpaid" is
+// a trivial payoutId: null filter, and "what did this payout cover" is
+// queryable from either side.
+model StylistPayout {
+  id           String   @id @default(cuid())
+  salonId      String
+  stylistId    String
+  periodStart  DateTime
+  periodEnd    DateTime
+  grossRevenue Int
+  totalPayout  Int
+  bookingCount Int
+  paidAt       DateTime @default(now())
+  paidBy       String
+  note         String?
+  createdAt    DateTime @default(now())
+  // A fixed-salary settlement (as opposed to a commission-on-bookings
+  // settlement) — no bookings are linked, grossRevenue/bookingCount stay 0.
+  // salaryMonth ("YYYY-MM") makes "already paid this month" a trivial
+  // lookup instead of parsing periodStart/periodEnd.
+  isSalaryPayout Boolean @default(false)
+  salaryMonth    String?
+
+  salon    Salon     @relation(fields: [salonId], references: [id])
+  stylist  Stylist   @relation(fields: [stylistId], references: [id])
+  bookings Booking[]
+
+  @@index([salonId, stylistId])
+  @@index([stylistId, periodStart])
+  @@index([stylistId, salaryMonth])
 }
 
 model BookingServiceItem {
@@ -254,6 +323,12 @@ enum SalonStylistStatus {
   TERMINATED
 }
 
+enum StaffPayType {
+  COMMISSION
+  SALARY
+  BOTH
+}
+
 enum ProviderType {
   SALON
   STYLIST_INDEPENDENT
@@ -263,6 +338,7 @@ enum ProviderType {
 enum BookedVia {
   SALONS_TAB
   STYLISTS_TAB
+  PUBLIC_PAGE
 }
 
 enum ServiceType {
@@ -270,10 +346,17 @@ enum ServiceType {
   HOME_SERVICE
 }
 
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+}
+
 enum BookingStatus {
   PENDING
   PENDING_RESCHEDULE
   CONFIRMED
+  IN_PROGRESS
   COMPLETED
   CANCELLED
   NO_SHOW

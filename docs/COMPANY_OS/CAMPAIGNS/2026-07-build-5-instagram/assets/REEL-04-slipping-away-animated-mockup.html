@@ -1,0 +1,305 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Chairful — Know who's slipping away</title>
+<style>
+  :root {
+    --bg-canvas-1: #FBF4F6;
+    --bg-canvas-2: #F6E9EE;
+    --surface: #FFFFFF;
+    --ink: #1A1A1A;
+    --ink-muted: #6B6B6B;
+    --ink-faint: #9E9E9E;
+    --border: #ECECEE;
+    --accent: #E91E76;
+    --accent-soft: #FDEAF1;
+    --danger: #C0392B;
+    --danger-soft: #FDECEC;
+    --whatsapp: #25D366;
+    --whatsapp-soft: #E7F9EE;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 1080px;
+    height: 1920px;
+    overflow: hidden;
+    background:
+      radial-gradient(60% 40% at 50% 18%, rgba(233,30,118,0.10) 0%, rgba(233,30,118,0) 70%),
+      linear-gradient(165deg, var(--bg-canvas-1) 0%, var(--bg-canvas-2) 100%);
+    font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    position: relative;
+  }
+
+  .scene { position: relative; width: 100%; height: 100%; }
+
+  /* ---------- one-shot entrance ---------- */
+  @keyframes riseIn {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .enter {
+    opacity: 0;
+    animation: riseIn 0.7s cubic-bezier(.16,.9,.35,1) both;
+  }
+
+  .hook {
+    position: absolute;
+    top: 128px;
+    left: 84px;
+    right: 84px;
+    font-size: 72px;
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -1.5px;
+    text-wrap: balance;
+    animation-delay: 0.05s;
+  }
+
+  .sub {
+    position: absolute;
+    top: 336px;
+    left: 88px;
+    right: 120px;
+    font-size: 31px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--ink-muted);
+    animation-delay: 0.2s;
+  }
+
+  /* ---------- phone card ---------- */
+  .phone {
+    position: absolute;
+    top: 468px;
+    left: 90px;
+    width: 900px;
+    background: var(--surface);
+    border-radius: 44px;
+    border: 1px solid var(--border);
+    box-shadow: 0 50px 90px rgba(30, 18, 24, 0.16), 0 4px 14px rgba(30,18,24,0.06);
+    padding: 52px 48px 60px;
+    animation-delay: 0.34s;
+  }
+
+  .appbar { display: flex; align-items: center; gap: 18px; margin-bottom: 40px; }
+  .appbar .mark {
+    width: 56px; height: 56px;
+    background: var(--accent);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 26px;
+    flex-shrink: 0;
+  }
+  .appbar .titles { display: flex; flex-direction: column; gap: 2px; }
+  .appbar .title { font-size: 32px; font-weight: 800; color: var(--ink); }
+  .appbar .kicker {
+    font-size: 18px; font-weight: 700; color: var(--ink-faint);
+    text-transform: uppercase; letter-spacing: 1.2px;
+  }
+
+  .alert {
+    background: var(--accent-soft);
+    border: 1px solid #F6D3E3;
+    border-radius: 30px;
+    padding: 40px 44px;
+    animation-delay: 0.46s;
+  }
+  .alert-head {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 34px; font-weight: 800; color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .alert-head .bell { font-size: 30px; }
+  .alert-sub {
+    font-size: 25px; font-weight: 600; color: var(--ink-muted);
+    margin-bottom: 32px;
+    font-variant-numeric: tabular-nums;
+  }
+  .alert-sub .at-risk { color: var(--danger); font-weight: 800; }
+
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 26px 30px;
+    margin-bottom: 20px;
+  }
+  .row:last-child { margin-bottom: 0; }
+
+  .cust-name {
+    font-size: 27px; font-weight: 800; color: var(--ink);
+    display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+  }
+  .overdue-pill {
+    background: var(--danger-soft); color: var(--danger);
+    font-size: 17px; font-weight: 800;
+    padding: 5px 13px; border-radius: 999px;
+  }
+  .cust-meta { font-size: 19px; color: var(--ink-muted); font-weight: 600; }
+
+  /* ---------- remind button: idle pulse -> tap -> sent -> reset, looping ---------- */
+  .remind-btn {
+    position: relative;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 800;
+    font-size: 21px;
+    padding: 17px 30px;
+    border-radius: 999px;
+    display: flex; align-items: center; gap: 9px;
+    white-space: nowrap;
+    animation: remindCycle 6s cubic-bezier(.4,0,.2,1) 1.9s infinite;
+  }
+  .remind-btn .ripple {
+    position: absolute; inset: 0;
+    border-radius: 999px;
+    background: var(--accent);
+    opacity: 0;
+    animation: rippleCycle 6s cubic-bezier(.4,0,.2,1) 1.9s infinite;
+  }
+  .remind-btn .state {
+    display: flex; align-items: center; gap: 9px;
+    grid-column: 1; grid-row: 1;
+  }
+  .remind-btn .states { display: grid; }
+  .remind-btn .state-idle { animation: idleLabel 6s cubic-bezier(.4,0,.2,1) 1.9s infinite; }
+  .remind-btn .state-sent { animation: sentLabel 6s cubic-bezier(.4,0,.2,1) 1.9s infinite; opacity: 0; }
+
+  @keyframes remindCycle {
+    0%, 32%   { background: var(--accent); box-shadow: 0 0 0 0 rgba(233,30,118,0.0); transform: scale(1); }
+    16%       { box-shadow: 0 0 0 14px rgba(233,30,118,0.08); }
+    40%       { transform: scale(0.94); background: var(--accent); }
+    50%, 78%  { transform: scale(1); background: var(--whatsapp); }
+    90%, 100% { background: var(--accent); transform: scale(1); }
+  }
+  @keyframes rippleCycle {
+    0%, 38%   { opacity: 0; transform: scale(1); }
+    46%       { opacity: 0.35; transform: scale(1.5); }
+    58%, 100% { opacity: 0; transform: scale(1.9); }
+  }
+  @keyframes idleLabel {
+    0%, 38%   { opacity: 1; }
+    46%, 84%  { opacity: 0; }
+    92%, 100% { opacity: 1; }
+  }
+  @keyframes sentLabel {
+    0%, 38%   { opacity: 0; }
+    46%, 84%  { opacity: 1; }
+    92%, 100% { opacity: 0; }
+  }
+
+  .row:first-child .remind-btn { animation-delay: 1.9s; }
+  .row:first-child .ripple { animation-delay: 1.9s; }
+  .row:first-child .state-idle { animation-delay: 1.9s; }
+  .row:first-child .state-sent { animation-delay: 1.9s; }
+
+  /* ---------- footer ---------- */
+  .footer {
+    position: absolute;
+    bottom: 120px;
+    left: 84px;
+    right: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation-delay: 0.62s;
+  }
+  .cta {
+    background: var(--ink);
+    color: #fff;
+    font-weight: 800;
+    font-size: 29px;
+    letter-spacing: 0.2px;
+    padding: 26px 46px;
+    border-radius: 999px;
+  }
+  .cta b { color: var(--accent); }
+  .brand { font-size: 30px; font-weight: 800; color: var(--accent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .enter { animation: none; opacity: 1; transform: none; }
+    .remind-btn, .remind-btn .ripple, .remind-btn .state-idle, .remind-btn .state-sent {
+      animation: none;
+    }
+    .remind-btn { background: var(--whatsapp); }
+    .state-idle { opacity: 0; }
+    .state-sent { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+  <div class="scene">
+    <div class="hook enter">Know who's<br>slipping away.</div>
+    <div class="sub enter">Chairful shows you exactly who's overdue — and lets you win them back in one tap.</div>
+
+    <div class="phone enter">
+      <div class="appbar">
+        <div class="mark">C</div>
+        <div class="titles">
+          <div class="kicker">Insights</div>
+          <div class="title">Retention</div>
+        </div>
+      </div>
+
+      <div class="alert enter">
+        <div class="alert-head"><span class="bell">🔔</span> Reach out now</div>
+        <div class="alert-sub">6 regulars are slipping · <span class="at-risk" id="atRisk">₹0</span> at risk</div>
+
+        <div class="row">
+          <div>
+            <div class="cust-name">Priya S. <span class="overdue-pill">3.2× overdue</span></div>
+            <div class="cust-meta">Usually every 10d · 22d overdue</div>
+          </div>
+          <div class="remind-btn">
+            <div class="ripple"></div>
+            <div class="states">
+              <span class="state state-idle">💬 Remind</span>
+              <span class="state state-sent">✓ Sent</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <div class="cust-name">Kavita M. <span class="overdue-pill">2.2× overdue</span></div>
+            <div class="cust-meta">Usually every 20d · 24d overdue</div>
+          </div>
+          <div class="remind-btn" style="animation-play-state: paused; background: var(--accent);">
+            <div class="states"><span class="state state-idle" style="opacity:1; animation:none;">💬 Remind</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer enter">
+      <div class="cta">DM <b>"CHAIRFUL"</b></div>
+      <div class="brand">Chairful</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var el = document.getElementById('atRisk');
+      var target = 18500;
+      if (reduced) { el.textContent = '₹' + target.toLocaleString('en-IN'); return; }
+      var start = null;
+      var duration = 1100;
+      function step(ts) {
+        if (start === null) start = ts;
+        var p = Math.min(1, (ts - start) / duration);
+        var eased = 1 - Math.pow(1 - p, 3);
+        var val = Math.round(target * eased);
+        el.textContent = '₹' + val.toLocaleString('en-IN');
+        if (p < 1) requestAnimationFrame(step);
+      }
+      setTimeout(function () { requestAnimationFrame(step); }, 460);
+    })();
+  </script>
+</body>
+</html>

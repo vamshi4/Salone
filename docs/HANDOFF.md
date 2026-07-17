@@ -6,11 +6,16 @@
 > this file (what + why), and run `graphify update .`.
 >
 > **New chat starting fresh with no prior context?** Read, in order:
-> `docs/STATUS.md` → this file (skip to the 2026-07-13/14 entry below, it's
-> the most recent and largest) → `docs/HANDOFF-SALON-ADMIN-V3.md` (v3 app
+> `docs/STATUS.md` → this file (skip to the 2026-07-14 v4 redesign entry at
+> the bottom, it's the most recent) → `docs/HANDOFF-SALON-ADMIN-V3.md` (v3 app
 > details) → `docs/GLOBAL-READINESS.md` (currency/language backend design).
 
-_Last updated: 2026-07-14 · Branch: `feature/retention-and-redesign` · Canonical dir: `D:\vamshi\Salone`_
+_Last updated: 2026-07-17 · Branch: `feature/retention-and-redesign` · Canonical dir: `D:\vamshi\Salone`_
+
+> **Starting cold and want the newest state?** Skip straight to the
+> **2026-07-15 → 2026-07-17** entry at the very bottom of this file — it supersedes everything
+> above it in terms of "what's the current app state." Read `docs/STATUS.md`'s warning box first
+> though; it has the short version + the exact release blockers.
 
 ## Canonical location (important)
 - Do **all** work in `D:\vamshi\Salone`. A stale sibling copy `D:\vamshi\Salone2`
@@ -470,3 +475,292 @@ Long session, several distinct chunks. **This is the entry to read if you're sta
 5. Everything already listed in the "Next / backlog" section below this entry (day-of booking
    statuses, force-update rollout to customer/stylist apps, etc.) is still open and unaffected
    by this session's work.
+
+## 2026-07-14 — v4 redesign: cream/terracotta "Open Design" prototype + Services tab
+
+New session, same day as the v3 ship above. Owner wants a visual redesign, tried two directions
+before landing on one — **read this whole entry**, the first attempt was discarded.
+
+### A. First attempt (discarded) — coral "Tres Beaux" reskin
+Owner shared a reference image (`docs/design-references/tres-beaux-reference.png`) and asked for
+a whole-app coral/peach reskin in a new parallel folder `mobile/salon_admin_app_v4/` (same
+pattern as v1→v2→v3 — v3 untouched). Built: coral palette, floating pill bottom nav, a horizontal
+day-strip calendar on Bookings, colored service-tag chips on Staff cards. **Then superseded** —
+see below. If you find references to "floating pill nav" or "day-strip calendar" anywhere, they
+describe this discarded direction, not what's actually in `v4` now.
+
+### B. Second direction (current) — "Open Design" prototype
+Owner shared a much more polished, fully-interactive static HTML prototype built in "Open
+Design": `C:\Users\vamshikrishna.sangi\AppData\Roaming\Open Design\namespaces\release-stable-win\data\projects\edd79427-ecac-46b4-b7ff-1c3497c2cf42\index.html`
+(1,729 lines — six simulated iPhone screens: Dashboard, Bookings, Staff, Insights, **Services**,
+Profile; that exact path is local to the owner's machine, not in this repo). Owner explicitly
+chose to **replace** the coral work with this design (not run both, not cherry-pick) — `v4/lib`
+was reset to a clean copy of v3's `lib/` and rebuilt from there.
+
+**Design language** (all in `lib/theme.dart`): warm cream background (`#FAF7F4`), white
+(`AppColors.surface`) cards with a hairline border + barely-there shadow (not the coral pass's
+heavy shadow), terracotta accent (`#C96442`, replaces teal as the default `AppColorSeed` — teal
+still exists as a picker option), Playfair Display serif for headlines/display text paired with
+Inter for body (both real OFL-licensed variable font files, fetched from `google/fonts` on GitHub
+into `assets/fonts/`, registered in `pubspec.yaml` with multiple weight entries pointing at the
+same variable file — Flutter/Skia resolves the requested weight via the font's `wght` axis). Added
+a fourth semantic color, `AppColors.amber`, specifically for "needs action"/pending/at-risk
+badges — previously `BookingActionCard`'s pending pill reused `AppColors.accent`, which read as
+the same color as primary CTAs; now disambiguated.
+
+**Navigation restructure** (`lib/shell/root_shell.dart`): the coral pass's floating pill nav is
+gone, replaced with a flush translucent blur bar (`BackdropFilter`) with a thin 3px top indicator
+line on the active tab — a custom `_TabBar` widget, not Material's `NavigationBar` (its pill
+indicator doesn't match this look). Five tabs: **Home, Bookings, Staff, Insights, Services**
+(Services replaces Account). Account is no longer a tab — `HomeScreen` takes an `onOpenAccount`
+callback wired to `Navigator.push` from the header avatar button.
+
+**New Services tab** (`lib/screens/services_screen.dart`, `lib/sheets/service_sheet.dart`) — a
+salon-wide service catalog, grouped by category with search + category filter chips. This needed
+one small **backend addition**, not just UI: `backend/prisma/schema.prisma` already had a
+first-class `Service` model with a nullable `salonId` (no migration needed), but every existing
+route (`backend/src/routes/stylist.routes.ts`) was stylist-scoped only. Added salon-scoped CRUD to
+`backend/src/routes/salon.routes.ts`: `GET/POST/PATCH/DELETE /api/v2/salons/:salonId/services`,
+using the same `findOwnedSalon()` ownership check and `requireRole('SALON_OWNER', 'SUPER_ADMIN')`
+pattern as the file's other sub-resources. The screen reads the list from `salon['services']`
+(already included in the existing `GET /api/v2/salons` payload `DashboardData.load()` fetches —
+no separate GET needed client-side) and writes through the new endpoints. **Note**: this list
+shows *all* of a salon's services, including ones created via the pre-existing per-stylist
+add-staff flow (those also get `salonId` set) — not a separate parallel catalog. Existing
+`add_staff_sheet.dart`/`staff_manage_sheet.dart` free-text service entry was deliberately left
+unchanged (not refactored to pick from this new catalog) — a natural follow-up, not required to
+ship the tab.
+
+**Motion**: added two small reusable widgets to `lib/widgets/common.dart` — `EntranceFade`
+(staggered fade+slide-up via `AnimatedOpacity`/`AnimatedSlide`, used on Home's logged-today list)
+and `CountUpNumber` (`TweenAnimationBuilder<int>`) — idiomatic-Flutter stand-ins for the
+prototype's CSS keyframe stagger and JS count-up animation, not literal ports.
+
+**l10n**: added 12 new keys (`addServiceTitle`, `editServiceTitle`, `serviceNameLabel`,
+`categoryLabel`, `priceLabel`, `durationMinutesLabel`, `deleteServiceButton`,
+`fillServiceFields`, `couldNotSaveService`, `noServicesInCatalog`, `searchServicesHint`,
+`filterAllCategories`) across all 25 ARB files in `lib/l10n/` — machine-translated same as the
+original 25-language rollout, not proofread by native speakers (same caveat as before). The nav
+tab label reuses the existing `statServices` key rather than adding a 13th. **Gotcha hit while
+doing this**: a Python script that round-tripped the ARB JSON with `object_pairs_hook=list` (to
+preserve key order) corrupted nested metadata objects like `@completedServicesCount`'s
+`placeholders` map into JSON arrays, which broke `flutter gen-l10n` silently at first (all new
+getters showed as "undefined" in `flutter analyze` even though the ARB files "loaded fine" per a
+naive JSON-validity check). Fixed by reloading from a clean v3 copy and re-running with a plain
+`json.load`/`json.dump` (Python 3.7+ dicts preserve insertion order natively — the
+`object_pairs_hook` trick was unnecessary and actively harmful for nested objects). If you ever
+bulk-edit ARB files with a script, verify with `flutter gen-l10n` (not just `json.load`), since a
+value can be syntactically valid JSON while still being semantically wrong for ARB's nested
+metadata format.
+
+### Verification done this session
+- `flutter analyze` in `salon_admin_app_v4` — clean, zero issues.
+- Backend: `npx tsc --noEmit` clean. Started Docker Desktop + local `postgres`/`redis` +
+  `npm run dev`, seeded demo data (`npm run prisma:seed:demo`), logged in as
+  `9000000001`/`glamour123` (**note**: `POST /auth/login` needs `"role":"SALON_OWNER"` in the
+  body — it defaults to `CUSTOMER` and silently 401s otherwise, easy to trip over), then curl-
+  verified all 4 new endpoints end-to-end (list, create, update, delete-then-confirm-gone) plus
+  both security checks (wrong/nonexistent `salonId` → 404, no token → 401).
+- **Not done**: no physical-device walkthrough this session (device wasn't connected when backend
+  verification finished). Do this before treating v4 as ready to show the owner — connect
+  `ed083e3d`, `adb reverse tcp:3000 tcp:3000`, `flutter run -d ed083e3d
+  --dart-define=API_URL=http://127.0.0.1:3000` from `mobile/salon_admin_app_v4`.
+- **Not done, intentionally out of scope**: no prod deploy of the new backend routes. v3 remains
+  the live/shipped app; v4 is still local-only.
+
+## 2026-07-15 → 2026-07-17 — v4 → v4_1: Phase 5 platform pivot, salary/commission, public booking + QR, dead-bug fix. **THIS IS THE MOST CURRENT ENTRY — read `docs/STATUS.md`'s top warning box first for the short version.**
+
+Multi-day, multi-session block of work. `mobile/salon_admin_app_v4_1` is a straight copy of `v4`
+(same pattern as every prior vN→vN+1 step) made partway through, once Phase 5 scope was decided —
+all work described below lives in `v4_1`; `v4` is now just a frozen earlier snapshot, don't build
+on it. **None of this — backend or app — is committed to git, and none of the backend changes are
+deployed to prod.** See the release-readiness checklist at the very end of this entry before doing
+anything Play-Store-facing.
+
+### Why the pivot: Phase 5 in `STRATEGY.md`
+Owner explicitly chose to add multi-branch + inventory on top of the existing single-salon
+retention product, after being shown the tradeoff (breadth vs. the "not another booking app"
+positioning). `docs/STRATEGY.md` documents this under "Phase 5 · Platform & scale" — retention
+stays the differentiator, multi-branch/inventory are now table stakes to land salon groups.
+Sequencing used: **Staff CRM → multi-branch → inventory** (staff CRM has no dependency on the
+other two and shipped first; inventory came last so it could be branch-scoped from day one).
+
+### Prep: fixed a real pre-existing security bug
+`stylist.routes.ts` had **zero ownership checks** on `PATCH /:id`, `POST/PATCH/DELETE
+/:id/services[/:serviceId]`, and `POST /:id/make-independent` — any authenticated `SALON_OWNER`
+could mutate *any* stylist in the system, not just their own. Added an `ownsStylist()` helper
+(mirrors `findOwnedSalon()`) and guarded all five routes before starting multi-branch work (which
+would have made the blast radius worse — stylists spanning branches).
+
+### 1. Staff CRM
+- **Pay type per stylist** — owner-configurable Commission / Salary / Both.
+  `SalonStylist.payType` (`StaffPayType` enum), `salaryAmount`. `backend/src/commission.ts`
+  (`commissionSplit()`) is now the **single shared function** for every commission calculation —
+  replaced three previously-hardcoded 70/30 splits in `booking.routes.ts` (self-booking + salon-
+  manual) and `public-booking.ts`. Returns `{stylistPct:0, salonPct:100}` for `SALARY` payType.
+- **Payouts** — new `StylistPayout` model (`isSalaryPayout`, `salaryMonth` as an idempotency key
+  so "pay this month's salary" can't double-pay). New endpoints on `salon.routes.ts`:
+  `POST/GET /:salonId/stylists/:stylistId/payouts`, extended `GET .../earnings` to return
+  `payType`/`salaryAmount`/`salaryPaidThisMonth`.
+- **Flutter**: `staff_manage_sheet.dart` got a pay-type editor (SegmentedButton) and a full rewrite
+  of the working-hours UI — was "select days, one shared time range" (always gave every selected
+  day the same hours); now 7 independent day rows, each with its own `Switch` + two time-picker
+  chips. `staff_payout_sheet.dart` got a "Pay salary" button/flow. `staff_screen.dart` gained a
+  search box + Active/Inactive/All filter chips, and two permission toggles
+  (`canSetOwnPrice`/`canCancelBooking`) were hidden — no stylist-facing app exists yet to use them.
+
+### 2. Multi-branch
+- **Schema**: dropped `@unique` on `Salon.ownerId` (kept an explicit `@@index`) — an owner can now
+  have N salons.
+- **`auth.routes.ts`**: `GET /me` gained a `salons` array **alongside** the existing singular
+  `salon` key — the singular key is a deliberate compatibility shim for `v3`'s
+  `account_screen.dart` (v3 is live with real users; **never remove that key** until v3 is
+  retired). New `PATCH /api/v2/salons/:salonId` (per-branch profile edits) and
+  `POST /api/v2/salons` ("add a branch").
+- **`DashboardData`** (`lib/shell/dashboard_data.dart`): `salon` field → `salons` list +
+  `selectedSalonId` + `currentSalon` getter. New `viewingAllBranches` mode
+  (`selectedSalonId == 'ALL'`) — `currentSalon` returns `null` in this mode, which every consumer
+  screen now has to distinguish from the genuine "no salon at all" error state (checking
+  `salons.isEmpty` instead of `currentSalon == null` for the error gate — **this exact bug bit us
+  once**, watch for the same mistake in new code). `switchToAllBranches()` fetches every branch's
+  data in parallel and tags each booking/staff row with `_branchId`/`_branchName` client-side so
+  existing generic getters (`todayCount` etc.) work unchanged.
+- **Branch switcher**: a persistent header bar above every tab (not just Home), tap opens a sheet
+  listing every branch + an "All branches" card, each showing per-branch today stats
+  (`GET /api/v2/salons` now returns `todayStats: {count, revenue}` per salon, computed server-side
+  via a shared `istStartOfDay()` IST-boundary helper).
+- Swept all 7 `data.salon` → `data.currentSalon` consumers in one pass (mechanically safe rename —
+  none of them assumed singularity beyond "there is one").
+
+### 3. Inventory
+- New `Product` model (salon-scoped, soft-delete via `deletedAt`, plain mutable `stockQty` —
+  deliberately not a transaction ledger, same tradeoff as `Service.basePrice`). CRUD routes mirror
+  the Services pattern exactly. New `products_screen.dart` + `product_sheet.dart`, and a Home
+  low-stock alert card. Not a 6th bottom-nav tab (reached as a pushed screen from Home) — 5 tabs is
+  already the comfortable max and inventory is checked far less often than daily-use tabs.
+
+### 4. Six UI fixes (owner-requested batch)
+"Switch branch" button label clarity, hid the two dead permission toggles (see Staff CRM above),
+branch switcher visual clarity (the persistent header bar), time-picker for staff hours instead of
+typing, per-day-independent hours (see Staff CRM above), and a `Delete` button that was rendering
+underneath the phone's on-screen nav bar in 3 different bottom sheets — fixed via
+`MediaQuery.of(context).viewPadding.bottom` added to each sheet's bottom padding.
+
+### 5. `share_plus` major-version bump (fixes a recurring build warning)
+`10.1.2` → `13.2.1` — resolves a Kotlin Gradle Plugin deprecation warning that showed on every
+single build. `Share.shareXFiles(...)` (deprecated API) → `SharePlus.instance.share(ShareParams(...))`
+(current API) in `insights_screen.dart`'s CSV export. Verified CSV export still works after the
+bump (owner tested on-device).
+
+### 6. Translations
+All new UI strings from this whole block of work (89 keys across Staff CRM/multi-branch/inventory,
+plus 6 more for the booking-link feature below) were added to `app_en.arb` and machine-translated
+into all 24 other `app_<code>.arb` files. `flutter gen-l10n` + `flutter analyze` both clean. Same
+caveat as always: machine-translated by whichever agent did the work, never proofread by a native
+speaker of each language.
+
+### 7. Google Sign-In status correction
+An earlier session in this block incorrectly flagged Google Sign-In as "local-dev-only, not yet
+live in prod." That was wrong — re-checked `deploy/k8s/salone-api.yaml` directly and confirmed
+`GOOGLE_CLIENT_ID` has been live in prod since the 2026-07-14 v3 ship (commit `1d13bfd`). No work
+was actually needed here; just a correction to earlier (wrong) session notes.
+
+### 8. Dead-`Salon.commissionRate` bug — found and fixed
+The super-admin console's "Commission %" field on a salon (`Salon.commissionRate`, an existing
+schema field) looked editable and functional but **nothing in the booking system ever read it** —
+editing it silently did nothing. Root cause: every `SalonStylist` row was created with no explicit
+`commissionRate`, so it always fell back to the Prisma schema's own hardcoded `@default(70)`,
+completely bypassing the salon-level field. Fixed at both creation sites in `salon.routes.ts` (the
+"add staff" `staff-setup` handler, and the `make-exclusive` handler) — both now compute
+`defaultCommissionRate = salon.commissionRate > 0 ? salon.commissionRate : 70` and pass it
+explicitly. **Behavior-neutral** for every salon that's never touched the field (still gets 70).
+Live-verified against the real local dev DB: a salon with `commissionRate=15` now produces new
+staff at 15%; an untouched salon (`commissionRate=0`) still produces staff at 70%; both creation
+paths (add-staff and make-exclusive) checked; test data cleaned up afterward.
+
+**Note on how this bug was found/fixed**: a separately-spawned background agent session was asked
+to fix this same bug earlier and got it wrong — it rewrote self-booking commission math against a
+stale, pre-multi-branch snapshot of the codebase (working in an orphaned git worktree,
+`agitated-lovelace-624b08`, that had never seen any of this session's work). That worktree's change
+was discarded (never merged) and the fix above was written fresh, directly in the main checkout,
+with the real current codebase in view. If you ever see a stray git worktree under
+`.claude/worktrees/` referencing this bug, it's leftover from that dead end — safe to ignore/clean
+up, nothing from it was merged.
+
+### 9. Public self-booking page + QR/share link
+- **`backend/src/public-booking.ts`** (new file): `GET /book/:salonId` — a plain HTML page (same
+  zero-framework approach as `privacy.ts`/`admin-page.ts`, no build step) listing the salon's
+  active stylists + services; customer picks one of each + a date/time, submits name/phone/
+  optional-email. `POST /api/v2/public/salons/:salonId/bookings` creates a normal `PENDING`
+  booking — flows straight into the existing owner-side "Needs Action" confirm/reject queue, no
+  changes needed there. Commission split uses the same shared `commissionSplit()` as every other
+  booking path, so it correctly picks up per-salon `commissionRate` defaults and salary/commission
+  pay types. Abuse guard: max 3 pending requests per phone number per salon.
+- **Phone verification was built, then explicitly removed** (owner's direct request on
+  2026-07-17). It briefly existed as an *optional* WhatsApp-OTP step (reusing the same
+  `User.resetOtp*` fields as forgot-password) with a `User.phoneVerifiedAt` schema field. All of
+  it — both endpoints, the schema field, the HTML/JS verify widget — was fully removed the same
+  day. **Do not re-add phone verification to the booking page unless explicitly asked again** —
+  it was a deliberate rollback, not an oversight.
+- **Booking-link + QR on the Account screen**: `mobile/salon_admin_app_v4_1/lib/screens/
+  account_screen.dart` now has a "Booking link" section — one card per branch (from
+  `widget.data.salons`), each showing a `qr_flutter`-rendered QR code of `$baseUrl/book/$salonId`,
+  the link text, and Copy (clipboard)/Share (`share_plus`) buttons. New dependency: `qr_flutter:
+  ^4.1.0`. Note `baseUrl` (`lib/core/api.dart`) is whatever `--dart-define=API_URL=...` the APK was
+  built with — a debug build pointed at `localhost:3000` will bake `localhost:3000` into every QR
+  code/link shown in that build; a real release build needs the prod `API_URL` so the QR/links
+  actually work for customers scanning them.
+- **Verified live on-device** (`ed083e3d`, debug build, local backend via `adb reverse`): Account
+  screen renders both branch cards correctly with real scannable-looking QR codes; Copy shows a
+  "Link copied" toast; Share opens the native Android share sheet with correct pre-filled text
+  (dismissed without actually sending, to avoid messaging a real contact during a test); the public
+  page itself loads correctly in the phone's own Chrome (via the same adb tunnel) with all fields
+  present and no leftover verify-phone UI; two real test bookings submitted through the page
+  (`Vcc`/`Beard Trim`, `Vamshj`/`Facial + shaving`) landed correctly as `PENDING` under "Needs
+  action" in the app **once switched to the correct branch** — see the gotcha below, this tripped
+  the owner up during testing.
+
+### Gotcha hit during this block: which branch you're viewing matters
+A booking submitted via a specific branch's `/book/:salonId` link only shows up in the app when
+that same branch is selected (or "All branches" is). The owner tested by scanning/opening the
+"Glamour Salon" link but had "Glamour Salon - Kondapur" selected in the app at the time, and
+reported "the booking isn't showing up" — it wasn't missing, just on the other branch. If this
+happens again: check the DB directly (`Booking` table, filter `bookedVia='PUBLIC_PAGE'`, join
+`Salon` for the name) before assuming something's broken client-side.
+
+### Gotcha hit during on-device UI testing: don't tap near the top of the screen blindly
+While tap-testing the Account screen's avatar button, a tap at a screenshot-derived coordinate
+landed on an **Instagram incoming-call notification banner** that happened to pop up at that exact
+moment, overlaying the app — it opened Instagram directly into an active call with a real contact
+on the owner's business account (`chair_full`). Caught immediately and hung up (ended as "Missed
+audio call," nothing was said/sent). No lasting harm, but it's a real risk of coordinate-based
+`adb input tap` automation on a personal device with live notifications enabled. Prefer
+`adb shell uiautomator dump` + exact `bounds="[x0,y0][x1,y1]"` for a target `content-desc` over
+eyeballing screenshot pixel coordinates (the existing scaling-factor gotcha above already said
+this for accuracy reasons — this is an additional *safety* reason). Screenshot immediately before
+any tap near the top of the screen to check for overlay notifications first if possible.
+
+### `graphify update .` run 2026-07-17
+Project graph regenerated after all of the above (34,740 nodes, 42,796 edges) — reflects the
+current file structure including `commission.ts`, `public-booking.ts`, and all `v4_1` files.
+
+### ⚠️ Release readiness — concrete checklist, do these in order before any Play Store action
+1. **Get explicit go-ahead and commit everything to git.** This repo's convention (and this
+   assistant's standing instruction) is: never commit without the human explicitly saying so. This
+   has been asked and left unanswered across multiple sessions now — resolve it before anything
+   else. `git status` currently shows the full backend diff + `salon_admin_app_v4`/`v4_1` as
+   uncommitted/untracked.
+2. **Deploy the backend.** Push → wait for the GHCR Action (`ghcr.io/vamshi4/salone-backend`) to
+   build the new commit's image → update **both** image refs (the `migrate` initContainer and the
+   `api` container) in `deploy/k8s/salone-api.yaml` → push → ArgoCD self-heals onto it (no manual
+   sync command available/needed from this environment, same as the 2026-07-14 v3 deploy
+   documented above). Verify with the same curl-checklist pattern as `DEPLOY-BUILD5.md`.
+3. **Bump `pubspec.yaml` version** in `salon_admin_app_v4_1` (currently `3.0.0+6`, same as live
+   v3 — Play requires strictly increasing versionCode across all uploads regardless of variant).
+4. **Build a real release AAB** with `--dart-define=API_URL=https://api.slotvibe.buzz` (NOT
+   localhost — the debug builds used for on-device testing this week all point at localhost via
+   `adb reverse`, which only works on this one dev machine).
+5. **Smoke-test the actual release build against prod** before uploading — at minimum: login,
+   branch switcher, add a staff member (confirm commission default), submit a public booking via a
+   real (non-localhost) QR/link, confirm it lands in the app.
+6. Then it's an owner-driven Play Console upload, same as every prior release in this file.

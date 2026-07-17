@@ -46,6 +46,31 @@ function canSetServicePrice(stylist: any) {
   );
 }
 
+// Returns true when the acting user may modify this specific stylist record:
+// the stylist themself, the owner of a salon they're primary/active-affiliated
+// with, or a SUPER_ADMIN. Every mutating route below previously had NO check
+// here at all — any SALON_OWNER could edit/delete any stylist in the system.
+async function ownsStylist(
+  stylistId: string,
+  user: { id: string; role: string },
+): Promise<boolean> {
+  if (user.role === 'SUPER_ADMIN') return true;
+
+  const stylist = await prisma.stylist.findUnique({
+    where: { id: stylistId },
+    include: {
+      primarySalon: true,
+      salonStylists: { where: { status: 'ACTIVE' }, include: { salon: true } },
+    },
+  });
+  if (!stylist) return false;
+
+  if (user.role === 'STYLIST') return stylist.userId === user.id;
+
+  if (stylist.primarySalon?.ownerId === user.id) return true;
+  return stylist.salonStylists.some((rel) => rel.salon.ownerId === user.id);
+}
+
 function parseClock(value: string): number {
   if (!/^\d{2}:\d{2}$/.test(value)) {
     throw new Error('Time must use HH:mm format');
@@ -456,6 +481,10 @@ router.post('/:id/services', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'
       return res.status(400).json({ error: 'Service name is required' });
     }
 
+    if (!(await ownsStylist(id, req.user!))) {
+      return res.status(404).json({ error: 'Stylist not found' });
+    }
+
     const stylist = await prisma.stylist.findUnique({
       where: { id },
       include: stylistInclude,
@@ -492,6 +521,10 @@ router.patch('/:id/services/:serviceId', requireRole('STYLIST', 'SALON_OWNER', '
   try {
     const { id, serviceId } = req.params;
     const { name, category, duration, basePrice } = req.body;
+
+    if (!(await ownsStylist(id, req.user!))) {
+      return res.status(404).json({ error: 'Stylist not found' });
+    }
 
     const stylist = await prisma.stylist.findUnique({
       where: { id },
@@ -530,6 +563,10 @@ router.delete('/:id/services/:serviceId', requireRole('STYLIST', 'SALON_OWNER', 
   try {
     const { id, serviceId } = req.params;
 
+    if (!(await ownsStylist(id, req.user!))) {
+      return res.status(404).json({ error: 'Stylist not found' });
+    }
+
     const service = await prisma.service.findFirst({
       where: { id: serviceId, stylistId: id },
     });
@@ -554,6 +591,11 @@ router.delete('/:id/services/:serviceId', requireRole('STYLIST', 'SALON_OWNER', 
 router.patch('/:id', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!(await ownsStylist(id, req.user!))) {
+      return res.status(404).json({ error: 'Stylist not found' });
+    }
+
     const { name, phone } = req.body;
     const allowedFields = [
       'registrationType',
@@ -609,6 +651,10 @@ router.patch('/:id', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async
 router.post('/:id/make-independent', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!(await ownsStylist(id, req.user!))) {
+      return res.status(404).json({ error: 'Stylist not found' });
+    }
 
     const stylist = await prisma.$transaction(async (tx) => {
       await tx.salonStylist.updateMany({
