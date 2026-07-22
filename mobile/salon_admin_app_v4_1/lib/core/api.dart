@@ -9,7 +9,7 @@ const baseUrl = String.fromEnvironment(
 /// This build's version. Keep in sync with pubspec.yaml `version:`.
 /// The backend's `salonAdminMinVersion` is compared against this to force
 /// updates (see [UpdateRequiredScreen]).
-const appVersion = '3.0.0';
+const appVersion = '4.0.0';
 
 String? _sessionToken;
 
