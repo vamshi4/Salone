@@ -13,7 +13,7 @@ export function TopBar() {
     .toUpperCase() || 'SA';
 
   return (
-    <div className="flex justify-between items-center px-6 py-4 bg-white border-b border-salone-border">
+    <div className="flex justify-between items-center px-4 py-3 bg-white border-b border-salone-border">
       {/* Search */}
       <div className="flex-1 max-w-sm">
         <div className="flex items-center gap-2 px-4 py-2.5 bg-salone-surface-alt rounded-lg border border-transparent hover:border-salone-border transition-all">

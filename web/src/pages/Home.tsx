@@ -15,22 +15,22 @@ export function Home() {
   const confirmedBookings = bookings?.filter((b) => b.status === 'CONFIRMED').length || 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Page Header */}
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold text-salone-ink mb-1">Dashboard</h1>
-          <p className="text-sm font-medium text-salone-ink-muted">
+          <h1 className="text-2xl font-bold text-salone-ink mb-1">Dashboard</h1>
+          <p className="text-xs font-medium text-salone-ink-muted">
             Welcome back! Monitor your salon's performance
           </p>
         </div>
-        <button className="px-5 py-2.5 bg-salone-accent text-white text-sm font-semibold rounded-md hover:bg-salone-accent-dark active:scale-95 transition-all shadow-sm hover:shadow-md">
+        <button className="px-4 py-2 bg-salone-accent text-white text-xs font-semibold rounded-md hover:bg-salone-accent-dark active:scale-95 transition-all shadow-sm hover:shadow-md">
           + New Booking
         </button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Today's Revenue"
           value={`₹${todayRevenue.toLocaleString()}`}

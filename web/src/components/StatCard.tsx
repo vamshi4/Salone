@@ -13,7 +13,7 @@ interface StatCardProps {
 export function StatCard({ label, value, change, icon, onClick }: StatCardProps) {
   return (
     <div
-      className="bg-white rounded-xl p-6 border border-salone-border hover:border-salone-ink-faint transition-all hover:shadow-lg cursor-pointer group"
+      className="bg-white rounded-xl p-4 border border-salone-border hover:border-salone-ink-faint transition-all hover:shadow-lg cursor-pointer group"
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -30,7 +30,7 @@ export function StatCard({ label, value, change, icon, onClick }: StatCardProps)
           </div>
         )}
       </div>
-      <div className="text-3xl font-bold text-salone-ink mb-3">{value}</div>
+      <div className="text-2xl font-bold text-salone-ink mb-3">{value}</div>
       {change && (
         <div
           className={`text-xs font-semibold flex items-center gap-1.5 ${
