@@ -1,8 +1,9 @@
 'use client';
 
 import { useAppStore } from '@/lib/store';
-import { Search, Bell, ChevronDown } from 'lucide-react';
+import { Search, Bell, ChevronDown, Plus, MapPin } from 'lucide-react';
 import { useState } from 'react';
+import { AddBranchModal } from './AddBranchModal';
 
 export function TopBar() {
   const user = useAppStore((state) => state.user);
@@ -10,6 +11,7 @@ export function TopBar() {
   const setSelectedSalon = useAppStore((state) => state.setSelectedSalon);
   const salons = useAppStore((state) => state.salons);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showAddBranch, setShowAddBranch] = useState(false);
 
   const selectedSalon = salons.find((s) => s.id === selectedSalonId);
 
@@ -26,24 +28,40 @@ export function TopBar() {
             <ChevronDown size={13} className="text-gray-400" />
           </button>
           {showDropdown && (
-            <div className="absolute top-full mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50 overflow-hidden">
-              {salons.map((salon) => (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
+              <div className="absolute top-full mt-1 w-60 bg-white rounded-md shadow-lg border border-gray-200 z-50 overflow-hidden">
+                <div className="py-1">
+                  {salons.map((salon) => (
+                    <button
+                      key={salon.id}
+                      onClick={() => {
+                        setSelectedSalon(salon.id);
+                        setShowDropdown(false);
+                      }}
+                      className={`flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors ${
+                        salon.id === selectedSalonId
+                          ? 'text-primary-dark font-medium'
+                          : 'text-gray-700'
+                      }`}
+                    >
+                      <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{salon.name}</span>
+                    </button>
+                  ))}
+                </div>
                 <button
-                  key={salon.id}
                   onClick={() => {
-                    setSelectedSalon(salon.id);
                     setShowDropdown(false);
+                    setShowAddBranch(true);
                   }}
-                  className={`block w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors ${
-                    salon.id === selectedSalonId
-                      ? 'text-primary-dark font-medium'
-                      : 'text-gray-700'
-                  }`}
+                  className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs text-primary-dark font-medium border-t border-gray-100 hover:bg-primary-50 transition-colors"
                 >
-                  {salon.name}
+                  <Plus size={12} />
+                  Add branch
                 </button>
-              ))}
-            </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -77,6 +95,7 @@ export function TopBar() {
           </div>
         </div>
       </div>
+      {showAddBranch && <AddBranchModal onClose={() => setShowAddBranch(false)} />}
     </header>
   );
 }

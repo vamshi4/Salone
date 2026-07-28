@@ -9,6 +9,7 @@ interface AppStore {
   setUser: (user: User) => void;
   setSalons: (salons: Salon[]) => void;
   setSelectedSalon: (salonId: string) => void;
+  addSalon: (salon: Salon) => void;
   logout: () => void;
 }
 
@@ -20,6 +21,8 @@ export const useAppStore = create<AppStore>((set) => ({
   setUser: (user) => set({ user }),
   setSalons: (salons) => set({ salons, selectedSalonId: salons[0]?.id || null }),
   setSelectedSalon: (salonId) => set({ selectedSalonId: salonId }),
+  addSalon: (salon) =>
+    set((s) => ({ salons: [...s.salons, salon], selectedSalonId: salon.id })),
   logout: () => {
     set({ user: null, selectedSalonId: null, salons: [] });
   },
