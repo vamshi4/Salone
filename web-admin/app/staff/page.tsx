@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { PageLayout } from '@/components/PageLayout';
 import { AddStaffModal, ManageStaffModal, PayoutModal } from '@/components/StaffModals';
+import { Avatar } from '@/components/Avatar';
 import { useDataStore, formatINR, isSameDay, type Staff } from '@/lib/data';
 import { Plus, Search, Wallet, MoreHorizontal } from 'lucide-react';
 
@@ -10,9 +11,7 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
   return (
     <button
       onClick={onClick}
-      className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
-        selected ? 'bg-primary-light text-primary-dark' : 'text-gray-600 hover:bg-gray-100'
-      }`}
+      className={selected ? 'chip-on' : 'chip-off'}
     >
       {label}
     </button>
@@ -58,15 +57,15 @@ export default function StaffPage() {
       <div className="space-y-4">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white border border-gray-200 rounded-lg px-3.5 py-3">
+          <div className="stat-tile">
             <p className="text-xs text-gray-500">Staff</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{staff.length}</p>
           </div>
-          <div className="bg-white border border-gray-200 rounded-lg px-3.5 py-3">
+          <div className="stat-tile">
             <p className="text-xs text-gray-500">Active</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{activeCount}</p>
           </div>
-          <div className="bg-white border border-gray-200 rounded-lg px-3.5 py-3">
+          <div className="stat-tile">
             <p className="text-xs text-gray-500">Today's total</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatINR(todayTotal)}</p>
           </div>
@@ -100,9 +99,7 @@ export default function StaffPage() {
             return (
               <div key={m.id} className={`card p-3.5 ${isActive ? '' : 'opacity-60'}`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-primary-light rounded-full flex items-center justify-center text-primary-dark font-medium text-sm flex-shrink-0">
-                    {m.name.charAt(0)}
-                  </div>
+                  <Avatar name={m.name} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900">{m.name}</p>
                     <p className="text-xs text-gray-400 truncate">

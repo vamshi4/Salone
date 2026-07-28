@@ -105,17 +105,25 @@ function EarningsTab() {
       </div>
 
       {/* Hero total */}
-      <div className="rounded-lg bg-primary-dark px-5 py-4 text-white">
-        <p className="text-xs text-white/70">{periodLabel}</p>
-        <p className="text-3xl font-semibold tabular-nums mt-1">{formatINR(data.total)}</p>
-        <div className="flex items-center gap-3 mt-1.5">
-          <p className="text-xs text-white/70">{data.count} completed services</p>
-          {(data.total > 0 || data.previousTotal > 0) && (
-            <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${isUp ? 'text-green-300' : 'text-red-300'}`}>
-              {isUp ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-              {Math.abs(change)}% {vsLabel}
-            </span>
-          )}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary-dark to-primary-deep px-5 py-5 text-white shadow-hero">
+        <div className="absolute -top-14 -right-14 w-48 h-48 rounded-full bg-white/10" />
+        <div className="absolute -bottom-20 right-16 w-36 h-36 rounded-full bg-white/5" />
+        <div className="relative">
+          <p className="text-xs text-teal-100/80">{periodLabel}</p>
+          <p className="text-3xl font-bold tabular-nums mt-1">{formatINR(data.total)}</p>
+          <div className="flex items-center gap-3 mt-2">
+            <p className="text-xs text-teal-100/80">{data.count} completed services</p>
+            {(data.total > 0 || data.previousTotal > 0) && (
+              <span
+                className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  isUp ? 'bg-emerald-400/20 text-emerald-200' : 'bg-red-400/20 text-red-200'
+                }`}
+              >
+                {isUp ? <ArrowUp size={11} /> : <ArrowDown size={11} />}
+                {Math.abs(change)}% {vsLabel}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

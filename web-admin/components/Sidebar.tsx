@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
+  Scissors,
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
@@ -47,32 +48,39 @@ export function Sidebar() {
   const isActive = (href: string) => pathname === href;
 
   const itemClass = (active: boolean) =>
-    `flex items-center rounded-md text-xs transition-colors ${
-      collapsed ? 'justify-center p-2' : 'gap-2.5 px-2.5 py-1.5'
+    `flex items-center rounded-lg text-xs transition-all ${
+      collapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-2'
     } ${
       active
-        ? 'bg-primary-light text-primary-dark font-medium'
-        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+        ? 'bg-white/15 text-white font-semibold shadow-sm'
+        : 'text-teal-100/70 hover:text-white hover:bg-white/10'
     }`;
 
   const sectionLabel = (label: string) =>
     !collapsed && (
-      <p className="px-2.5 pt-3 pb-1 text-xs text-gray-400">{label}</p>
+      <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-teal-100/40">{label}</p>
     );
 
   return (
-    <aside className={`bg-white border-r border-gray-200 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'w-14' : 'w-48'}`}>
-      {/* Header with Logo & Collapse Button */}
-      <div className={`border-b border-gray-200 flex items-center justify-between ${collapsed ? 'py-2 px-0 justify-center' : 'px-3 py-2'}`}>
+    <aside
+      className={`bg-gradient-to-b from-primary-dark to-primary-deep flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'w-14' : 'w-52'}`}
+    >
+      {/* Brand */}
+      <div className={`flex items-center ${collapsed ? 'justify-center py-3' : 'justify-between px-3.5 py-3.5'}`}>
         {!collapsed && (
-          <div>
-            <h1 className="text-sm font-semibold text-primary-dark">Salone</h1>
-            <p className="text-xs text-gray-400">Admin</p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+              <Scissors size={15} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-sm font-bold text-white leading-tight">Salone</h1>
+              <p className="text-[10px] text-teal-100/50 leading-tight">Salon admin</p>
+            </div>
           </div>
         )}
         <button
           onClick={toggleCollapse}
-          className="p-1 hover:bg-gray-100 rounded-md text-gray-500 transition-colors flex-shrink-0"
+          className="p-1 hover:bg-white/10 rounded-md text-teal-100/60 hover:text-white transition-colors flex-shrink-0"
           title={collapsed ? 'Expand' : 'Collapse'}
         >
           <ChevronLeft size={14} className={`transition-transform ${collapsed ? 'rotate-180' : ''}`} />
@@ -80,9 +88,9 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-2">
+      <nav className="flex-1 overflow-y-auto px-2 pb-2">
         {sectionLabel('Main')}
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           {mainItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -92,7 +100,7 @@ export function Sidebar() {
                 title={collapsed ? item.label : ''}
                 className={itemClass(isActive(item.href))}
               >
-                <Icon size={15} />
+                <Icon size={16} />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
             );
@@ -100,7 +108,7 @@ export function Sidebar() {
         </div>
 
         {sectionLabel('Management')}
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           {managementItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -110,7 +118,7 @@ export function Sidebar() {
                 title={collapsed ? item.label : ''}
                 className={itemClass(isActive(item.href))}
               >
-                <Icon size={15} />
+                <Icon size={16} />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
             );
@@ -118,31 +126,31 @@ export function Sidebar() {
         </div>
 
         {sectionLabel('Account')}
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           <Link
             href="/account"
             title={collapsed ? 'Account' : ''}
             className={itemClass(isActive('/account'))}
           >
-            <Settings size={15} />
+            <Settings size={16} />
             {!collapsed && <span>Account</span>}
           </Link>
         </div>
       </nav>
 
       {/* Logout */}
-      <div className="p-2 border-t border-gray-200">
+      <div className="p-2 border-t border-white/10">
         <button
           onClick={() => {
             logout();
             window.location.href = '/login';
           }}
           title={collapsed ? 'Logout' : ''}
-          className={`flex items-center rounded-md text-xs transition-colors text-gray-600 hover:text-red-600 hover:bg-red-50 w-full ${
-            collapsed ? 'justify-center p-2' : 'gap-2.5 px-2.5 py-1.5'
+          className={`flex items-center rounded-lg text-xs transition-colors text-teal-100/60 hover:text-white hover:bg-white/10 w-full ${
+            collapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-2'
           }`}
         >
-          <LogOut size={15} />
+          <LogOut size={16} />
           {!collapsed && <span>Logout</span>}
         </button>
       </div>

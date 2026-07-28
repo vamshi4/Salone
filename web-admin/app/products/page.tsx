@@ -11,9 +11,7 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
   return (
     <button
       onClick={onClick}
-      className={`px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-        selected ? 'bg-primary-light text-primary-dark' : 'text-gray-600 hover:bg-gray-100'
-      }`}
+      className={selected ? 'chip-on' : 'chip-off'}
     >
       {label}
     </button>

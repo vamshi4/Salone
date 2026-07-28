@@ -68,10 +68,10 @@ export function TopBar() {
 
           <div className="flex items-center gap-2 pl-2 border-l border-gray-200">
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-medium text-gray-900 leading-tight">{user?.name}</p>
-              <p className="text-xs text-gray-400 leading-tight">Owner</p>
+              <p className="text-xs font-semibold text-gray-900 leading-tight">{user?.name}</p>
+              <p className="text-[11px] text-gray-400 leading-tight">Owner</p>
             </div>
-            <div className="w-7 h-7 bg-primary-light rounded-full flex items-center justify-center text-primary-dark font-medium text-xs">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center text-white font-semibold text-xs shadow-sm">
               {user?.name?.charAt(0).toUpperCase()}
             </div>
           </div>

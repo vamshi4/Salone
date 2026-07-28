@@ -24,9 +24,7 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
   return (
     <button
       onClick={onClick}
-      className={`px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-        selected ? 'bg-primary-light text-primary-dark' : 'text-gray-600 hover:bg-gray-100'
-      }`}
+      className={selected ? 'chip-on' : 'chip-off'}
     >
       {label}
     </button>
@@ -197,15 +195,15 @@ export default function BookingsPage() {
 
         {/* Period stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white border border-gray-200 rounded-lg px-3.5 py-3">
+          <div className="stat-tile">
             <p className="text-xs text-gray-500">Total</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatINR(periodTotal)}</p>
           </div>
-          <div className="bg-white border border-gray-200 rounded-lg px-3.5 py-3">
+          <div className="stat-tile">
             <p className="text-xs text-gray-500">Services</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{periodCount}</p>
           </div>
-          <div className="bg-white border border-gray-200 rounded-lg px-3.5 py-3">
+          <div className="stat-tile">
             <p className="text-xs text-gray-500">Avg ticket</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatINR(avgTicket)}</p>
           </div>
