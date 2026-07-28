@@ -15,17 +15,17 @@ export function Home() {
   const confirmedBookings = bookings?.filter((b) => b.status === 'CONFIRMED').length || 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Page Header */}
-      <div className="mb-3">
-        <h1 className="text-lg font-bold text-salone-ink mb-0.5">Home</h1>
+      <div className="mb-2">
+        <h1 className="text-base font-bold text-salone-ink mb-0.5">Home</h1>
         <p className="text-xs text-salone-ink-muted">
           Today's business overview
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <StatCard
           label="Today's revenue"
           description="today, all staff"
@@ -68,11 +68,11 @@ export function Home() {
             No bookings today
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {bookings.map((booking) => (
               <div
                 key={booking.id}
-                className="flex items-center justify-between py-2 border-b border-salone-border last:border-b-0"
+                className="flex items-center justify-between py-1.5 border-b border-salone-border last:border-b-0"
               >
                 <div className="flex-1">
                   <div className="text-xs font-medium text-salone-ink">
