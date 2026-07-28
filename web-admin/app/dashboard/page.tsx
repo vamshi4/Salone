@@ -89,7 +89,7 @@ export default function DashboardPage() {
     <div className="min-h-screen">
       <div className="p-5 space-y-5 max-w-5xl mx-auto">
         {/* Hero briefing */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary-dark to-primary-deep text-white shadow-hero">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#2FB0B0] via-primary to-primary-dark text-white shadow-hero">
           <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white/10" />
           <div className="absolute -bottom-24 -right-2 w-40 h-40 rounded-full bg-white/5" />
           <div className="relative p-5">

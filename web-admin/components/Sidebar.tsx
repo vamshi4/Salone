@@ -63,7 +63,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`bg-gradient-to-b from-primary-dark to-primary-deep flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'w-14' : 'w-52'}`}
+      className={`bg-gradient-to-b from-primary to-primary-dark flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'w-14' : 'w-52'}`}
     >
       {/* Brand */}
       <div className={`flex items-center ${collapsed ? 'justify-center py-3' : 'justify-between px-3.5 py-3.5'}`}>

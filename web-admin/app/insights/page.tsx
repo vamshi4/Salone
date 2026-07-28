@@ -105,7 +105,7 @@ function EarningsTab() {
       </div>
 
       {/* Hero total */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary-dark to-primary-deep px-5 py-5 text-white shadow-hero">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#2FB0B0] via-primary to-primary-dark px-5 py-5 text-white shadow-hero">
         <div className="absolute -top-14 -right-14 w-48 h-48 rounded-full bg-white/10" />
         <div className="absolute -bottom-20 right-16 w-36 h-36 rounded-full bg-white/5" />
         <div className="relative">
