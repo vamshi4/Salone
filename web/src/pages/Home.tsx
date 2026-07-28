@@ -15,17 +15,17 @@ export function Home() {
   const confirmedBookings = bookings?.filter((b) => b.status === 'CONFIRMED').length || 0;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Page Header */}
-      <div className="mb-2">
-        <h1 className="text-base font-bold text-salone-ink mb-0.5">Home</h1>
-        <p className="text-xs text-salone-ink-muted">
+      <div className="mb-1">
+        <h1 className="text-sm font-bold text-salone-ink">Home</h1>
+        <p className="text-xs text-salone-ink-muted leading-tight">
           Today's business overview
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5">
         <StatCard
           label="Today's revenue"
           description="today, all staff"

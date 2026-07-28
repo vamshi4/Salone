@@ -45,7 +45,7 @@ function AppContent() {
 
         {/* Content */}
         <div
-          className={`flex-1 overflow-y-auto px-2 py-2 transition-all ${
+          className={`flex-1 overflow-y-auto px-2 py-1.5 transition-all ${
             sidebarOpen ? 'md:ml-0' : 'md:ml-0'
           }`}
         >
