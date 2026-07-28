@@ -58,7 +58,7 @@ export function Sidebar() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-4">
+        <div className="p-3">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 bg-salone-accent rounded-md flex items-center justify-center flex-shrink-0">
