@@ -1,115 +1,151 @@
 'use client';
 
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PageLayout } from '@/components/PageLayout';
-import { formatINR } from '@/components/StatusBadge';
-import { Plus, MoreVertical } from 'lucide-react';
+import { ProductModal } from '@/components/ProductModal';
+import { useDataStore, formatINR, type Product } from '@/lib/data';
+import { Plus, Search, Package } from 'lucide-react';
 
-export default function ProductsPage() {
-  const products = [
-    {
-      id: '1',
-      name: 'Hair shampoo premium',
-      category: 'Hair care',
-      quantity: 45,
-      price: 599,
-      stock: 'In stock',
-      status: 'Active',
-    },
-    {
-      id: '2',
-      name: 'Deep conditioner',
-      category: 'Hair care',
-      quantity: 12,
-      price: 799,
-      stock: 'Low stock',
-      status: 'Active',
-    },
-    {
-      id: '3',
-      name: 'Facial cleanser',
-      category: 'Skin care',
-      quantity: 28,
-      price: 449,
-      stock: 'In stock',
-      status: 'Active',
-    },
-    {
-      id: '4',
-      name: 'Body lotion',
-      category: 'Body care',
-      quantity: 3,
-      price: 399,
-      stock: 'Out of stock',
-      status: 'Inactive',
-    },
-  ];
+function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+        selected ? 'bg-primary-light text-primary-dark' : 'text-gray-600 hover:bg-gray-100'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
 
-  const stockStyle = (stock: string) => {
-    switch (stock) {
-      case 'In stock':
-        return { dot: 'bg-green-600', text: 'text-green-700' };
-      case 'Low stock':
-        return { dot: 'bg-amber-500', text: 'text-amber-700' };
-      default:
-        return { dot: 'bg-red-500', text: 'text-red-600' };
-    }
-  };
+function ProductsContent() {
+  const searchParams = useSearchParams();
+  const { products } = useDataStore();
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<string | null>(null);
+  const [lowOnly, setLowOnly] = useState(searchParams.get('low') === '1');
+  const [showAdd, setShowAdd] = useState(false);
+  const [edit, setEdit] = useState<Product | undefined>();
+
+  const categories = [...new Set(products.map((p) => p.category))].sort();
+  const isLow = (p: Product) => p.stockQty <= p.lowStockThreshold;
+
+  const filtered = products.filter((p) => {
+    if (lowOnly && !isLow(p)) return false;
+    if (category && p.category !== category) return false;
+    const q = query.trim().toLowerCase();
+    return !q || p.name.toLowerCase().includes(q);
+  });
+
+  const grouped = new Map<string, Product[]>();
+  for (const p of filtered) grouped.set(p.category, [...(grouped.get(p.category) ?? []), p]);
+  const sortedCategories = [...grouped.keys()].sort();
 
   return (
     <PageLayout
       title="Inventory"
-      subtitle="Manage your salon products"
+      subtitle="Retail products and stock"
       action={
-        <button className="btn-primary">
+        <button onClick={() => setShowAdd(true)} className="btn-primary">
           <Plus size={13} />
           Add product
         </button>
       }
     >
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Product</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Category</th>
-                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">Quantity</th>
-                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">Price</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Stock</th>
-                <th className="px-4 py-2.5"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {products.map((product) => {
-                const stock = stockStyle(product.stock);
-                return (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-2.5 text-xs font-medium text-gray-900">{product.name}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600">
-                        {product.category}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-xs text-gray-600 tabular-nums">{product.quantity}</td>
-                    <td className="px-4 py-2.5 text-right text-xs text-gray-900 tabular-nums">{formatINR(product.price)}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${stock.text}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${stock.dot}`} />
-                        {product.stock}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <button className="p-1 hover:bg-gray-200 rounded transition-colors">
-                        <MoreVertical size={14} className="text-gray-400" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <div className="relative max-w-xs">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              className="w-full pl-8 pr-3 py-1.5 rounded-md text-xs bg-white border border-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary/40"
+              placeholder="Search products"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-1 overflow-x-auto">
+            <Chip
+              label="All"
+              selected={!lowOnly && category === null}
+              onClick={() => {
+                setLowOnly(false);
+                setCategory(null);
+              }}
+            />
+            <Chip label="Low stock" selected={lowOnly} onClick={() => setLowOnly(!lowOnly)} />
+            {categories.map((c) => (
+              <Chip
+                key={c}
+                label={c}
+                selected={!lowOnly && category === c}
+                onClick={() => {
+                  setLowOnly(false);
+                  setCategory(c);
+                }}
+              />
+            ))}
+          </div>
         </div>
+
+        {filtered.length === 0 ? (
+          <div className="card px-4 py-6 text-center">
+            <p className="text-xs text-gray-400">
+              {lowOnly ? 'No products are low on stock. Nice.' : 'No products in the catalog yet.'}
+            </p>
+          </div>
+        ) : (
+          sortedCategories.map((cat) => (
+            <div key={cat}>
+              <p className="text-xs font-semibold text-gray-500 mb-1.5">{cat}</p>
+              <div className="space-y-2">
+                {grouped.get(cat)!.map((p) => {
+                  const low = isLow(p);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setEdit(p)}
+                      className={`flex items-center gap-3 w-full text-left px-3.5 py-2.5 bg-white border rounded-lg hover:bg-gray-50 transition-colors ${
+                        low ? 'border-red-200' : 'border-gray-200'
+                      }`}
+                    >
+                      <span className="w-8 h-8 bg-primary-light rounded-md flex items-center justify-center flex-shrink-0">
+                        <Package size={15} className="text-primary-dark" />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-xs font-medium text-gray-900">{p.name}</span>
+                        <span className="text-xs text-gray-400">
+                          {p.stockQty} in stock
+                          {low && (
+                            <span className="ml-1.5 px-1.5 py-px rounded bg-red-50 text-red-600 font-medium">
+                              low stock
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                      <span className="text-xs font-medium text-gray-900 tabular-nums">
+                        {formatINR(p.retailPrice)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
       </div>
+
+      {showAdd && <ProductModal onClose={() => setShowAdd(false)} />}
+      {edit && <ProductModal product={edit} onClose={() => setEdit(undefined)} />}
     </PageLayout>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense>
+      <ProductsContent />
+    </Suspense>
   );
 }

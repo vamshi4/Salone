@@ -1,185 +1,185 @@
 'use client';
 
-import { PageLayout } from '@/components/PageLayout';
-import { Save, User, Lock, Globe, Bell } from 'lucide-react';
 import { useState } from 'react';
+import { PageLayout } from '@/components/PageLayout';
+import { Field, inputClass } from '@/components/Modal';
+import { useDataStore, formatINR } from '@/lib/data';
+import { User, Lock, Globe, Store } from 'lucide-react';
+
+const TABS = [
+  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'salon', label: 'Salon', icon: Store },
+  { id: 'security', label: 'Security', icon: Lock },
+  { id: 'preferences', label: 'Preferences', icon: Globe },
+] as const;
 
 export default function AccountPage() {
-  const [activeTab, setActiveTab] = useState('profile');
+  const { salon, updateSalon } = useDataStore();
+  const [tab, setTab] = useState<(typeof TABS)[number]['id']>('profile');
 
-  const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'security', label: 'Security', icon: Lock },
-    { id: 'preferences', label: 'Preferences', icon: Globe },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-  ];
+  const [ownerName, setOwnerName] = useState(salon.ownerName);
+  const [ownerPhone, setOwnerPhone] = useState(salon.ownerPhone);
+  const [ownerEmail, setOwnerEmail] = useState(salon.ownerEmail);
+  const [salonName, setSalonName] = useState(salon.name);
+  const [address, setAddress] = useState(salon.address);
+  const [goal, setGoal] = useState(salon.dailyRevenueGoal ? String(salon.dailyRevenueGoal) : '');
+  const [saved, setSaved] = useState(false);
+
+  const [pwCurrent, setPwCurrent] = useState('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [pwMessage, setPwMessage] = useState('');
+
+  const saveProfile = () => {
+    updateSalon({
+      ownerName: ownerName.trim(),
+      ownerPhone: ownerPhone.trim(),
+      ownerEmail: ownerEmail.trim(),
+      name: salonName.trim(),
+      address: address.trim(),
+      dailyRevenueGoal: parseInt(goal, 10) || 0,
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
+  const changePassword = () => {
+    if (!pwCurrent || !pwNew) return setPwMessage('Fill in all password fields.');
+    if (pwNew !== pwConfirm) return setPwMessage("New passwords don't match.");
+    setPwCurrent('');
+    setPwNew('');
+    setPwConfirm('');
+    setPwMessage('Password updated.');
+    setTimeout(() => setPwMessage(''), 2000);
+  };
 
   return (
-    <PageLayout
-      title="Account Settings"
-      subtitle="Manage your account and preferences"
-    >
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-0.5 rounded-md w-fit">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-medium text-xs transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              <Icon size={13} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Content */}
-      {activeTab === 'profile' && (
-        <div className="card p-6 space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-primary-light rounded-full flex items-center justify-center text-primary-dark text-xl font-medium">
-              P
+    <PageLayout title="Account" subtitle="Your profile and salon settings">
+      <div className="space-y-4">
+        {/* Plan banner */}
+        <div className="flex items-center justify-between card px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary-light rounded-full flex items-center justify-center text-primary-dark text-base font-medium">
+              {salon.ownerName.charAt(0)}
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-900">Priya Sharma</p>
-              <p className="text-xs text-gray-400">Salon owner</p>
-              <button className="text-xs text-primary font-medium mt-1 hover:underline">Change avatar</button>
+              <p className="text-sm font-medium text-gray-900">{salon.ownerName}</p>
+              <p className="text-xs text-gray-400">Joined {salon.joined}</p>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-              <input
-                type="text"
-                defaultValue="Priya"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-              <input
-                type="text"
-                defaultValue="Sharma"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                defaultValue="priya@salone.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input
-                type="tel"
-                defaultValue="9876543210"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-          </div>
-
-          <button className="btn-primary flex items-center gap-2 mt-4">
-            <Save size={16} />
-            Save Changes
-          </button>
+          <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium">
+            {salon.plan} plan
+          </span>
         </div>
-      )}
 
-      {activeTab === 'security' && (
-        <div className="card p-6 space-y-6">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Change Password</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                <input
-                  type="password"
-                  placeholder="Enter current password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                <input
-                  type="password"
-                  placeholder="Enter new password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                <input
-                  type="password"
-                  placeholder="Confirm new password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <button className="btn-primary">Update Password</button>
-            </div>
-          </div>
+        {/* Tabs */}
+        <div className="flex gap-1 bg-gray-100 p-0.5 rounded-md w-fit">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-medium text-xs transition-colors ${
+                  tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                <Icon size={13} />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
-      )}
 
-      {activeTab === 'preferences' && (
-        <div className="card p-6 space-y-6">
-          <h3 className="text-lg font-bold text-gray-900">Preferences</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+        {tab === 'profile' && (
+          <div className="card p-4 space-y-3 max-w-lg">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Your name">
+                <input className={inputClass} value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
+              </Field>
+              <Field label="Phone">
+                <input className={inputClass} value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} />
+              </Field>
+            </div>
+            <Field label="Email">
+              <input className={inputClass} value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} />
+            </Field>
+            <button onClick={saveProfile} className="btn-primary">{saved ? 'Saved' : 'Save changes'}</button>
+          </div>
+        )}
+
+        {tab === 'salon' && (
+          <div className="card p-4 space-y-3 max-w-lg">
+            <Field label="Salon name">
+              <input className={inputClass} value={salonName} onChange={(e) => setSalonName(e.target.value)} />
+            </Field>
+            <Field label="Address">
+              <input className={inputClass} value={address} onChange={(e) => setAddress(e.target.value)} />
+            </Field>
+            <Field label="Daily revenue goal (₹)">
+              <input
+                type="number"
+                className={inputClass}
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                placeholder="6000"
+              />
+            </Field>
+            <p className="text-xs text-gray-400">
+              The goal powers the pace bar on your Home briefing.
+              {salon.dailyRevenueGoal > 0 && ` Currently ${formatINR(salon.dailyRevenueGoal)}.`}
+            </p>
+            <button onClick={saveProfile} className="btn-primary">{saved ? 'Saved' : 'Save changes'}</button>
+          </div>
+        )}
+
+        {tab === 'security' && (
+          <div className="card p-4 space-y-3 max-w-lg">
+            <Field label="Current password">
+              <input type="password" className={inputClass} value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="New password">
+                <input type="password" className={inputClass} value={pwNew} onChange={(e) => setPwNew(e.target.value)} />
+              </Field>
+              <Field label="Confirm new password">
+                <input type="password" className={inputClass} value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} />
+              </Field>
+            </div>
+            {pwMessage && <p className="text-xs text-gray-600">{pwMessage}</p>}
+            <button onClick={changePassword} className="btn-primary">Update password</button>
+          </div>
+        )}
+
+        {tab === 'preferences' && (
+          <div className="card p-4 space-y-3 max-w-lg">
+            <div className="flex items-center justify-between px-3 py-2.5 rounded-md bg-gray-50">
               <div>
-                <p className="font-medium text-gray-900">Language</p>
-                <p className="text-sm text-gray-600">English</p>
+                <p className="text-xs font-medium text-gray-900">Language</p>
+                <p className="text-xs text-gray-400">Interface language</p>
               </div>
-              <select className="px-3 py-2 border border-gray-300 rounded-lg">
+              <select className={`${inputClass} w-36`}>
                 <option>English</option>
-                <option>Hindi</option>
+                <option>हिन्दी</option>
+                <option>తెలుగు</option>
+                <option>தமிழ்</option>
               </select>
             </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between px-3 py-2.5 rounded-md bg-gray-50">
               <div>
-                <p className="font-medium text-gray-900">Timezone</p>
-                <p className="text-sm text-gray-600">Asia/Kolkata (IST)</p>
+                <p className="text-xs font-medium text-gray-900">Country and currency</p>
+                <p className="text-xs text-gray-400">Formats prices and phone numbers</p>
               </div>
-              <select className="px-3 py-2 border border-gray-300 rounded-lg">
-                <option>Asia/Kolkata</option>
-                <option>UTC</option>
+              <select className={`${inputClass} w-36`}>
+                <option>India (₹)</option>
+                <option>UAE (د.إ)</option>
+                <option>USA ($)</option>
               </select>
             </div>
+            <p className="text-xs text-gray-400">Preferences are saved on this device only.</p>
           </div>
-        </div>
-      )}
-
-      {activeTab === 'notifications' && (
-        <div className="card p-6 space-y-6">
-          <h3 className="text-lg font-bold text-gray-900">Notification Preferences</h3>
-          <div className="space-y-4">
-            {[
-              { title: 'Email Notifications', desc: 'Receive updates via email' },
-              { title: 'SMS Alerts', desc: 'Get important alerts via SMS' },
-              { title: 'Push Notifications', desc: 'Receive app notifications' },
-              { title: 'Marketing Emails', desc: 'Receive promotional emails' },
-            ].map((notif, idx) => (
-              <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{notif.title}</p>
-                  <p className="text-sm text-gray-600">{notif.desc}</p>
-                </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 text-primary rounded" />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </PageLayout>
   );
 }
