@@ -1,5 +1,6 @@
 interface StatCardProps {
   label: string;
+  description?: string;
   value: string | number;
   change?: {
     value: number;
@@ -10,37 +11,32 @@ interface StatCardProps {
   onClick?: () => void;
 }
 
-export function StatCard({ label, value, change, icon, onClick }: StatCardProps) {
+export function StatCard({ label, description, value, change, icon, onClick }: StatCardProps) {
   return (
     <div
-      className="bg-white rounded-xl p-4 border border-salone-border hover:border-salone-ink-faint transition-all hover:shadow-lg cursor-pointer group"
+      className="bg-white rounded-lg p-4 border border-salone-border hover:shadow-sm transition-all cursor-pointer"
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="text-xs font-semibold uppercase text-salone-ink-muted mb-3 tracking-tight letter-spacing-wide">
-            {label}
-          </div>
-        </div>
+      <div className="flex items-start justify-between mb-3">
         {icon && (
-          <div className="text-salone-accent ml-3 p-2 bg-salone-accent-soft rounded-lg group-hover:bg-salone-accent-light transition-colors">
+          <div className="text-salone-accent mr-2">
             {icon}
           </div>
         )}
-      </div>
-      <div className="text-2xl font-bold text-salone-ink mb-3">{value}</div>
-      {change && (
-        <div
-          className={`text-xs font-semibold flex items-center gap-1.5 ${
-            change.type === 'positive' ? 'text-salone-success' : 'text-salone-danger'
-          }`}
-        >
-          <span className="inline-block">{change.type === 'positive' ? '↗' : '↘'}</span>
-          <span>{change.value}% {change.label}</span>
+        <div className="flex-1">
+          <div className="text-xs font-medium text-salone-ink-muted mb-1">
+            {label}
+          </div>
+          {description && (
+            <div className="text-xs text-salone-ink-faint">
+              {description}
+            </div>
+          )}
         </div>
-      )}
+      </div>
+      <div className="text-2xl font-bold text-salone-ink">{value}</div>
     </div>
   );
 }
