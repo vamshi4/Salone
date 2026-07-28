@@ -85,7 +85,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-2 pb-2">
+      <nav className="flex-1 overflow-y-auto no-scrollbar px-2 pb-2">
         {sectionLabel('Main')}
         <div className="space-y-1">
           {mainItems.map((item) => {
