@@ -54,10 +54,9 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <div
-        className={`fixed md:relative left-0 top-0 h-full w-[280px] bg-salone-surface border-r border-salone-border overflow-y-auto z-40 transform transition-transform md:transform-none ${
+        className={`fixed md:relative left-0 top-0 h-full w-[280px] bg-white border-r border-salone-border overflow-y-auto z-40 transform transition-transform md:transform-none ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ boxShadow: '0 3px 16px rgba(26, 26, 26, 0.06)' }}
       >
         <div className="p-6">
           {/* Logo */}
@@ -91,7 +90,7 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   to={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-semibold transition-all ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     isActive(item.href)
                       ? 'bg-salone-accent-soft text-salone-accent'
                       : 'text-salone-ink-muted hover:bg-salone-surface-alt hover:text-salone-ink'
@@ -117,7 +116,7 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   to={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-semibold transition-all ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     isActive(item.href)
                       ? 'bg-salone-accent-soft text-salone-accent'
                       : 'text-salone-ink-muted hover:bg-salone-surface-alt hover:text-salone-ink'
@@ -143,7 +142,7 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   to={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-semibold transition-all ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     isActive(item.href)
                       ? 'bg-salone-accent-soft text-salone-accent'
                       : 'text-salone-ink-muted hover:bg-salone-surface-alt hover:text-salone-ink'

@@ -12,34 +12,35 @@ interface StatCardProps {
 
 export function StatCard({ label, value, change, icon, onClick }: StatCardProps) {
   return (
-    <button
+    <div
+      className="bg-white rounded-xl p-6 border border-salone-border hover:border-salone-ink-faint transition-all hover:shadow-lg cursor-pointer group"
       onClick={onClick}
-      className="bg-white rounded-lg p-6 text-left transition-all hover:shadow-lg border border-salone-border hover:border-salone-accent-lighter cursor-pointer"
-      style={{ boxShadow: '0 2px 8px rgba(0, 121, 107, 0.08)' }}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <div className="text-xs font-semibold uppercase text-salone-ink-muted mb-2 tracking-wide">
+          <div className="text-xs font-semibold uppercase text-salone-ink-muted mb-3 tracking-tight letter-spacing-wide">
             {label}
           </div>
         </div>
         {icon && (
-          <div className="text-salone-accent ml-2">
+          <div className="text-salone-accent ml-3 p-2 bg-salone-accent-soft rounded-lg group-hover:bg-salone-accent-light transition-colors">
             {icon}
           </div>
         )}
       </div>
-      <div className="text-4xl font-extrabold text-salone-ink mb-3">{value}</div>
+      <div className="text-3xl font-bold text-salone-ink mb-3">{value}</div>
       {change && (
         <div
-          className={`text-sm font-semibold flex items-center gap-2 ${
+          className={`text-xs font-semibold flex items-center gap-1.5 ${
             change.type === 'positive' ? 'text-salone-success' : 'text-salone-danger'
           }`}
         >
-          <span className="text-lg">{change.type === 'positive' ? '↑' : '↓'}</span>
-          <span>{change.value} {change.label}</span>
+          <span className="inline-block">{change.type === 'positive' ? '↗' : '↘'}</span>
+          <span>{change.value}% {change.label}</span>
         </div>
       )}
-    </button>
+    </div>
   );
 }

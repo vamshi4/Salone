@@ -13,38 +13,33 @@ export function TopBar() {
     .toUpperCase() || 'SA';
 
   return (
-    <div
-      className="flex justify-between items-center px-6 py-4 bg-salone-surface border-b border-salone-border"
-      style={{ boxShadow: '0 3px 16px rgba(26, 26, 26, 0.06)' }}
-    >
+    <div className="flex justify-between items-center px-6 py-4 bg-white border-b border-salone-border">
       {/* Search */}
-      <div className="flex-1 max-w-md">
-        <div className="flex items-center gap-2 px-4 py-3 bg-salone-surface-alt rounded-full">
-          <span className="text-lg">🔍</span>
+      <div className="flex-1 max-w-sm">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-salone-surface-alt rounded-lg border border-transparent hover:border-salone-border transition-all">
+          <span className="text-salone-ink-faint">🔍</span>
           <input
             type="text"
             placeholder="Search bookings, staff..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-transparent text-sm font-semibold text-salone-ink outline-none"
+            className="flex-1 bg-transparent text-sm text-salone-ink placeholder-salone-ink-faint outline-none"
           />
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3 ml-6">
-        <button className="w-10 h-10 bg-salone-surface-alt rounded-sm flex items-center justify-center hover:bg-salone-border transition-colors">
-          <Bell size={18} className="text-salone-ink" />
+      <div className="flex items-center gap-2 ml-6">
+        <button className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-salone-surface-alt transition-colors text-salone-ink-muted hover:text-salone-ink" aria-label="Notifications">
+          <Bell size={20} />
         </button>
-        <button className="w-10 h-10 bg-salone-surface-alt rounded-sm flex items-center justify-center hover:bg-salone-border transition-colors">
-          <Settings size={18} className="text-salone-ink" />
+        <button className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-salone-surface-alt transition-colors text-salone-ink-muted hover:text-salone-ink" aria-label="Settings">
+          <Settings size={20} />
         </button>
 
         {/* Avatar */}
-        <div className="flex items-center gap-2 ml-2">
-          <div className="w-9 h-9 bg-salone-accent rounded-sm flex items-center justify-center">
-            <span className="text-xs font-extrabold text-white">{initials}</span>
-          </div>
+        <div className="w-10 h-10 bg-salone-accent rounded-lg flex items-center justify-center ml-2 cursor-pointer hover:opacity-90 transition-opacity">
+          <span className="text-xs font-bold text-white">{initials}</span>
         </div>
       </div>
     </div>
