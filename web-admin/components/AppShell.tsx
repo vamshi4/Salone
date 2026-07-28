@@ -4,48 +4,60 @@ import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAppStore } from '@/lib/store';
-import { useEffect } from 'react';
+import { fetchMe } from '@/lib/auth';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const queryClient = new QueryClient();
 
 function ShellContent({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const setUser = useAppStore((state) => state.setUser);
   const setSalons = useAppStore((state) => state.setSalons);
+  const [status, setStatus] = useState<'checking' | 'ready' | 'error'>('checking');
+  const [error, setError] = useState('');
+
+  const boot = async () => {
+    setStatus('checking');
+    try {
+      const me = await fetchMe();
+      if (!me) {
+        router.replace('/login');
+        return;
+      }
+      setUser(me.user);
+      setSalons(me.salons);
+      setStatus('ready');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not reach the server.');
+      setStatus('error');
+    }
+  };
 
   useEffect(() => {
-    setUser({
-      id: '1',
-      name: 'Priya Sharma',
-      email: 'priya@salone.com',
-      phone: '9876543210',
-      role: 'SALON_OWNER',
-      salons: [],
-    });
-    setSalons([
-      {
-        id: '1',
-        name: 'Lotus Salon & Spa',
-        ownerId: '1',
-        address: '123 MG Road, Bengaluru',
-        phone: '9876543210',
-        email: 'salon@example.com',
-        currency: 'INR',
-        countryCode: 'IN',
-        todayStats: { revenue: 0, count: 0 },
-      },
-      {
-        id: '2',
-        name: 'Elegance Beauty Studio',
-        ownerId: '1',
-        address: '456 Park Ave',
-        phone: '9876543211',
-        email: 'elegance@example.com',
-        currency: 'INR',
-        countryCode: 'IN',
-        todayStats: { revenue: 0, count: 0 },
-      },
-    ]);
-  }, [setUser, setSalons]);
+    boot();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (status === 'checking') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F6F8]">
+        <p className="text-sm text-gray-400">Loading…</p>
+      </div>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F6F8] p-4">
+        <div className="card p-6 max-w-sm text-center space-y-3">
+          <p className="text-sm font-semibold text-gray-900">Couldn't load your account</p>
+          <p className="text-xs text-gray-500">{error}</p>
+          <button onClick={boot} className="btn-primary">Retry</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">

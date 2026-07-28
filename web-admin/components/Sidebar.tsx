@@ -15,6 +15,7 @@ import {
   Scissors,
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+import { logoutLocal } from '@/lib/auth';
 import { useState, useEffect } from 'react';
 
 export function Sidebar() {
@@ -139,6 +140,7 @@ export function Sidebar() {
       <div className="p-2 border-t border-white/10">
         <button
           onClick={() => {
+            logoutLocal();
             logout();
             window.location.href = '/login';
           }}

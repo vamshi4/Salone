@@ -3,10 +3,11 @@ export interface Salon {
   name: string;
   ownerId: string;
   address: string;
-  phone: string;
-  email: string;
+  phone?: string;
+  email?: string;
   currency: string;
   countryCode: string;
+  dailyRevenueGoal?: number | null;
   todayStats?: {
     count: number;
     revenue: number;
