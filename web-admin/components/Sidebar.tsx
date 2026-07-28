@@ -47,31 +47,31 @@ export function Sidebar() {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <aside className={`bg-gradient-to-b from-primary-light to-primary-light/80 border-r border-primary/15 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'w-16' : 'w-56'}`}>
+    <aside className={`bg-gradient-to-b from-primary-light to-primary-light/80 border-r border-primary/15 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'w-14' : 'w-48'}`}>
       {/* Header with Logo & Collapse Button */}
-      <div className={`border-b border-primary/10 flex items-center justify-between ${collapsed ? 'py-3 px-0 justify-center' : 'px-4 py-3'}`}>
+      <div className={`border-b border-primary/10 flex items-center justify-between ${collapsed ? 'py-2 px-0 justify-center' : 'px-3 py-2'}`}>
         {!collapsed && (
           <div>
-            <h1 className="text-sm font-bold text-primary">Salone</h1>
-            <p className="text-xs text-primary/60 mt-0.5">Salon Admin</p>
+            <h1 className="text-xs font-bold text-primary">Salone</h1>
+            <p className="text-xs text-primary/60">Admin</p>
           </div>
         )}
         <button
           onClick={toggleCollapse}
-          className="p-1.5 hover:bg-primary/15 rounded-lg text-primary transition-colors flex-shrink-0"
+          className="p-1 hover:bg-primary/15 rounded text-primary transition-colors flex-shrink-0"
           title={collapsed ? 'Expand' : 'Collapse'}
         >
-          <ChevronLeft size={16} className={`transition-transform ${collapsed ? 'rotate-180' : ''}`} />
+          <ChevronLeft size={14} className={`transition-transform ${collapsed ? 'rotate-180' : ''}`} />
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+      <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {/* MAIN */}
-        {!collapsed && <div className="px-3 pt-2 pb-1.5">
-          <p className="text-xs font-bold text-primary/60 uppercase tracking-wider">Main</p>
+        {!collapsed && <div className="px-2 pt-1.5 pb-1">
+          <p className="text-xs font-bold text-primary/60 uppercase">Main</p>
         </div>}
-        <div className={collapsed ? 'space-y-1.5' : 'space-y-1'}>
+        <div className={collapsed ? 'space-y-1' : 'space-y-0.5'}>
           {mainItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -80,15 +80,15 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 title={collapsed ? item.label : ''}
-                className={`flex items-center rounded-lg text-sm transition-all ${
-                  collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'
+                className={`flex items-center rounded text-xs transition-all ${
+                  collapsed ? 'justify-center p-2' : 'gap-2 px-2.5 py-1.5'
                 } ${
                   active
                     ? 'bg-white text-primary font-semibold shadow-sm'
                     : 'text-primary/70 hover:text-primary hover:bg-white/40'
                 }`}
               >
-                <Icon size={18} />
+                <Icon size={16} />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
             );
@@ -96,10 +96,10 @@ export function Sidebar() {
         </div>
 
         {/* MANAGEMENT */}
-        {!collapsed && <div className="px-3 pt-3 pb-1.5">
-          <p className="text-xs font-bold text-primary/60 uppercase tracking-wider">Management</p>
+        {!collapsed && <div className="px-2 pt-2 pb-1">
+          <p className="text-xs font-bold text-primary/60 uppercase">Mgmt</p>
         </div>}
-        <div className={collapsed ? 'space-y-1.5' : 'space-y-1'}>
+        <div className={collapsed ? 'space-y-1' : 'space-y-0.5'}>
           {managementItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -108,15 +108,15 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 title={collapsed ? item.label : ''}
-                className={`flex items-center rounded-lg text-sm transition-all ${
-                  collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'
+                className={`flex items-center rounded text-xs transition-all ${
+                  collapsed ? 'justify-center p-2' : 'gap-2 px-2.5 py-1.5'
                 } ${
                   active
                     ? 'bg-white text-primary font-semibold shadow-sm'
                     : 'text-primary/70 hover:text-primary hover:bg-white/40'
                 }`}
               >
-                <Icon size={18} />
+                <Icon size={16} />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
             );
@@ -124,40 +124,40 @@ export function Sidebar() {
         </div>
 
         {/* SETTINGS */}
-        {!collapsed && <div className="px-3 pt-3 pb-1.5">
-          <p className="text-xs font-bold text-primary/60 uppercase tracking-wider">Account</p>
+        {!collapsed && <div className="px-2 pt-2 pb-1">
+          <p className="text-xs font-bold text-primary/60 uppercase">Acct</p>
         </div>}
-        <div className={collapsed ? 'space-y-1.5' : 'space-y-1'}>
+        <div className={collapsed ? 'space-y-1' : 'space-y-0.5'}>
           <Link
             href="/account"
             title={collapsed ? 'Account' : ''}
-            className={`flex items-center rounded-lg text-sm transition-all ${
-              collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'
+            className={`flex items-center rounded text-xs transition-all ${
+              collapsed ? 'justify-center p-2' : 'gap-2 px-2.5 py-1.5'
             } ${
               isActive('/account')
                 ? 'bg-white text-primary font-semibold shadow-sm'
                 : 'text-primary/70 hover:text-primary hover:bg-white/40'
             }`}
           >
-            <Settings size={18} />
+            <Settings size={16} />
             {!collapsed && <span>Account</span>}
           </Link>
         </div>
       </nav>
 
       {/* Logout */}
-      <div className="p-3 border-t border-primary/10">
+      <div className="p-2 border-t border-primary/10">
         <button
           onClick={() => {
             logout();
             window.location.href = '/login';
           }}
           title={collapsed ? 'Logout' : ''}
-          className={`flex items-center rounded-lg text-sm transition-all text-red-600 hover:bg-red-50 w-full ${
-            collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'
+          className={`flex items-center rounded text-xs transition-all text-red-600 hover:bg-red-50 w-full ${
+            collapsed ? 'justify-center p-2' : 'gap-2 px-2.5 py-1.5'
           }`}
         >
-          <LogOut size={18} />
+          <LogOut size={16} />
           {!collapsed && <span className="font-medium">Logout</span>}
         </button>
       </div>

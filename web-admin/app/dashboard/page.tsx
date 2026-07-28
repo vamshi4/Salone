@@ -16,15 +16,15 @@ function StatCard({
   icon: React.ComponentType<{ size: number }>;
 }) {
   return (
-    <div className="card p-5 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
-          {subtitle && <p className="text-xs text-gray-500 font-medium">{subtitle}</p>}
+    <div className="card p-3 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          {subtitle && <p className="text-xs text-gray-500 font-medium mt-0.5">{subtitle}</p>}
         </div>
-        <div className="bg-primary/8 p-3 rounded-lg ml-3 flex-shrink-0">
-          <Icon size={22} className="text-primary" />
+        <div className="bg-primary/8 p-2 rounded-lg flex-shrink-0">
+          <Icon size={18} className="text-primary" />
         </div>
       </div>
     </div>
@@ -88,7 +88,7 @@ export default function DashboardPage() {
       subtitle="Here's what's happening at your salons today"
     >
       {/* Stats Grid - 4 columns, one line */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-3">
         <StatCard
           label="Today's revenue"
           value={`Rs ${todayRevenue}`}
@@ -106,38 +106,38 @@ export default function DashboardPage() {
       </div>
 
       {/* Today's Bookings */}
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
+      <div className="card p-3">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-base font-bold text-gray-900">Today's bookings</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Manage your appointments</p>
+            <h2 className="text-sm font-bold text-gray-900">Today's bookings</h2>
+            <p className="text-xs text-gray-500 mt-0">Manage your appointments</p>
           </div>
-          <button className="btn-primary text-sm">
-            <Plus size={16} />
+          <button className="btn-primary">
+            <Plus size={14} />
             New booking
           </button>
         </div>
 
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {bookings.map((booking) => (
             <div
               key={booking.id}
-              className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-white hover:shadow-md transition-all"
+              className="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-200 rounded hover:bg-white hover:shadow-sm transition-all"
             >
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 text-sm">
+                <p className="font-semibold text-gray-900 text-xs">
                   {booking.serviceName}
                 </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <p className="text-xs text-gray-600 font-medium">{booking.stylistName}</p>
+                <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-600">
+                  <span className="font-medium">{booking.stylistName}</span>
                   <span className="text-gray-400">·</span>
-                  <p className="text-xs text-gray-600">{booking.customerName}</p>
+                  <span>{booking.customerName}</span>
                   <span className="text-gray-400">·</span>
-                  <p className="text-xs text-gray-600">{booking.bookingTime}</p>
+                  <span>{booking.bookingTime}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                <span className="text-primary font-bold text-sm whitespace-nowrap">Rs {booking.totalAmount}</span>
+              <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                <span className="text-primary font-bold text-xs whitespace-nowrap">Rs {booking.totalAmount}</span>
                 <Badge status={booking.status} />
               </div>
             </div>
