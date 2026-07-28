@@ -49,7 +49,7 @@ export function Sidebar() {
 
   const itemClass = (active: boolean) =>
     `flex items-center rounded-lg text-xs transition-all ${
-      collapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-2'
+      collapsed ? 'justify-center p-2' : 'gap-2 px-2 py-1.5'
     } ${
       active
         ? 'bg-white/15 text-white font-semibold shadow-sm'
@@ -58,24 +58,21 @@ export function Sidebar() {
 
   const sectionLabel = (label: string) =>
     !collapsed && (
-      <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-teal-100/40">{label}</p>
+      <p className="px-2 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-teal-100/40 truncate">{label}</p>
     );
 
   return (
     <aside
-      className={`bg-gradient-to-b from-primary to-primary-dark flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'w-14' : 'w-52'}`}
+      className={`bg-gradient-to-b from-primary to-primary-dark flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'w-14' : 'w-32'}`}
     >
       {/* Brand */}
-      <div className={`flex items-center ${collapsed ? 'justify-center py-3' : 'justify-between px-3.5 py-3.5'}`}>
+      <div className={`flex items-center ${collapsed ? 'justify-center py-3' : 'justify-between px-2.5 py-3'}`}>
         {!collapsed && (
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
-              <Scissors size={15} className="text-white" />
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center">
+              <Scissors size={13} className="text-white" />
             </div>
-            <div>
-              <h1 className="text-sm font-bold text-white leading-tight">Salone</h1>
-              <p className="text-[10px] text-teal-100/50 leading-tight">Salon admin</p>
-            </div>
+            <h1 className="text-sm font-bold text-white leading-tight">Salone</h1>
           </div>
         )}
         <button
@@ -147,7 +144,7 @@ export function Sidebar() {
           }}
           title={collapsed ? 'Logout' : ''}
           className={`flex items-center rounded-lg text-xs transition-colors text-teal-100/60 hover:text-white hover:bg-white/10 w-full ${
-            collapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-2'
+            collapsed ? 'justify-center p-2' : 'gap-2 px-2 py-1.5'
           }`}
         >
           <LogOut size={16} />
