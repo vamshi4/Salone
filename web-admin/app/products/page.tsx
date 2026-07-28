@@ -1,58 +1,57 @@
 'use client';
 
 import { PageLayout } from '@/components/PageLayout';
-import { Plus, MoreVertical, AlertCircle } from 'lucide-react';
+import { formatINR } from '@/components/StatusBadge';
+import { Plus, MoreVertical } from 'lucide-react';
 
 export default function ProductsPage() {
   const products = [
     {
       id: '1',
-      name: 'Hair Shampoo Premium',
-      category: 'Hair Care',
+      name: 'Hair shampoo premium',
+      category: 'Hair care',
       quantity: 45,
       price: 599,
-      stock: 'In Stock',
+      stock: 'In stock',
       status: 'Active',
     },
     {
       id: '2',
-      name: 'Deep Conditioner',
-      category: 'Hair Care',
+      name: 'Deep conditioner',
+      category: 'Hair care',
       quantity: 12,
       price: 799,
-      stock: 'Low Stock',
+      stock: 'Low stock',
       status: 'Active',
     },
     {
       id: '3',
-      name: 'Facial Cleanser',
-      category: 'Skin Care',
+      name: 'Facial cleanser',
+      category: 'Skin care',
       quantity: 28,
       price: 449,
-      stock: 'In Stock',
+      stock: 'In stock',
       status: 'Active',
     },
     {
       id: '4',
-      name: 'Body Lotion',
-      category: 'Body Care',
+      name: 'Body lotion',
+      category: 'Body care',
       quantity: 3,
       price: 399,
-      stock: 'Out of Stock',
+      stock: 'Out of stock',
       status: 'Inactive',
     },
   ];
 
-  const getStockColor = (stock: string) => {
+  const stockStyle = (stock: string) => {
     switch (stock) {
-      case 'In Stock':
-        return 'bg-green-100 text-green-700';
-      case 'Low Stock':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'Out of Stock':
-        return 'bg-red-100 text-red-700';
+      case 'In stock':
+        return { dot: 'bg-green-600', text: 'text-green-700' };
+      case 'Low stock':
+        return { dot: 'bg-amber-500', text: 'text-amber-700' };
       default:
-        return 'bg-gray-100 text-gray-700';
+        return { dot: 'bg-red-500', text: 'text-red-600' };
     }
   };
 
@@ -61,61 +60,52 @@ export default function ProductsPage() {
       title="Inventory"
       subtitle="Manage your salon products"
       action={
-        <button className="btn-primary flex items-center gap-2">
-          <Plus size={18} />
-          Add Product
+        <button className="btn-primary">
+          <Plus size={13} />
+          Add product
         </button>
       }
     >
-      <div className="card p-0 overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Product</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Quantity</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stock Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Action</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Product</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Category</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">Quantity</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">Price</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Stock</th>
+                <th className="px-4 py-2.5"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{product.name}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                      {product.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm text-gray-700">{product.quantity}</td>
-                  <td className="px-6 py-4 text-right text-sm font-semibold text-primary">Rs {product.price}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {product.stock === 'Low Stock' && <AlertCircle size={14} className="text-yellow-600" />}
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStockColor(product.stock)}`}>
+            <tbody className="divide-y divide-gray-100">
+              {products.map((product) => {
+                const stock = stockStyle(product.stock);
+                return (
+                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-2.5 text-xs font-medium text-gray-900">{product.name}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600">
+                        {product.category}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-xs text-gray-600 tabular-nums">{product.quantity}</td>
+                    <td className="px-4 py-2.5 text-right text-xs text-gray-900 tabular-nums">{formatINR(product.price)}</td>
+                    <td className="px-4 py-2.5">
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${stock.text}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${stock.dot}`} />
                         {product.stock}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      product.status === 'Active'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {product.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <button className="p-1 hover:bg-gray-200 rounded transition-colors">
-                      <MoreVertical size={16} className="text-gray-600" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <button className="p-1 hover:bg-gray-200 rounded transition-colors">
+                        <MoreVertical size={14} className="text-gray-400" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

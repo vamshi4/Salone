@@ -1,13 +1,14 @@
 'use client';
 
 import { PageLayout } from '@/components/PageLayout';
-import { Plus, MoreVertical, Clock, IndianRupee } from 'lucide-react';
+import { formatINR } from '@/components/StatusBadge';
+import { Plus, MoreVertical, Clock } from 'lucide-react';
 
 export default function ServicesPage() {
   const services = [
     {
       id: '1',
-      name: 'Haircut & Style',
+      name: 'Haircut & style',
       category: 'Hair',
       duration: '45 min',
       price: 399,
@@ -16,7 +17,7 @@ export default function ServicesPage() {
     },
     {
       id: '2',
-      name: 'Full Body Spa',
+      name: 'Full body spa',
       category: 'Spa',
       duration: '90 min',
       price: 2999,
@@ -25,7 +26,7 @@ export default function ServicesPage() {
     },
     {
       id: '3',
-      name: 'Beard Trim',
+      name: 'Beard trim',
       category: 'Men',
       duration: '20 min',
       price: 199,
@@ -34,8 +35,8 @@ export default function ServicesPage() {
     },
     {
       id: '4',
-      name: 'Facial Treatment',
-      category: 'Skin Care',
+      name: 'Facial treatment',
+      category: 'Skin care',
       duration: '60 min',
       price: 1299,
       status: 'Active',
@@ -48,57 +49,55 @@ export default function ServicesPage() {
       title="Services"
       subtitle="Manage your salon services"
       action={
-        <button className="btn-primary flex items-center gap-2">
-          <Plus size={18} />
-          Add Service
+        <button className="btn-primary">
+          <Plus size={13} />
+          Add service
         </button>
       }
     >
-      <div className="card p-0 overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Service</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Duration</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Action</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Service</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Category</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Duration</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">Price</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Status</th>
+                <th className="px-4 py-2.5"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100">
               {services.map((service) => (
                 <tr key={service.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">{service.name}</div>
-                    <div className="text-xs text-gray-600">{service.description}</div>
+                  <td className="px-4 py-2.5">
+                    <div className="text-xs font-medium text-gray-900">{service.name}</div>
+                    <div className="text-xs text-gray-400">{service.description}</div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                  <td className="px-4 py-2.5">
+                    <span className="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600">
                       {service.category}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 text-sm text-gray-700">
-                      <Clock size={14} className="text-gray-500" />
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-1 text-xs text-gray-600">
+                      <Clock size={12} className="text-gray-400" />
                       {service.duration}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1 text-sm font-semibold text-primary">
-                      <IndianRupee size={14} />
-                      {service.price}
-                    </div>
+                  <td className="px-4 py-2.5 text-right text-xs text-gray-900 tabular-nums">
+                    {formatINR(service.price)}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                  <td className="px-4 py-2.5">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
                       {service.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center">
+                  <td className="px-4 py-2.5 text-right">
                     <button className="p-1 hover:bg-gray-200 rounded transition-colors">
-                      <MoreVertical size={16} className="text-gray-600" />
+                      <MoreVertical size={14} className="text-gray-400" />
                     </button>
                   </td>
                 </tr>

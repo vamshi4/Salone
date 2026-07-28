@@ -20,20 +20,20 @@ export default function AccountPage() {
       subtitle="Manage your account and preferences"
     >
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 bg-gray-100 p-0.5 rounded-md w-fit">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-medium text-xs transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-white text-primary shadow-sm'
-                  : 'text-gray-700 hover:text-gray-900'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900'
               }`}
             >
-              <Icon size={16} />
+              <Icon size={13} />
               {tab.label}
             </button>
           );
@@ -44,13 +44,13 @@ export default function AccountPage() {
       {activeTab === 'profile' && (
         <div className="card p-6 space-y-6">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center text-white text-3xl font-bold">
+            <div className="w-14 h-14 bg-primary-light rounded-full flex items-center justify-center text-primary-dark text-xl font-medium">
               P
             </div>
             <div>
-              <p className="text-lg font-bold text-gray-900">Priya Sharma</p>
-              <p className="text-sm text-gray-600">Salon Owner</p>
-              <button className="text-sm text-primary font-medium mt-2 hover:underline">Change Avatar</button>
+              <p className="text-sm font-medium text-gray-900">Priya Sharma</p>
+              <p className="text-xs text-gray-400">Salon owner</p>
+              <button className="text-xs text-primary font-medium mt-1 hover:underline">Change avatar</button>
             </div>
           </div>
 

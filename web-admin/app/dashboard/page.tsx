@@ -1,64 +1,62 @@
 'use client';
 
 import { useAppStore } from '@/lib/store';
-import { PageLayout } from '@/components/PageLayout';
-import { DollarSign, Calendar, Users, Star, Plus } from 'lucide-react';
+import { StatusBadge, formatINR } from '@/components/StatusBadge';
+import { Plus } from 'lucide-react';
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
 function StatCard({
   label,
   value,
-  subtitle,
-  icon: Icon,
+  trend,
+  trendPositive,
 }: {
   label: string;
   value: string | number;
-  subtitle?: string;
-  icon: React.ComponentType<{ size: number }>;
+  trend?: string;
+  trendPositive?: boolean;
 }) {
   return (
-    <div className="card p-3 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {subtitle && <p className="text-xs text-gray-500 font-medium mt-0.5">{subtitle}</p>}
-        </div>
-        <div className="bg-primary/8 p-2 rounded-lg flex-shrink-0">
-          <Icon size={18} className="text-primary" />
-        </div>
-      </div>
+    <div className="bg-white border border-gray-200 rounded-lg px-3.5 py-3">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{value}</p>
+      {trend && (
+        <p className={`text-xs mt-0.5 ${trendPositive ? 'text-green-700' : 'text-gray-400'}`}>
+          {trend}
+        </p>
+      )}
     </div>
   );
 }
 
-function Badge({ status }: { status: string }) {
-  const statusStyles = {
-    PENDING: 'badge-pending',
-    CONFIRMED: 'badge-confirmed',
-    COMPLETED: 'badge-completed',
-    CANCELLED: 'bg-gray-100 text-gray-600',
-    NO_SHOW: 'bg-gray-100 text-gray-600',
-    IN_PROGRESS: 'badge-confirmed',
-  };
-
-  return <span className={`${statusStyles[status as keyof typeof statusStyles] || 'badge'} text-xs`}>{status}</span>;
-}
-
 export default function DashboardPage() {
+  const user = useAppStore((state) => state.user);
   const selectedSalonId = useAppStore((state) => state.selectedSalonId);
   const salons = useAppStore((state) => state.salons);
 
   const selectedSalon = salons.find((s) => s.id === selectedSalonId);
   const todayRevenue = selectedSalon?.todayStats?.revenue || 0;
 
+  const today = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+
   // Mock bookings
   const bookings = [
     {
       id: '1',
-      serviceName: 'Haircut & Style',
+      serviceName: 'Haircut & style',
       stylistName: 'Kabir M.',
       customerName: 'Priya Sharma',
-      bookingTime: '3:00 PM',
+      bookingTime: '3:00 pm',
       totalAmount: 399,
       status: 'PENDING',
     },
@@ -67,7 +65,7 @@ export default function DashboardPage() {
       serviceName: 'Full body spa',
       stylistName: 'Arjun Verma',
       customerName: 'Neha T.',
-      bookingTime: '6:00 PM',
+      bookingTime: '6:00 pm',
       totalAmount: 2999,
       status: 'CONFIRMED',
     },
@@ -76,74 +74,77 @@ export default function DashboardPage() {
       serviceName: 'Beard trim',
       stylistName: 'Sana R.',
       customerName: 'Priya Sharma',
-      bookingTime: '11:30 AM',
+      bookingTime: '11:30 am',
       totalAmount: 199,
       status: 'COMPLETED',
     },
   ];
 
-  return (
-    <PageLayout
-      title="Welcome back"
-      subtitle="Here's what's happening at your salons today"
-    >
-      {/* Stats Grid - 4 columns, one line */}
-      <div className="grid grid-cols-4 gap-3">
-        <StatCard
-          label="Today's revenue"
-          value={`Rs ${todayRevenue}`}
-          subtitle="all staff"
-          icon={DollarSign}
-        />
-        <StatCard
-          label="Bookings today"
-          value={bookings.length}
-          subtitle="across all staff"
-          icon={Calendar}
-        />
-        <StatCard label="Active staff" value="2" subtitle="on schedule" icon={Users} />
-        <StatCard label="Rating" value="4.8" subtitle="284 reviews" icon={Star} />
-      </div>
+  const firstName = user?.name?.split(' ')[0];
 
-      {/* Today's Bookings */}
-      <div className="card p-3">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-sm font-bold text-gray-900">Today's bookings</h2>
-            <p className="text-xs text-gray-500 mt-0">Manage your appointments</p>
-          </div>
-          <button className="btn-primary">
-            <Plus size={14} />
-            New booking
-          </button>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Header */}
+        <div>
+          <h1 className="text-lg font-semibold text-gray-900">
+            {greeting()}{firstName ? `, ${firstName}` : ''}
+          </h1>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {today} · {salons.length} salons
+          </p>
         </div>
 
-        <div className="space-y-2">
-          {bookings.map((booking) => (
-            <div
-              key={booking.id}
-              className="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-200 rounded hover:bg-white hover:shadow-sm transition-all"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 text-xs">
-                  {booking.serviceName}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-600">
-                  <span className="font-medium">{booking.stylistName}</span>
-                  <span className="text-gray-400">·</span>
-                  <span>{booking.customerName}</span>
-                  <span className="text-gray-400">·</span>
-                  <span>{booking.bookingTime}</span>
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-3">
+          <StatCard
+            label="Revenue today"
+            value={formatINR(todayRevenue)}
+            trend="↑ 12% vs last Mon"
+            trendPositive
+          />
+          <StatCard label="Bookings" value={bookings.length} trend="2 upcoming" />
+          <StatCard label="Staff on duty" value="2" trend="of 3 scheduled" />
+          <StatCard label="Rating" value="4.8" trend="284 reviews" />
+        </div>
+
+        {/* Today's bookings */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold text-gray-900">Today's bookings</h2>
+            <button className="btn-primary">
+              <Plus size={13} />
+              New booking
+            </button>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
+            {bookings.map((booking) => (
+              <div
+                key={booking.id}
+                className="flex items-center justify-between px-3.5 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-900">
+                    <span className="font-medium">{booking.serviceName}</span>
+                    <span className="text-gray-400"> · </span>
+                    <span className="text-gray-600">{booking.stylistName}</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {booking.customerName} · {booking.bookingTime}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4 flex-shrink-0 ml-3">
+                  <span className="text-xs text-gray-900 tabular-nums">
+                    {formatINR(booking.totalAmount)}
+                  </span>
+                  <StatusBadge status={booking.status} />
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                <span className="text-primary font-bold text-xs whitespace-nowrap">Rs {booking.totalAmount}</span>
-                <Badge status={booking.status} />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 }
