@@ -773,3 +773,11 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
 - Still needs operational verification from prod/ArgoCD once GitHub Actions finishes: confirm the
   web image exists, ArgoCD syncs to the commit containing this pin, `https://web.slotvibe.buzz/login`
   loads, TLS covers `web.slotvibe.buzz`, and the backend CORS change is live.
+
+### 2026-07-29 Codex handoff: web admin real-data image pin
+- Pushed Claude's web-admin real-backend wiring commits through `af8e160`.
+- Confirmed `ghcr.io/vamshi4/salone-web:af8e160` exists in GHCR, then pinned
+  `deploy/k8s/salone-web.yaml` to that tag.
+- Nginx had already been updated live to route `web.slotvibe.buzz` to `salone-web` without removing
+  the Kimai/timesheet route; recreate/reload carefully because this nginx deployment owns host
+  ports 80/443 and cannot roll with a second pod in parallel.
