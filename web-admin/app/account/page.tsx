@@ -38,7 +38,9 @@ export default function AccountPage() {
 
   const [salonName, setSalonName] = useState(salon?.name ?? '');
   const [address, setAddress] = useState(salon?.address ?? '');
-  const [goal, setGoal] = useState(salon?.dailyRevenueGoal ? String(salon.dailyRevenueGoal) : '');
+  // dailyRevenueGoal is stored in paise (minor units) like every other money
+  // field on the backend — /100 for display, *100 when saving (see saveSalon).
+  const [goal, setGoal] = useState(salon?.dailyRevenueGoal ? String(Math.round(salon.dailyRevenueGoal / 100)) : '');
   const [salonSaving, setSalonSaving] = useState(false);
   const [salonSaved, setSalonSaved] = useState(false);
   const [salonError, setSalonError] = useState('');
@@ -76,7 +78,7 @@ export default function AccountPage() {
       const { salon: updated } = await updateProfile({
         salonName: salonName.trim(),
         address: address.trim(),
-        dailyRevenueGoal: parseInt(goal, 10) || 0,
+        dailyRevenueGoal: (parseInt(goal, 10) || 0) * 100,
       });
       if (updated) {
         setSalons(salons.map((s) => (s.id === updated.id ? updated : s)));
