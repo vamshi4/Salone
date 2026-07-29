@@ -13,11 +13,13 @@
 _Last updated: 2026-07-29 · Branch: `feature/retention-and-redesign` · Canonical dir: `D:\vamshi\Salone`_
 
 > **Starting cold and want the newest state?** Skip straight to the
-> **2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit** entry at the
-> very bottom of this file — it supersedes everything above it (including the mobile-app
-> 2026-07-15 → 2026-07-17 entry, which is still accurate for the Flutter apps but not for
-> `web-admin`). Read `docs/STATUS.md`'s warning box first though; it has the short version + the
-> exact release blockers.
+> **2026-07-29 — web admin: mobile responsiveness fixes** entry at the very bottom of this file —
+> it supersedes everything above it (including the mobile-app 2026-07-15 → 2026-07-17 entry, which
+> is still accurate for the Flutter apps but not for `web-admin`). **That entry flags one commit
+> (`518a9cb`, the CDN no-cache fix) as not yet deployed to the backend** — check that before
+> assuming the "confirm doesn't update live" bug is actually gone on production. Read
+> `docs/STATUS.md`'s warning box first though; it has the short version + the exact release
+> blockers.
 
 ## Canonical location (important)
 - Do **all** work in `D:\vamshi\Salone`. A stale sibling copy `D:\vamshi\Salone2`
@@ -912,3 +914,92 @@ updated with this entry's content yet — do that before treating `web-admin` do
 3. `lib/data.ts` (the old mock store) is fully unused but was never deleted — safe to remove
    whenever, just cosmetic cleanup.
 4. `docs/STATUS.md` should get a short pointer to this entry.
+
+## 2026-07-29 — web admin: mobile responsiveness fixes (commits `9af9a9b`, `518a9cb`, `4d1265d`)
+
+Same day as the entry above, three more bug reports came in directly from the owner using the app
+on a real phone — content for the two Codex handoff notes just above this one (`9af9a9b`/`4d1265d`
+image pins), which cover push/deploy mechanics only. This entry covers what those commits actually
+fix and why.
+
+### 1. `9af9a9b` — sidebar had no responsive breakpoint at all
+Reported via a Chrome DevTools mobile-emulator screenshot (430px iPhone 14 Pro Max), then
+independently reproduced in Instagram's in-app browser on a real phone. `Sidebar.tsx` was a fixed
+`w-32`/`w-14` rail with zero width-awareness — on any viewport under ~500px it ate a third of the
+screen, squeezing every page's content into a cramped column (text visibly cut off: "Add
+service"/"Repeat custome[r]"/low-stock text wrapping badly).
+
+Fix: below a new `MOBILE_BREAKPOINT = 768` (tracked via a `resize` listener, not just a CSS media
+query, since the component also needs to *not* render icon-only collapsed content in this mode),
+the sidebar becomes a `fixed` slide-in drawer (`translate-x-full` ↔ `translate-x-0`, `w-64`,
+`z-50`) with a backdrop, closing on backdrop-tap or nav-link-tap, with a body-scroll-lock while
+open (same pattern `Modal.tsx` already uses). `AppShell.tsx` now lifts the open/closed state and
+passes it to both `Sidebar` (the drawer) and `TopBar` (a new hamburger button, `Menu` icon,
+`md:hidden`). Desktop behavior (the collapsible icon-only rail, `localStorage`-persisted) is
+completely unchanged above 768px — verified by resizing the local dev server both ways and reading
+computed classes directly (`fixed inset-y-0 ... -translate-x-full` at 390px vs `relative ... w-32`
+at 1280px, zero console errors either way).
+
+**Environment gotcha hit while verifying**: `computer{action:"screenshot"}` and
+`getBoundingClientRect()`-based geometry reads are unreliable in this session's Browser-pane tool
+when the pane isn't actually displayed/compositing — a percentage-based CSS `transform` read back
+as identity/`matrix(1,0,0,1,0,0)` even though the underlying `--tw-translate-x` custom property and
+class list were both provably correct. Don't chase this as a code bug if it recurs — verify via
+DOM class-list toggling and a fresh cold-load (`navigate({force:true})`) instead of trusting
+computed geometry from a non-displayed pane.
+
+### 2. `518a9cb` — confirming a booking only reflected after a manual refresh
+Reported: tapping "Confirm" (or "Done") on a booking in `web-admin`'s Bookings page appeared to do
+nothing until the owner manually refreshed the page, at which point the correct new status showed.
+Reproduced the exact click-to-mutate-to-refetch flow against local dev (no CDN in front of it,
+using a real "Schedule later" booking created with a future same-day time so it lands in "Today's
+schedule") and it updated instantly with zero delay — so `useSetBookingStatus`'s React Query
+invalidation logic (`lib/salon-queries.ts`) is not the bug.
+
+Production's `api.slotvibe.buzz` sits behind Cloudflare, and no backend route was setting explicit
+cache headers. Theory: an intermediary cached the `GET /bookings` response, so the refetch
+triggered right after the mutation could hit stale cached data instead of the origin — making the
+action look like it silently did nothing until the cache naturally expired (which a manual refresh
+could coincide with, explaining "only after refreshing it goes"). Fix: `backend/src/index.ts` now
+sets `Cache-Control: no-store` on every `/api/v2/*` response, as a defensive fix regardless of the
+exact Cloudflare zone config in play (which isn't inspectable from this environment).
+
+**⚠️ This is a `backend` change and has NOT been deployed yet as of this entry** — Codex's handoff
+notes for this session only pinned `deploy/k8s/salone-web.yaml` (the frontend). `deploy/k8s/
+salone-api.yaml`'s image tag hasn't moved since commit `641fe92` (check via `git log --oneline -- 
+deploy/k8s/salone-api.yaml`). The backend image needs its own rebuild + repin before this fix is
+actually live — until then, the "confirm doesn't update live" symptom will likely still occur on
+production even though it's fixed in this branch.
+
+### 3. `4d1265d` — Home page text overflowing its boxes on mobile
+Reported via a real-device screenshot at `web.slotvibe.buzz/dashboard` with the literal question
+"is the text-out-of-boxes issue fixed??" (it was not, at the time). Two distinct overflows,
+confirmed via actual `scrollWidth`/`clientWidth` DOM measurement rather than eyeballing the photo
+(the tool used for this: temporarily resize the local Browser pane to a real device width like
+390-412px, then compare `el.scrollWidth > el.clientWidth` directly — much more reliable than
+reading a screenshot):
+- The Home page's 3-stat-tile row (`StatTile` component in `app/dashboard/page.tsx`): a fixed
+  36px icon + `gap-3` left only ~34px of a ~114px mobile column for the actual number, so anything
+  wider than 1-2 digits (`₹2,497` in the reported screenshot) spilled out. Fixed by hiding the
+  decorative icon below `sm` (`hidden sm:flex`) and tightening `.stat-tile`'s padding on mobile
+  (`px-2.5 py-3 sm:px-4 sm:py-3.5` in `globals.css`) — frees the value column to ~94px, comfortably
+  fitting `₹2,497` (measured via an offscreen `<canvas>` text-width check: 61.6px used of 94px
+  available). Also added `break-words` on the label/value/helper paragraphs as a safety net for any
+  future long value.
+- The hero card's 4-button action row (New booking/Add staff/Add service/Inventory): not just
+  visually tight — the 4th button was genuinely clipped and *unreachable* by the card's own
+  `overflow-hidden` (there for the decorative background blob) on narrow screens. Fixed by making
+  the row itself `overflow-x-auto no-scrollbar` with `flex-shrink-0` on each button, so it's
+  swipeable instead of silently losing a button off the edge. Verified reachability directly:
+  scrolled the row to its end programmatically and confirmed the "Inventory" link's bounding rect
+  is fully inside the scroll container's, not just "less clipped."
+
+A full-page overflow sweep (`el.scrollWidth - el.clientWidth > 4`, excluding elements with their
+own `overflow-x: auto/scroll`) came back clean afterward except for the hero card's own intentional
+`overflow-hidden` wrapper (used to crop the decorative background circle — not a bug).
+
+### Deploy status as of this entry
+`9af9a9b` and `4d1265d` (frontend/`salone-web`): pinned and live per Codex's handoff notes above.
+`518a9cb` (backend/`salone-api`): **not yet deployed** — see the warning in section 2 above. Do
+not assume the CDN-caching symptom is resolved on production until `deploy/k8s/salone-api.yaml` is
+repinned to a commit at or after `518a9cb` and rolled.
