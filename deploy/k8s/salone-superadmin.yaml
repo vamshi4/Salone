@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: salone-superadmin
+  namespace: salone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: salone-superadmin
+  template:
+    metadata:
+      labels:
+        app: salone-superadmin
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-master
+      containers:
+        - name: superadmin
+          image: ghcr.io/vamshi4/salone-superadmin:PLACEHOLDER
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: "production"
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: salone-superadmin
+  namespace: salone
+spec:
+  selector:
+    app: salone-superadmin
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000

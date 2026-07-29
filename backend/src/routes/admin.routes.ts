@@ -204,7 +204,9 @@ router.get('/salons/:salonId', async (req, res) => {
                 homeServiceEnabled: true,
                 independentBookingEnabled: true,
                 deletedAt: true,
-                user: { select: { name: true, phone: true } },
+                // id is needed so the admin console can act on the underlying
+                // User (e.g. reset-password), not just display name/phone.
+                user: { select: { id: true, name: true, phone: true } },
               },
             },
           },
@@ -215,7 +217,9 @@ router.get('/salons/:salonId', async (req, res) => {
             id: true,
             notes: true,
             tags: true,
-            customer: { select: { name: true, phone: true } },
+            // Same reasoning as stylists above — id needed to act on the
+            // underlying User (reset-password), not just the SalonCustomer link.
+            customer: { select: { id: true, name: true, phone: true } },
           },
         },
       },

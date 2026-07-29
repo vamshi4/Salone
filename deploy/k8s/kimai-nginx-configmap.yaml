@@ -8,6 +8,7 @@ data:
     upstream kimai_backend { server kimai.kimai.svc.cluster.local:8001; }
     upstream salone_backend { server salone-api.salone.svc.cluster.local:3000; }
     upstream salone_web { server salone-web.salone.svc.cluster.local:3000; }
+    upstream salone_superadmin { server salone-superadmin.salone.svc.cluster.local:3000; }
 
     server {
         listen 80; listen [::]:80;
@@ -56,6 +57,33 @@ data:
         ssl_session_cache shared:SSL:10m; ssl_session_timeout 10m;
         location / {
             proxy_pass http://salone_backend;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_read_timeout 300; proxy_connect_timeout 60; proxy_redirect off;
+        }
+    }
+
+    # ---- Salone super-admin console (admin.slotvibe.buzz) ----
+    server {
+        listen 80; listen [::]:80;
+        server_name admin.slotvibe.buzz;
+        return 301 https://$host$request_uri;
+    }
+    server {
+        listen 443 ssl http2; listen [::]:443 ssl http2;
+        server_name admin.slotvibe.buzz;
+        # Same TLS caveat as web.slotvibe.buzz below — assumes the cert
+        # covers this host too (e.g. a *.slotvibe.buzz wildcard). Unverified
+        # from this environment; check before relying on it.
+        ssl_certificate /etc/nginx/ssl/tls.crt;
+        ssl_certificate_key /etc/nginx/ssl/tls.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_session_cache shared:SSL:10m; ssl_session_timeout 10m;
+        location / {
+            proxy_pass http://salone_superadmin;
             proxy_http_version 1.1;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
