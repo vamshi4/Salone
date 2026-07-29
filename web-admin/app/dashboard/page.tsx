@@ -51,13 +51,17 @@ function StatTile({
 }) {
   return (
     <div className="stat-tile flex items-start gap-3">
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${iconClass}`}>
+      {/* Hidden below sm — at 3-per-row on a ~360-412px phone, a fixed
+          36px icon + gap left almost no room for the number itself,
+          causing it to overflow the tile (confirmed via a real device
+          screenshot: ₹2,497 spilling past its column). */}
+      <div className={`hidden sm:flex w-9 h-9 rounded-lg items-center justify-center flex-shrink-0 ${iconClass}`}>
         <Icon size={17} />
       </div>
-      <div className="min-w-0">
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-xl font-bold text-gray-900 tabular-nums leading-tight">{value}</p>
-        <p className="text-[11px] text-gray-400">{helper}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-gray-500 break-words">{label}</p>
+        <p className="text-lg sm:text-xl font-bold text-gray-900 tabular-nums leading-tight break-words">{value}</p>
+        <p className="text-[11px] text-gray-400 break-words">{helper}</p>
       </div>
     </div>
   );
@@ -131,31 +135,36 @@ export default function DashboardPage() {
                 </p>
               </div>
             )}
-            <div className="flex items-center gap-2 mt-4">
+            {/* overflow-x-auto: on a narrow phone these 4 buttons don't fit
+                the card's width, and the card's own overflow-hidden (for the
+                decorative background blob) was clipping "Inventory" with no
+                way to reach it — confirmed on a real device screenshot. Now
+                swipeable instead of silently cut off. */}
+            <div className="flex items-center gap-2 mt-4 overflow-x-auto no-scrollbar">
               <button
                 onClick={() => setModal('booking')}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-white text-primary-dark px-3.5 py-2 text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-px transition-all"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white text-primary-dark px-3.5 py-2 text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-px transition-all flex-shrink-0"
               >
                 <Plus size={14} />
                 New booking
               </button>
               <button
                 onClick={() => setModal('staff')}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 text-white px-3.5 py-2 text-xs font-semibold hover:bg-white/25 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 text-white px-3.5 py-2 text-xs font-semibold hover:bg-white/25 transition-colors flex-shrink-0"
               >
                 <UserPlus size={13} />
                 Add staff
               </button>
               <button
                 onClick={() => setModal('service')}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 text-white px-3.5 py-2 text-xs font-semibold hover:bg-white/25 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 text-white px-3.5 py-2 text-xs font-semibold hover:bg-white/25 transition-colors flex-shrink-0"
               >
                 <Scissors size={13} />
                 Add service
               </button>
               <Link
                 href="/products"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 text-white px-3.5 py-2 text-xs font-semibold hover:bg-white/25 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 text-white px-3.5 py-2 text-xs font-semibold hover:bg-white/25 transition-colors flex-shrink-0"
               >
                 <Package size={13} />
                 Inventory
