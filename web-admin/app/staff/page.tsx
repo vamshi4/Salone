@@ -4,37 +4,41 @@ import { useState } from 'react';
 import { PageLayout } from '@/components/PageLayout';
 import { AddStaffModal, ManageStaffModal, PayoutModal } from '@/components/StaffModals';
 import { Avatar } from '@/components/Avatar';
-import { useDataStore, formatINR, isSameDay, type Staff } from '@/lib/data';
+import { formatINR, type Staff } from '@/lib/salon-api';
+import { isSameDay } from '@/lib/booking-helpers';
+import { useBookings, useCurrentSalon, useSelectedSalonId } from '@/lib/salon-queries';
 import { Plus, Search, Wallet, MoreHorizontal } from 'lucide-react';
 
 function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className={selected ? 'chip-on' : 'chip-off'}
-    >
+    <button onClick={onClick} className={selected ? 'chip-on' : 'chip-off'}>
       {label}
     </button>
   );
 }
 
 export default function StaffPage() {
-  const { staff, services, bookings } = useDataStore();
+  const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
+  const { data: bookings = [] } = useBookings(salonId);
+  const staff = salon?.staff ?? [];
+  const services = salon?.services ?? [];
+
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [manage, setManage] = useState<Staff | undefined>();
   const [payout, setPayout] = useState<Staff | undefined>();
 
-  const todayTally = (id: string) => {
+  const todayTally = (stylistId: string) => {
     const list = bookings.filter(
-      (b) => b.status === 'COMPLETED' && b.stylistId === id && isSameDay(new Date(b.time), new Date())
+      (b) => b.status === 'COMPLETED' && b.stylistId === stylistId && isSameDay(new Date(b.time), new Date())
     );
     return { count: list.length, revenue: list.reduce((s, b) => s + b.price, 0) };
   };
 
   const activeCount = staff.filter((s) => s.status === 'ACTIVE').length;
-  const todayTotal = staff.reduce((s, m) => s + todayTally(m.id).revenue, 0);
+  const todayTotal = staff.reduce((s, m) => s + todayTally(m.stylistId).revenue, 0);
 
   const filtered = staff.filter((m) => {
     if (filter === 'active' && m.status !== 'ACTIVE') return false;
@@ -42,6 +46,16 @@ export default function StaffPage() {
     const q = query.trim().toLowerCase();
     return !q || m.name.toLowerCase().includes(q) || m.phone.includes(q);
   });
+
+  if (!salonId) {
+    return (
+      <PageLayout title="Staff" subtitle="Your team">
+        <div className="card px-4 py-6 text-center">
+          <p className="text-xs text-gray-400">No salon selected yet.</p>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout
@@ -90,7 +104,7 @@ export default function StaffPage() {
         {/* Staff cards */}
         <div className="space-y-2.5">
           {filtered.map((m) => {
-            const tally = todayTally(m.id);
+            const tally = todayTally(m.stylistId);
             const svcNames = m.serviceIds
               .map((id) => services.find((s) => s.id === id)?.name)
               .filter(Boolean)

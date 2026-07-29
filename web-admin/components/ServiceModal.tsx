@@ -2,33 +2,56 @@
 
 import { useState } from 'react';
 import { Modal, Field, inputClass } from './Modal';
-import { useDataStore, type Service } from '@/lib/data';
+import type { Service } from '@/lib/salon-api';
+import { useCurrentSalon, useDeleteService, useSaveService, useSelectedSalonId } from '@/lib/salon-queries';
+import { AuthError } from '@/lib/auth';
 
 export function ServiceModal({ service, onClose }: { service?: Service; onClose: () => void }) {
-  const { services, staff, saveService, deleteService } = useDataStore();
+  const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
+  const saveService = useSaveService(salonId ?? '');
+  const deleteService = useDeleteService(salonId ?? '');
+
+  const services = salon?.services ?? [];
+  const staff = salon?.staff ?? [];
   const categories = [...new Set(services.map((s) => s.category))].sort();
 
   const [name, setName] = useState(service?.name ?? '');
   const [category, setCategory] = useState(service?.category ?? categories[0] ?? 'Hair');
   const [newCategory, setNewCategory] = useState('');
   const [duration, setDuration] = useState(String(service?.duration ?? 30));
-  const [price, setPrice] = useState(String(service?.price ?? ''));
+  const [price, setPrice] = useState(service?.price ? String(service.price) : '');
   const [stylistId, setStylistId] = useState(service?.stylistId ?? '');
   const [error, setError] = useState('');
 
   const save = () => {
+    if (!salonId) return setError('No salon selected');
     if (!name.trim()) return setError('Enter a service name');
-    const p = parseInt(price, 10);
+    const p = parseFloat(price);
     if (!p || p <= 0) return setError('Enter a valid price');
-    saveService({
-      id: service?.id,
-      name: name.trim(),
-      category: newCategory.trim() || category,
-      duration: parseInt(duration, 10) || 30,
-      price: p,
-      stylistId: stylistId || null,
+
+    saveService.mutate(
+      {
+        id: service?.id,
+        name: name.trim(),
+        category: newCategory.trim() || category,
+        duration: parseInt(duration, 10) || 30,
+        price: p,
+        stylistId: stylistId || null,
+      },
+      {
+        onSuccess: () => onClose(),
+        onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not save this service.'),
+      }
+    );
+  };
+
+  const remove = () => {
+    if (!service) return;
+    deleteService.mutate(service.id, {
+      onSuccess: () => onClose(),
+      onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not delete this service.'),
     });
-    onClose();
   };
 
   return (
@@ -61,26 +84,22 @@ export function ServiceModal({ service, onClose }: { service?: Service; onClose:
           <select className={inputClass} value={stylistId} onChange={(e) => setStylistId(e.target.value)}>
             <option value="">Any staff</option>
             {staff.filter((s) => s.status === 'ACTIVE').map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
+              <option key={s.stylistId} value={s.stylistId}>{s.name}</option>
             ))}
           </select>
         </Field>
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex justify-between pt-2 border-t border-gray-200">
           {service ? (
-            <button
-              onClick={() => {
-                deleteService(service.id);
-                onClose();
-              }}
-              className="text-xs text-red-600 hover:underline"
-            >
-              Delete service
+            <button onClick={remove} disabled={deleteService.isPending} className="text-xs text-red-600 hover:underline disabled:opacity-60">
+              {deleteService.isPending ? 'Deleting…' : 'Delete service'}
             </button>
           ) : (
             <span />
           )}
-          <button onClick={save} className="btn-primary">Save service</button>
+          <button onClick={save} disabled={saveService.isPending} className="btn-primary disabled:opacity-60">
+            {saveService.isPending ? 'Saving…' : 'Save service'}
+          </button>
         </div>
       </div>
     </Modal>

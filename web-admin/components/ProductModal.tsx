@@ -2,33 +2,55 @@
 
 import { useState } from 'react';
 import { Modal, Field, inputClass } from './Modal';
-import { useDataStore, type Product } from '@/lib/data';
+import type { Product } from '@/lib/salon-api';
+import { useCurrentSalon, useDeleteProduct, useSaveProduct, useSelectedSalonId } from '@/lib/salon-queries';
+import { AuthError } from '@/lib/auth';
 
 export function ProductModal({ product, onClose }: { product?: Product; onClose: () => void }) {
-  const { products, saveProduct, deleteProduct } = useDataStore();
+  const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
+  const saveProduct = useSaveProduct(salonId ?? '');
+  const deleteProduct = useDeleteProduct(salonId ?? '');
+
+  const products = salon?.products ?? [];
   const categories = [...new Set(products.map((p) => p.category))].sort();
 
   const [name, setName] = useState(product?.name ?? '');
   const [category, setCategory] = useState(product?.category ?? categories[0] ?? 'Hair care');
   const [newCategory, setNewCategory] = useState('');
-  const [price, setPrice] = useState(String(product?.retailPrice ?? ''));
+  const [price, setPrice] = useState(product?.retailPrice ? String(product.retailPrice) : '');
   const [stock, setStock] = useState(String(product?.stockQty ?? '0'));
   const [threshold, setThreshold] = useState(String(product?.lowStockThreshold ?? '5'));
   const [error, setError] = useState('');
 
   const save = () => {
+    if (!salonId) return setError('No salon selected');
     if (!name.trim()) return setError('Enter a product name');
-    const p = parseInt(price, 10);
+    const p = parseFloat(price);
     if (!p || p <= 0) return setError('Enter a valid price');
-    saveProduct({
-      id: product?.id,
-      name: name.trim(),
-      category: newCategory.trim() || category,
-      retailPrice: p,
-      stockQty: parseInt(stock, 10) || 0,
-      lowStockThreshold: parseInt(threshold, 10) || 0,
+
+    saveProduct.mutate(
+      {
+        id: product?.id,
+        name: name.trim(),
+        category: newCategory.trim() || category,
+        retailPrice: p,
+        stockQty: parseInt(stock, 10) || 0,
+        lowStockThreshold: parseInt(threshold, 10) || 0,
+      },
+      {
+        onSuccess: () => onClose(),
+        onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not save this product.'),
+      }
+    );
+  };
+
+  const remove = () => {
+    if (!product) return;
+    deleteProduct.mutate(product.id, {
+      onSuccess: () => onClose(),
+      onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not delete this product.'),
     });
-    onClose();
   };
 
   return (
@@ -63,19 +85,15 @@ export function ProductModal({ product, onClose }: { product?: Product; onClose:
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex justify-between pt-2 border-t border-gray-200">
           {product ? (
-            <button
-              onClick={() => {
-                deleteProduct(product.id);
-                onClose();
-              }}
-              className="text-xs text-red-600 hover:underline"
-            >
-              Delete product
+            <button onClick={remove} disabled={deleteProduct.isPending} className="text-xs text-red-600 hover:underline disabled:opacity-60">
+              {deleteProduct.isPending ? 'Deleting…' : 'Delete product'}
             </button>
           ) : (
             <span />
           )}
-          <button onClick={save} className="btn-primary">Save product</button>
+          <button onClick={save} disabled={saveProduct.isPending} className="btn-primary disabled:opacity-60">
+            {saveProduct.isPending ? 'Saving…' : 'Save product'}
+          </button>
         </div>
       </div>
     </Modal>

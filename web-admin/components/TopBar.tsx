@@ -6,12 +6,14 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AddBranchModal } from './AddBranchModal';
 import { CustomerProfileModal } from './CustomerProfileModal';
-import { useDataStore, needsAction, type Customer } from '@/lib/data';
+import type { Customer } from '@/lib/salon-api';
+import { needsAction } from '@/lib/booking-helpers';
+import { useBookings, useCurrentSalon, useCustomers, useSelectedSalonId } from '@/lib/salon-queries';
 
 export function TopBar() {
   const router = useRouter();
   const user = useAppStore((state) => state.user);
-  const selectedSalonId = useAppStore((state) => state.selectedSalonId);
+  const selectedSalonId = useSelectedSalonId();
   const setSelectedSalon = useAppStore((state) => state.setSelectedSalon);
   const salons = useAppStore((state) => state.salons);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -21,7 +23,12 @@ export function TopBar() {
   const [showResults, setShowResults] = useState(false);
   const [profileCustomer, setProfileCustomer] = useState<Customer | undefined>();
 
-  const { customers, staff, services, bookings, products } = useDataStore();
+  const salon = useCurrentSalon();
+  const { data: customers = [] } = useCustomers(selectedSalonId);
+  const { data: bookings = [] } = useBookings(selectedSalonId);
+  const staff = salon?.staff ?? [];
+  const services = salon?.services ?? [];
+  const products = salon?.products ?? [];
 
   const selectedSalon = salons.find((s) => s.id === selectedSalonId);
 

@@ -5,56 +5,49 @@ import { PageLayout } from '@/components/PageLayout';
 import { NewBookingModal } from '@/components/NewBookingModal';
 import { CustomerProfileModal } from '@/components/CustomerProfileModal';
 import { BookingRow } from '@/components/BookingRow';
+import { formatINR, type Booking, type Customer } from '@/lib/salon-api';
+import { formatDay, formatTime, startOfDay, needsAction, todaySchedule, repeatCustomerIds } from '@/lib/booking-helpers';
 import {
-  useDataStore,
-  formatINR,
-  formatDay,
-  formatTime,
-  startOfDay,
-  needsAction,
-  todaySchedule,
-  repeatCustomerIds,
-  bookingServiceNames,
-  type Booking,
-  type Customer,
-} from '@/lib/data';
+  useBookings,
+  useCurrentSalon,
+  useCustomers,
+  useSelectedSalonId,
+  useSetBookingStatus,
+} from '@/lib/salon-queries';
 import { Search, Plus, Check, X } from 'lucide-react';
 
 function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className={selected ? 'chip-on' : 'chip-off'}
-    >
+    <button onClick={onClick} className={selected ? 'chip-on' : 'chip-off'}>
       {label}
     </button>
   );
 }
 
 /** Pending / scheduled item with confirm–cancel actions. */
-function ActionCard({ booking }: { booking: Booking }) {
-  const { services, staff, customers, setBookingStatus } = useDataStore();
-  const customer = customers.find((c) => c.id === booking.customerId);
-  const isPending = booking.status === 'PENDING';
+function ActionCard({ booking, salonId }: { booking: Booking; salonId: string }) {
+  const setStatus = useSetBookingStatus(salonId);
+  const isPending = booking.status === 'PENDING' || booking.status === 'PENDING_RESCHEDULE';
 
   return (
     <div className="flex items-center justify-between px-3.5 py-2.5 bg-white border border-amber-200 rounded-lg">
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-900">
-          <span className="font-medium">{bookingServiceNames(booking, services)}</span>
+          <span className="font-medium">{booking.serviceNames.join(' + ') || 'Service'}</span>
           <span className="text-gray-400"> · </span>
-          <span className="text-gray-600">{staff.find((s) => s.id === booking.stylistId)?.name}</span>
+          <span className="text-gray-600">{booking.stylistName}</span>
         </p>
         <p className="text-xs text-gray-400 mt-0.5">
-          {customer?.name} · {formatDay(new Date(booking.time))} {formatTime(booking.time)} ·{' '}
+          {booking.customerName} · {formatDay(new Date(booking.time))} {formatTime(booking.time)} ·{' '}
           {formatINR(booking.price)}
         </p>
       </div>
       <div className="flex items-center gap-1.5 ml-3">
         {isPending && (
           <button
-            onClick={() => setBookingStatus(booking.id, 'CONFIRMED')}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
+            onClick={() => setStatus.mutate({ bookingId: booking.id, status: 'CONFIRMED' })}
+            disabled={setStatus.isPending}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
           >
             <Check size={12} />
             Confirm
@@ -62,16 +55,18 @@ function ActionCard({ booking }: { booking: Booking }) {
         )}
         {!isPending && (
           <button
-            onClick={() => setBookingStatus(booking.id, 'COMPLETED')}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
+            onClick={() => setStatus.mutate({ bookingId: booking.id, status: 'COMPLETED' })}
+            disabled={setStatus.isPending}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
           >
             <Check size={12} />
             Done
           </button>
         )}
         <button
-          onClick={() => setBookingStatus(booking.id, 'CANCELLED')}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+          onClick={() => setStatus.mutate({ bookingId: booking.id, status: 'CANCELLED' })}
+          disabled={setStatus.isPending}
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-60"
         >
           <X size={12} />
           Cancel
@@ -82,7 +77,11 @@ function ActionCard({ booking }: { booking: Booking }) {
 }
 
 export default function BookingsPage() {
-  const { bookings, staff, customers } = useDataStore();
+  const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
+  const { data: bookings = [], isLoading, isError } = useBookings(salonId);
+  const { data: customers = [] } = useCustomers(salonId);
+
   const [query, setQuery] = useState('');
   const [staffId, setStaffId] = useState<string | null>(null);
   const [periodDays, setPeriodDays] = useState(7); // 7 = this week, 0 = all time
@@ -90,10 +89,10 @@ export default function BookingsPage() {
   const [rebook, setRebook] = useState<Booking | undefined>();
   const [profileCustomer, setProfileCustomer] = useState<Customer | undefined>();
 
+  const staff = salon?.staff ?? [];
   const pending = needsAction(bookings);
   const schedule = todaySchedule(bookings);
   const repeats = repeatCustomerIds(bookings);
-  const { services } = useDataStore();
 
   const byDay = useMemo(() => {
     const cutoff = periodDays === 0 ? null : new Date(Date.now() - periodDays * 86400000);
@@ -103,8 +102,8 @@ export default function BookingsPage() {
       if (staffId && b.stylistId !== staffId) return false;
       if (query.trim()) {
         const q = query.trim().toLowerCase();
-        const cName = customers.find((c) => c.id === b.customerId)?.name.toLowerCase() ?? '';
-        const sNames = bookingServiceNames(b, services).toLowerCase();
+        const cName = b.customerName.toLowerCase();
+        const sNames = b.serviceNames.join(' ').toLowerCase();
         if (!cName.includes(q) && !sNames.includes(q)) return false;
       }
       return true;
@@ -120,7 +119,7 @@ export default function BookingsPage() {
         day: new Date(ts),
         bookings: list.sort((a, b) => b.time.localeCompare(a.time)),
       }));
-  }, [bookings, customers, services, query, staffId, periodDays]);
+  }, [bookings, query, staffId, periodDays]);
 
   const periodTotal = byDay.reduce((s, d) => s + d.bookings.reduce((x, b) => x + b.price, 0), 0);
   const periodCount = byDay.reduce((s, d) => s + d.bookings.length, 0);
@@ -128,8 +127,18 @@ export default function BookingsPage() {
 
   const openCustomer = (b: Booking) => {
     const c = customers.find((x) => x.id === b.customerId);
-    if (c) setProfileCustomer(c);
+    setProfileCustomer(c ?? { id: b.customerId, name: b.customerName, phone: b.customerPhone });
   };
+
+  if (!salonId) {
+    return (
+      <PageLayout title="Bookings" subtitle="The full service log">
+        <div className="card px-4 py-6 text-center">
+          <p className="text-xs text-gray-400">No salon selected yet.</p>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout
@@ -160,10 +169,13 @@ export default function BookingsPage() {
             <span className="w-px bg-gray-200 mx-1" />
             <Chip label="All staff" selected={staffId === null} onClick={() => setStaffId(null)} />
             {staff.filter((s) => s.status === 'ACTIVE').map((s) => (
-              <Chip key={s.id} label={s.name} selected={staffId === s.id} onClick={() => setStaffId(s.id)} />
+              <Chip key={s.stylistId} label={s.name} selected={staffId === s.stylistId} onClick={() => setStaffId(s.stylistId)} />
             ))}
           </div>
         </div>
+
+        {isLoading && <p className="text-xs text-gray-400">Loading bookings…</p>}
+        {isError && <p className="text-xs text-red-600">Could not load bookings. Try refreshing.</p>}
 
         {/* Needs action */}
         {pending.length > 0 && (
@@ -173,7 +185,7 @@ export default function BookingsPage() {
             </h2>
             <div className="space-y-2">
               {pending.map((b) => (
-                <ActionCard key={b.id} booking={b} />
+                <ActionCard key={b.id} booking={b} salonId={salonId} />
               ))}
             </div>
           </div>
@@ -187,7 +199,7 @@ export default function BookingsPage() {
             </h2>
             <div className="space-y-2">
               {schedule.map((b) => (
-                <ActionCard key={b.id} booking={b} />
+                <ActionCard key={b.id} booking={b} salonId={salonId} />
               ))}
             </div>
           </div>

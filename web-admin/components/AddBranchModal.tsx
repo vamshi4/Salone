@@ -3,29 +3,44 @@
 import { useState } from 'react';
 import { Modal, Field, inputClass } from './Modal';
 import { useAppStore } from '@/lib/store';
+import { useCreateSalon } from '@/lib/salon-queries';
+import { AuthError } from '@/lib/auth';
 
 export function AddBranchModal({ onClose }: { onClose: () => void }) {
-  const addSalon = useAppStore((s) => s.addSalon);
-  const user = useAppStore((s) => s.user);
+  const setSelectedSalon = useAppStore((s) => s.setSelectedSalon);
+  const addSalonToIdentity = useAppStore((s) => s.addSalon);
+  const createSalon = useCreateSalon();
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
 
   const save = () => {
     if (!name.trim()) return setError('Enter a branch name');
-    addSalon({
-      id: `br-${Date.now()}`,
-      name: name.trim(),
-      ownerId: user?.id ?? '1',
-      address: address.trim(),
-      phone: phone.trim(),
-      email: '',
-      currency: 'INR',
-      countryCode: 'IN',
-      todayStats: { revenue: 0, count: 0 },
-    });
-    onClose();
+    if (!address.trim()) return setError('Enter an address');
+
+    createSalon.mutate(
+      { name: name.trim(), address: address.trim() },
+      {
+        onSuccess: (salon) => {
+          // Two separate salon lists exist: the identity store's basic list
+          // (drives the TopBar switcher) and react-query's richer
+          // SalonSummary list (drives business-data pages, invalidated by
+          // useCreateSalon already). Both need the new branch.
+          addSalonToIdentity({
+            id: salon.id,
+            name: salon.name,
+            ownerId: '',
+            address: salon.address,
+            currency: salon.currency,
+            countryCode: salon.countryCode,
+            dailyRevenueGoal: salon.dailyRevenueGoal,
+          });
+          setSelectedSalon(salon.id);
+          onClose();
+        },
+        onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not create this branch.'),
+      }
+    );
   };
 
   return (
@@ -47,17 +62,11 @@ export function AddBranchModal({ onClose }: { onClose: () => void }) {
             placeholder="Street, area, city"
           />
         </Field>
-        <Field label="Phone">
-          <input
-            className={inputClass}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="98765 43210"
-          />
-        </Field>
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex justify-end pt-2 border-t border-gray-200">
-          <button onClick={save} className="btn-primary">Add branch</button>
+          <button onClick={save} disabled={createSalon.isPending} className="btn-primary disabled:opacity-60">
+            {createSalon.isPending ? 'Creating…' : 'Add branch'}
+          </button>
         </div>
       </div>
     </Modal>

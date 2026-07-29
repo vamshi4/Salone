@@ -2,12 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import { Modal, Field, inputClass } from './Modal';
-import {
-  useDataStore,
-  formatINR,
-  type Booking,
-  type PaymentMethod,
-} from '@/lib/data';
+import { formatINR, type Booking, type PaymentMethod } from '@/lib/salon-api';
+import { useCurrentSalon, useCustomers, useLogBooking, useSelectedSalonId } from '@/lib/salon-queries';
+import { AuthError } from '@/lib/auth';
 
 /** Two modes matching the mobile app: "Done service" (log a finished
  * walk-in now — the default) and "Schedule later" (a future appointment). */
@@ -18,15 +15,18 @@ export function NewBookingModal({
   onClose: () => void;
   prefill?: Booking;
 }) {
-  const { staff, services, customers, logBooking } = useDataStore();
-  const activeStaff = staff.filter((s) => s.status === 'ACTIVE');
+  const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
+  const { data: customers = [] } = useCustomers(salonId);
+  const logBooking = useLogBooking();
 
-  const prefillCustomer = prefill ? customers.find((c) => c.id === prefill.customerId) : undefined;
+  const activeStaff = (salon?.staff ?? []).filter((s) => s.status === 'ACTIVE');
+  const services = salon?.services ?? [];
 
   const [completed, setCompleted] = useState(!prefill);
-  const [name, setName] = useState(prefillCustomer?.name ?? '');
-  const [phone, setPhone] = useState(prefillCustomer?.phone ?? '');
-  const [stylistId, setStylistId] = useState(prefill?.stylistId ?? activeStaff[0]?.id ?? '');
+  const [name, setName] = useState(prefill?.customerName ?? '');
+  const [phone, setPhone] = useState(prefill?.customerPhone ?? '');
+  const [stylistId, setStylistId] = useState(prefill?.stylistId ?? activeStaff[0]?.stylistId ?? '');
   const [selected, setSelected] = useState<Set<string>>(new Set(prefill?.serviceIds ?? []));
   const [payment, setPayment] = useState<PaymentMethod>('CASH');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -61,19 +61,30 @@ export function NewBookingModal({
   };
 
   const save = () => {
+    if (!salonId) return setError('No salon selected');
     if (!name.trim()) return setError('Enter the customer name');
+    if (!phone.trim()) return setError('Enter the customer phone number');
     if (!stylistId) return setError('Pick a staff member');
     if (selected.size === 0) return setError('Pick at least one service');
-    logBooking({
-      customerName: name,
-      customerPhone: phone,
-      stylistId,
-      serviceIds: [...selected],
-      completed,
-      time: completed ? undefined : new Date(`${date}T${time}`).toISOString(),
-      paymentMethod: completed ? payment : undefined,
-    });
-    onClose();
+    if (!completed && (!date || !time)) return setError('Pick a date and time');
+
+    setError('');
+    logBooking.mutate(
+      {
+        salonId,
+        stylistId,
+        serviceIds: [...selected],
+        customerName: name.trim(),
+        customerPhone: phone.trim(),
+        completed,
+        dateTime: completed ? undefined : new Date(`${date}T${time}`).toISOString(),
+        paymentMethod: completed ? payment : undefined,
+      },
+      {
+        onSuccess: () => onClose(),
+        onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not save this booking.'),
+      }
+    );
   };
 
   return (
@@ -148,10 +159,10 @@ export function NewBookingModal({
           <div className="flex flex-wrap gap-1.5">
             {activeStaff.map((s) => (
               <button
-                key={s.id}
-                onClick={() => setStylistId(s.id)}
+                key={s.stylistId}
+                onClick={() => setStylistId(s.stylistId)}
                 className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  stylistId === s.id
+                  stylistId === s.stylistId
                     ? 'bg-primary-light text-primary-dark'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
@@ -159,6 +170,9 @@ export function NewBookingModal({
                 {s.name}
               </button>
             ))}
+            {activeStaff.length === 0 && (
+              <p className="text-xs text-gray-400">Add a staff member before booking.</p>
+            )}
           </div>
         </Field>
 
@@ -182,6 +196,9 @@ export function NewBookingModal({
                 <span className="text-xs text-gray-900 tabular-nums">{formatINR(s.price)}</span>
               </label>
             ))}
+            {availableServices.length === 0 && (
+              <p className="text-xs text-gray-400">No services available for this staff member.</p>
+            )}
           </div>
         </Field>
 
@@ -222,8 +239,8 @@ export function NewBookingModal({
             <p className="text-xs text-gray-400">Total</p>
             <p className="text-base font-semibold text-gray-900 tabular-nums">{formatINR(total)}</p>
           </div>
-          <button onClick={save} className="btn-primary">
-            {completed ? 'Log service' : 'Schedule booking'}
+          <button onClick={save} disabled={logBooking.isPending} className="btn-primary disabled:opacity-60">
+            {logBooking.isPending ? 'Saving…' : completed ? 'Log service' : 'Schedule booking'}
           </button>
         </div>
       </div>

@@ -3,22 +3,26 @@
 import { useState } from 'react';
 import { PageLayout } from '@/components/PageLayout';
 import { ServiceModal } from '@/components/ServiceModal';
-import { useDataStore, formatINR, categoryIcon, type Service } from '@/lib/data';
+import { formatINR, categoryIcon, type Service } from '@/lib/salon-api';
+import { useAddStarterServices, useCurrentSalon, useSelectedSalonId } from '@/lib/salon-queries';
 import { Plus, Search, Sparkles } from 'lucide-react';
 
 function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className={selected ? 'chip-on' : 'chip-off'}
-    >
+    <button onClick={onClick} className={selected ? 'chip-on' : 'chip-off'}>
       {label}
     </button>
   );
 }
 
 export default function ServicesPage() {
-  const { services, staff, addStarterServices } = useDataStore();
+  const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
+  const addStarter = useAddStarterServices(salonId ?? '');
+
+  const services = salon?.services ?? [];
+  const staff = salon?.staff ?? [];
+
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -35,6 +39,16 @@ export default function ServicesPage() {
   const grouped = new Map<string, Service[]>();
   for (const s of filtered) grouped.set(s.category, [...(grouped.get(s.category) ?? []), s]);
   const sortedCategories = [...grouped.keys()].sort();
+
+  if (!salonId) {
+    return (
+      <PageLayout title="Services" subtitle="Your service catalog">
+        <div className="card px-4 py-6 text-center">
+          <p className="text-xs text-gray-400">No salon selected yet.</p>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout
@@ -70,9 +84,9 @@ export default function ServicesPage() {
           <div className="card px-4 py-8 text-center space-y-3">
             <p className="text-xs text-gray-400">No services in the catalog yet.</p>
             {services.length === 0 && (
-              <button onClick={addStarterServices} className="btn-secondary mx-auto">
+              <button onClick={() => addStarter.mutate()} disabled={addStarter.isPending} className="btn-secondary mx-auto disabled:opacity-60">
                 <Sparkles size={13} />
-                Add a starter set of common services
+                {addStarter.isPending ? 'Adding…' : 'Add a starter set of common services'}
               </button>
             )}
           </div>
@@ -82,7 +96,7 @@ export default function ServicesPage() {
               <p className="text-xs font-semibold text-gray-500 mb-1.5">{cat}</p>
               <div className="card divide-y divide-gray-100">
                 {grouped.get(cat)!.map((s) => {
-                  const assignee = s.stylistId ? staff.find((m) => m.id === s.stylistId)?.name : null;
+                  const assignee = s.stylistId ? staff.find((m) => m.stylistId === s.stylistId)?.name : null;
                   return (
                     <button
                       key={s.id}

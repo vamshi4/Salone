@@ -1,17 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Field, inputClass } from './Modal';
 import { StatusBadge } from './StatusBadge';
+import { formatINR, type Booking, type Customer } from '@/lib/salon-api';
 import {
-  useDataStore,
-  formatINR,
-  formatTime,
-  formatDay,
-  bookingServiceNames,
-  type Customer,
-} from '@/lib/data';
+  useBookings,
+  useCurrentSalon,
+  useCustomerProfile,
+  useSaveCustomerProfile,
+  useSelectedSalonId,
+} from '@/lib/salon-queries';
 import { X } from 'lucide-react';
+
+function formatDay(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const diff = Math.round((today.setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+}
 
 export function CustomerProfileModal({
   customer,
@@ -20,17 +33,29 @@ export function CustomerProfileModal({
   customer: Customer;
   onClose: () => void;
 }) {
-  const { bookings, services, staff, saveCustomerProfile } = useDataStore();
-  const [notes, setNotes] = useState(customer.notes);
-  const [tags, setTags] = useState<string[]>(customer.tags);
+  const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
+  const { data: bookings = [] } = useBookings(salonId);
+  const { data: profile } = useCustomerProfile(salonId, customer.id);
+  const saveProfile = useSaveCustomerProfile(salonId ?? '');
+
+  const [notes, setNotes] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    if (profile) {
+      setNotes(profile.notes);
+      setTags(profile.tags);
+    }
+  }, [profile]);
+
   const history = bookings
-    .filter((b) => b.customerId === customer.id)
-    .sort((a, b) => b.time.localeCompare(a.time));
-  const done = history.filter((b) => b.status === 'COMPLETED');
-  const totalSpend = done.reduce((s, b) => s + b.price, 0);
+    .filter((b: Booking) => b.customerId === customer.id)
+    .sort((a: Booking, b: Booking) => b.time.localeCompare(a.time));
+  const done = history.filter((b: Booking) => b.status === 'COMPLETED');
+  const totalSpend = done.reduce((s: number, b: Booking) => s + b.price, 0);
   const last = done[0];
 
   const addTag = () => {
@@ -40,9 +65,16 @@ export function CustomerProfileModal({
   };
 
   const save = () => {
-    saveCustomerProfile(customer.id, notes, tags);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    if (!salonId) return;
+    saveProfile.mutate(
+      { customerId: customer.id, notes, tags },
+      {
+        onSuccess: () => {
+          setSaved(true);
+          setTimeout(() => setSaved(false), 1500);
+        },
+      }
+    );
   };
 
   return (
@@ -61,7 +93,7 @@ export function CustomerProfileModal({
           <div className="bg-gray-50 rounded-md px-3 py-2">
             <p className="text-xs text-gray-500">Last visit</p>
             <p className="text-base font-semibold text-gray-900">
-              {last ? formatDay(new Date(last.time)) : '—'}
+              {last ? formatDay(last.time) : '—'}
             </p>
           </div>
         </div>
@@ -97,8 +129,8 @@ export function CustomerProfileModal({
             />
           </div>
         </Field>
-        <button onClick={save} className="btn-secondary">
-          {saved ? 'Saved' : 'Save notes'}
+        <button onClick={save} disabled={saveProfile.isPending} className="btn-secondary disabled:opacity-60">
+          {saveProfile.isPending ? 'Saving…' : saved ? 'Saved' : 'Save notes'}
         </button>
 
         {/* History */}
@@ -108,17 +140,15 @@ export function CustomerProfileModal({
             {history.length === 0 && (
               <p className="px-3 py-3 text-xs text-gray-400">No bookings yet.</p>
             )}
-            {history.map((b) => (
+            {history.map((b: Booking) => (
               <div key={b.id} className="flex items-center justify-between px-3 py-2">
                 <div>
                   <p className="text-xs text-gray-900">
-                    {bookingServiceNames(b, services)}
-                    <span className="text-gray-400">
-                      {' '}· {staff.find((s) => s.id === b.stylistId)?.name ?? ''}
-                    </span>
+                    {b.serviceNames.join(' + ') || 'Service'}
+                    <span className="text-gray-400"> · {b.stylistName}</span>
                   </p>
                   <p className="text-xs text-gray-400">
-                    {formatDay(new Date(b.time))} · {formatTime(b.time)}
+                    {formatDay(b.time)} · {formatTime(b.time)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2.5">

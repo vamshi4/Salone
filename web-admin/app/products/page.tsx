@@ -4,15 +4,13 @@ import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PageLayout } from '@/components/PageLayout';
 import { ProductModal } from '@/components/ProductModal';
-import { useDataStore, formatINR, type Product } from '@/lib/data';
+import { formatINR, type Product } from '@/lib/salon-api';
+import { useCurrentSalon, useSelectedSalonId } from '@/lib/salon-queries';
 import { Plus, Search, Package } from 'lucide-react';
 
 function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className={selected ? 'chip-on' : 'chip-off'}
-    >
+    <button onClick={onClick} className={selected ? 'chip-on' : 'chip-off'}>
       {label}
     </button>
   );
@@ -20,7 +18,10 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
 
 function ProductsContent() {
   const searchParams = useSearchParams();
-  const { products } = useDataStore();
+  const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
+  const products = salon?.products ?? [];
+
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [lowOnly, setLowOnly] = useState(searchParams.get('low') === '1');
@@ -40,6 +41,16 @@ function ProductsContent() {
   const grouped = new Map<string, Product[]>();
   for (const p of filtered) grouped.set(p.category, [...(grouped.get(p.category) ?? []), p]);
   const sortedCategories = [...grouped.keys()].sort();
+
+  if (!salonId) {
+    return (
+      <PageLayout title="Inventory" subtitle="Retail products and stock">
+        <div className="card px-4 py-6 text-center">
+          <p className="text-xs text-gray-400">No salon selected yet.</p>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout

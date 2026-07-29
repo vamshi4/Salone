@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useAppStore } from '@/lib/store';
+import { formatINR, type Booking, type Customer } from '@/lib/salon-api';
+import { loggedToday, repeatCustomerIds } from '@/lib/booking-helpers';
 import {
-  useDataStore,
-  formatINR,
-  loggedToday,
-  repeatCustomerIds,
-  atRiskCustomers,
-  type Booking,
-  type Customer,
-} from '@/lib/data';
+  useAtRisk,
+  useBookings,
+  useCurrentSalon,
+  useSelectedSalonId,
+} from '@/lib/salon-queries';
 import { NewBookingModal } from '@/components/NewBookingModal';
 import { CustomerProfileModal } from '@/components/CustomerProfileModal';
 import { AddStaffModal } from '@/components/StaffModals';
@@ -64,7 +64,12 @@ function StatTile({
 }
 
 export default function DashboardPage() {
-  const { bookings, customers, products, salon } = useDataStore();
+  const user = useAppStore((s) => s.user);
+  const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
+  const { data: bookings = [], isLoading, isError } = useBookings(salonId);
+  const { data: atRiskData } = useAtRisk(salonId);
+
   const [modal, setModal] = useState<'booking' | 'staff' | 'service' | null>(null);
   const [rebook, setRebook] = useState<Booking | undefined>();
   const [profileCustomer, setProfileCustomer] = useState<Customer | undefined>();
@@ -73,17 +78,26 @@ export default function DashboardPage() {
   const todayRevenue = logged.reduce((s, b) => s + b.price, 0);
   const repeats = repeatCustomerIds(bookings);
   const repeatCount = logged.filter((b) => repeats.has(b.customerId)).length;
-  const atRisk = atRiskCustomers(customers, bookings).slice(0, 2);
-  const lowStock = products.filter((p) => p.stockQty <= p.lowStockThreshold);
-  const goal = salon.dailyRevenueGoal;
+  const atRisk = (atRiskData?.customers ?? []).slice(0, 2);
+  const lowStock = (salon?.products ?? []).filter((p) => p.stockQty <= p.lowStockThreshold);
+  const goal = salon?.dailyRevenueGoal ?? 0;
   const pace = goal > 0 ? Math.min(1, todayRevenue / goal) : 0;
 
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
 
   const openCustomer = (b: Booking) => {
-    const c = customers.find((x) => x.id === b.customerId);
-    if (c) setProfileCustomer(c);
+    setProfileCustomer({ id: b.customerId, name: b.customerName, phone: b.customerPhone });
   };
+
+  if (!salonId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="card px-4 py-6 text-center">
+          <p className="text-xs text-gray-400">No salon on your account yet.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -95,7 +109,7 @@ export default function DashboardPage() {
           <div className="relative p-5">
             <p className="text-xs text-teal-100/80">{today}</p>
             <h1 className="text-xl font-bold mt-0.5">
-              {greeting()}, {salon.ownerName.split(' ')[0]} 👋
+              {greeting()}{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
             </h1>
             <p className="text-sm text-teal-50/90 mt-2">
               <span className="font-semibold text-white">
@@ -150,6 +164,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {isLoading && <p className="text-xs text-gray-400">Loading your day…</p>}
+        {isError && <p className="text-xs text-red-600">Could not load bookings. Try refreshing.</p>}
+
         {/* Alerts row */}
         {(atRisk.length > 0 || lowStock.length > 0) && (
           <div className="grid gap-3" style={{ gridTemplateColumns: atRisk.length && lowStock.length ? '1fr 1fr' : '1fr' }}>
@@ -160,17 +177,17 @@ export default function DashboardPage() {
                   <p className="text-xs font-bold text-gray-900">Worth reaching out today</p>
                 </div>
                 <div className="mt-2 space-y-1.5">
-                  {atRisk.map((h) => (
+                  {atRisk.map((c) => (
                     <button
-                      key={h.customer.id}
-                      onClick={() => setProfileCustomer(h.customer)}
+                      key={c.customerId}
+                      onClick={() => setProfileCustomer({ id: c.customerId, name: c.name ?? 'Customer', phone: c.phone })}
                       className="flex items-center justify-between w-full text-left group py-1 -mx-1 px-1 rounded hover:bg-amber-50/60 transition-colors"
                     >
                       <span className="text-xs font-medium text-gray-800 group-hover:text-primary-dark">
-                        {h.customer.name}
+                        {c.name ?? 'Customer'}
                       </span>
                       <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold">
-                        {h.overdueDays}d overdue
+                        {c.overdueDays}d overdue
                       </span>
                     </button>
                   ))}

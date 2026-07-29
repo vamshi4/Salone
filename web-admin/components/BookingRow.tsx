@@ -1,15 +1,13 @@
 'use client';
 
 import { StatusBadge } from './StatusBadge';
-import {
-  useDataStore,
-  formatINR,
-  formatTime,
-  bookingServiceNames,
-  type Booking,
-} from '@/lib/data';
+import { formatINR, type Booking } from '@/lib/salon-api';
 import { RotateCcw } from 'lucide-react';
 import { Avatar } from './Avatar';
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+}
 
 /** One row in a booking log list. Click opens the customer profile;
  * the rebook button pre-fills a new scheduled booking. */
@@ -24,24 +22,20 @@ export function BookingRow({
   onOpenCustomer: (b: Booking) => void;
   onRebook: (b: Booking) => void;
 }) {
-  const { services, staff, customers } = useDataStore();
-  const customer = customers.find((c) => c.id === booking.customerId);
-  const stylist = staff.find((s) => s.id === booking.stylistId);
-
   return (
     <div
       className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-primary-50/60 transition-colors cursor-pointer"
       onClick={() => onOpenCustomer(booking)}
     >
-      <Avatar name={customer?.name ?? '?'} size="sm" />
+      <Avatar name={booking.customerName || '?'} size="sm" />
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-900 truncate">
-          <span className="font-semibold">{bookingServiceNames(booking, services)}</span>
+          <span className="font-semibold">{booking.serviceNames.join(' + ') || 'Service'}</span>
           <span className="text-gray-400"> · </span>
-          <span className="text-gray-600">{stylist?.name ?? ''}</span>
+          <span className="text-gray-600">{booking.stylistName}</span>
         </p>
         <p className="text-xs text-gray-400 mt-0.5">
-          {customer?.name ?? 'Customer'}
+          {booking.customerName}
           {isRepeat && (
             <span className="ml-1.5 px-1.5 py-px rounded-full bg-primary-light text-primary-dark font-semibold text-[10px]">
               repeat
