@@ -10,12 +10,14 @@
 > the bottom, it's the most recent) → `docs/HANDOFF-SALON-ADMIN-V3.md` (v3 app
 > details) → `docs/GLOBAL-READINESS.md` (currency/language backend design).
 
-_Last updated: 2026-07-17 · Branch: `feature/retention-and-redesign` · Canonical dir: `D:\vamshi\Salone`_
+_Last updated: 2026-07-29 · Branch: `feature/retention-and-redesign` · Canonical dir: `D:\vamshi\Salone`_
 
 > **Starting cold and want the newest state?** Skip straight to the
-> **2026-07-15 → 2026-07-17** entry at the very bottom of this file — it supersedes everything
-> above it in terms of "what's the current app state." Read `docs/STATUS.md`'s warning box first
-> though; it has the short version + the exact release blockers.
+> **2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit** entry at the
+> very bottom of this file — it supersedes everything above it (including the mobile-app
+> 2026-07-15 → 2026-07-17 entry, which is still accurate for the Flutter apps but not for
+> `web-admin`). Read `docs/STATUS.md`'s warning box first though; it has the short version + the
+> exact release blockers.
 
 ## Canonical location (important)
 - Do **all** work in `D:\vamshi\Salone`. A stale sibling copy `D:\vamshi\Salone2`
@@ -781,3 +783,121 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
 - Nginx had already been updated live to route `web.slotvibe.buzz` to `salone-web` without removing
   the Kimai/timesheet route; recreate/reload carefully because this nginx deployment owns host
   ports 80/443 and cannot roll with a second pod in parallel.
+
+## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
+
+Continuation of the `web-admin` work referenced in the two Codex handoff notes just above (those
+cover push/deploy mechanics only — this entry covers what was actually built). **This is the
+current entry to read for `web-admin` state** — the mobile-app entries above it are unaffected and
+still accurate for the Flutter apps.
+
+### Context: why this was needed
+`web-admin` (the Next.js dashboard mirroring the Flutter salon-owner app) had every business-data
+page — Home, Bookings, Staff, Services, Inventory, Insights — reading from a client-only mock
+Zustand store. Auth was real, but the moment an owner logged into the *live* production account,
+they saw fake customer names (`Neha T.`, `Kabir M.`, etc.) instead of their own salon's data.
+Confirmed via a screenshot of a real logged-in owner (`vamshichair`) on `web.slotvibe.buzz`.
+
+### 1. Real-backend wiring (the bulk of commit `af8e160`)
+- New `web-admin/lib/salon-api.ts` — typed API client for every business endpoint, with all
+  `toRupees`/`toPaise` paise-conversion happening at this one boundary (backend stores money in
+  minor units, same as the Flutter apps' `formatMoney()`).
+- New `web-admin/lib/salon-queries.ts` — React Query hooks wrapping it (`useSalons`,
+  `useCurrentSalon`, `useBookings`, `useCustomers`, `useEarnings`, `useRetention`, `useAtRisk`,
+  staff/service/product mutations, etc.).
+- New `web-admin/lib/booking-helpers.ts` — client-side booking grouping/filtering helpers
+  (`needsAction`, `todaySchedule`, `bookingsByDay`, `repeatCustomerIds`), mirroring the Flutter
+  `DashboardData` getters in `mobile/salon_admin_app_v4_1/lib/shell/dashboard_data.dart`.
+- Every business page (`app/dashboard`, `app/bookings`, `app/staff`, `app/services`,
+  `app/products`, `app/insights`) and every modal (`NewBookingModal`, `StaffModals`,
+  `ServiceModal`, `ProductModal`, `CustomerProfileModal`, `AddBranchModal`, `TopBar`) rewritten
+  against the real hooks. The old mock store (`lib/data.ts`) is no longer imported anywhere
+  (verified via grep) but was left on disk, unremoved.
+- Two bugs caught and fixed *before* this reached prod-facing status: `dailyRevenueGoal` was off
+  by 100x (missing the paise conversion on the Account page), and the global 401-interceptor was
+  force-logging users out on a *wrong password* response from `change-password` (should show an
+  inline error instead) — fixed via a `SESSION_EXEMPT_401_PATHS` allowlist in `lib/api.ts`.
+- End-to-end verified against a **local dev backend only** (never against prod — no throwaway
+  test actions were run against real customer data): fresh signup → add staff → log a walk-in
+  booking → confirmed it flows correctly through Bookings stats, Insights/Earnings, and
+  Insights/Retention, plus Account profile/salon-goal save and the password-change error path.
+  Zero console errors throughout.
+
+### 2. Field-parity audit against the real Flutter v4.1 app
+Owner asked for every field of data available in the mobile app to also be available in
+`web-admin`, and to check whether the `graphify` knowledge graph (`graphify-out/`) was stale
+first — it was (last built ~1hr before this session's edits), so it was refreshed twice via
+`graphify update .` (once before the audit, once after the fixes below) to keep it current, per
+the standing rule in `.cursor/rules/graphify.mdc`.
+
+Read the real mobile source directly for ground truth — `mobile/salon_admin_app_v4_1/lib/sheets/
+staff_manage_sheet.dart`, `add_staff_sheet.dart`, `staff_payout_sheet.dart`,
+`new_booking_sheet.dart`, `customer_profile_sheet.dart` — and diffed field-by-field against the
+`web-admin` equivalents. Confirmed via `backend/src/routes/stylist.routes.ts` and
+`salon.routes.ts` that every gap found below was **already backend-supported**; only the web UI
+was missing it. Three real gaps found and closed:
+
+1. **Working hours (stylist availability)** — mobile lets an owner set/edit per-day open-close
+   hours for each stylist (`GET/POST /api/v2/stylists/:id/availability-rules` +
+   `/availability`, `DELETE .../availability/:id`); web had zero UI for this at all, either at
+   staff creation or afterward. Added to `AddStaffModal` (open/close time + working-day chips,
+   defaulting Mon–Sat 09:00–18:00 same as the backend's own default) and a new
+   `WorkingHoursSection` inside `ManageStaffModal` (per-day toggle + time inputs, auto-saves on
+   change via delete-then-recreate, matching the mobile app's own pattern — the backend rejects
+   overlapping windows per day so replace-in-place isn't possible).
+2. **Payout actions + history** — mobile can actually settle a commission payout ("Mark as
+   paid") or pay a stylist's monthly salary ("Pay salary"), and shows a payout history list
+   (`POST/GET /api/v2/salons/:salonId/stylists/:stylistId/payouts`). Web's `PayoutModal` only
+   *displayed* `unpaidTotal`/`unpaidCount` with no way to act on them, and no salary section or
+   history at all. Added both actions plus a payout-history list, and made the modal payType-aware
+   (shows the commission section only for COMMISSION/BOTH, salary section only for SALARY/BOTH —
+   same conditional logic as `staff_payout_sheet.dart`).
+3. **Staff profile + pay type editing** — mobile lets an owner edit a stylist's name/phone
+   (`PATCH /api/v2/stylists/:id`) and choose Commission/Salary/Both pay type with a salary amount
+   (`PATCH /api/v2/salons/:salonId/stylists/:stylistId` — this endpoint already accepted
+   `payType`/`salaryAmount`, just wasn't being sent). Web's `ManageStaffModal` only exposed
+   commission rate + active toggle. Added name/phone fields, a Commission/Salary/Both segmented
+   control, and a conditional salary-amount field.
+
+`lib/salon-api.ts` gained: `updateStylistProfile()`, `AvailabilityRule` type +
+`fetchAvailabilityRules`/`addAvailabilityRule`/`deleteAvailabilityRule`, `Payout` type +
+`fetchPayouts`/`settleCommissionPayout`/`paySalary`, and `StylistEarnings` extended with
+`payType`/`salaryAmount`/`salaryPaidThisMonth` (the backend already returned these, the mapper
+was just dropping them). `lib/salon-queries.ts` gained matching hooks. All of this is in the same
+commit `af8e160` as the wiring work above (both were uncommitted together at the time).
+
+**Deliberately not changed** (mobile has a small edge, but web already has a working equivalent,
+so left alone rather than adding redundant UI without checking first): mobile's `AddStaffSheet`
+lets you add multiple services at creation time — web adds one and points to the Services tab for
+the rest, which already works (the Services page can assign any service to any stylist, actually
+more flexible than mobile's per-stylist-only creation flow). Mobile's "Schedule later" booking
+mode picks from real computed availability slots (`GET /api/v2/stylists/:id/availability`); web
+takes free-form date/time — the backend doesn't validate slot conflicts on either path, so this is
+a UX nicety gap, not a data-integrity one.
+
+### Verification
+All three new features tested end-to-end against the **local dev backend** via browser automation:
+created a fresh staff member with a custom Tue/Wed/Thu working-day selection (confirmed it
+persisted exactly, Mon/Fri/Sat/Sun correctly showed "Day off"), edited an existing member's hours
+(confirmed the delete-then-recreate round-trip), switched pay type to "Both" and set a ₹12,000
+salary, then actually executed both a salary payout and a commission "Mark as paid" — both created
+real `StylistPayout` records, correctly zeroed out `unpaidCount`, and appeared in payout history.
+Zero console errors throughout. **Never tested against prod directly** — the owner independently
+confirmed post-deploy, via a real production screenshot of the `vamshichair` salon's Add Staff
+modal, that the new working-hours/working-days fields render and behave correctly live, and
+separately confirmed the original dummy-data bug is gone.
+
+### Deploy
+Committed as `af8e160` — see the two Codex handoff entries directly above this one for the actual
+push/GHCR/ArgoCD/nginx mechanics (already done, confirmed live). `docs/STATUS.md` has not been
+updated with this entry's content yet — do that before treating `web-admin` docs as fully current.
+
+### Still open (real backlog for `web-admin`, not urgent)
+1. Multi-service selection at staff-creation time (mobile has it, web's one-service-then-Services-tab
+   flow is an acceptable but not identical substitute).
+2. Real availability-slot picking for "Schedule later" bookings (currently free-form date/time,
+   works fine since the backend doesn't enforce slot conflicts, but doesn't guide the owner to an
+   actually-open slot the way mobile does).
+3. `lib/data.ts` (the old mock store) is fully unused but was never deleted — safe to remove
+   whenever, just cosmetic cleanup.
+4. `docs/STATUS.md` should get a short pointer to this entry.
