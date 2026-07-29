@@ -17,7 +17,7 @@ spec:
         kubernetes.io/hostname: k8s-master
       containers:
         - name: web
-          image: ghcr.io/vamshi4/salone-web:af8e160
+          image: ghcr.io/vamshi4/salone-web:9af9a9b
           imagePullPolicy: Always
           ports:
             - containerPort: 3000

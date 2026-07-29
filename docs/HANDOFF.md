@@ -784,6 +784,11 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
   the Kimai/timesheet route; recreate/reload carefully because this nginx deployment owns host
   ports 80/443 and cannot roll with a second pod in parallel.
 
+### 2026-07-29 Codex handoff: responsive web shell image pin
+- Pushed Claude's web-admin responsive mobile drawer commits through `9af9a9b`.
+- Confirmed `ghcr.io/vamshi4/salone-web:9af9a9b` exists in GHCR, then pinned
+  `deploy/k8s/salone-web.yaml` to that tag for production rollout.
+
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
 Continuation of the `web-admin` work referenced in the two Codex handoff notes just above (those
