@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+export const APP_BASE_PATH = '/admin';
 
 // Deliberately a different key from web-admin's — a browser could plausibly
 // have both apps open, and they must never share or clobber each other's
@@ -43,8 +44,8 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       clearToken();
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
+      if (!window.location.pathname.startsWith(`${APP_BASE_PATH}/login`)) {
+        window.location.href = `${APP_BASE_PATH}/login`;
       }
     }
     return Promise.reject(error);

@@ -797,6 +797,16 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
 - Confirmed `ghcr.io/vamshi4/salone-web:4d1265d` exists in GHCR, then pinned
   `deploy/k8s/salone-web.yaml` to that tag for production rollout.
 
+### 2026-07-29 Codex handoff: super-admin served under API `/admin`
+- User chose to keep super-admin at `https://api.slotvibe.buzz/admin` instead of adding
+  `admin.slotvibe.buzz`.
+- Updated `web-superadmin` to use Next.js `basePath: '/admin'` and route auth redirects/logout under
+  `/admin/login`.
+- Updated nginx API host blocks so `/admin` routes to `salone-superadmin` while `/api/v2/*` continues
+  to route to `salone-api`.
+- Pinned `salone-api` to backend image `ghcr.io/vamshi4/salone-backend:3bf55d2` for the matching
+  admin API route changes.
+
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
 Continuation of the `web-admin` work referenced in the two Codex handoff notes just above (those

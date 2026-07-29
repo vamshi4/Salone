@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Building2, Trash2, ScrollText, LogOut, ChevronLeft, ShieldCheck, X } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { logoutLocal } from '@/lib/auth';
+import { APP_BASE_PATH } from '@/lib/api';
 import { useState, useEffect } from 'react';
 
 // Same responsive-drawer pattern as web-admin/components/Sidebar.tsx (a
@@ -136,7 +137,7 @@ export function Sidebar({
             onClick={() => {
               logoutLocal();
               logout();
-              window.location.href = '/login';
+              window.location.href = `${APP_BASE_PATH}/login`;
             }}
             title={effectiveCollapsed ? 'Logout' : ''}
             className={`flex items-center rounded-lg text-xs transition-colors text-indigo-100/60 hover:text-white hover:bg-white/10 w-full ${
