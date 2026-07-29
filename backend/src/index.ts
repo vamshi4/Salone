@@ -38,6 +38,16 @@ app.use(
 app.use(express.json({ limit: process.env.JSON_LIMIT || '1mb' }));
 app.use(authOptional);
 
+// Every /api/v2 response is per-user dynamic data — without this, an
+// intermediary (e.g. Cloudflare, which proxies this API in production) can
+// cache a GET response and keep serving it after a mutation, making an
+// action like "confirm this booking" look like it silently did nothing
+// until the cache naturally expires or a hard refresh bypasses it.
+app.use('/api/v2', (_req: Request, res: Response, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', version: '2.0.0' });
 });
