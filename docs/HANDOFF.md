@@ -789,6 +789,12 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
 - Confirmed `ghcr.io/vamshi4/salone-web:9af9a9b` exists in GHCR, then pinned
   `deploy/k8s/salone-web.yaml` to that tag for production rollout.
 
+### 2026-07-29 Codex handoff: mobile text overflow image pin
+- Pushed commits through `4d1265d` (`518a9cb` backend API no-cache headers plus
+  `4d1265d` web dashboard mobile text-overflow fix).
+- Confirmed `ghcr.io/vamshi4/salone-web:4d1265d` exists in GHCR, then pinned
+  `deploy/k8s/salone-web.yaml` to that tag for production rollout.
+
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
 Continuation of the `web-admin` work referenced in the two Codex handoff notes just above (those
