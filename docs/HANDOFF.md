@@ -806,6 +806,8 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
   to route to `salone-api`.
 - Pinned `salone-api` to backend image `ghcr.io/vamshi4/salone-backend:3bf55d2` for the matching
   admin API route changes.
+- Confirmed `ghcr.io/vamshi4/salone-superadmin:7125d3f` exists in GHCR and pinned
+  `deploy/k8s/salone-superadmin.yaml` to that tag.
 
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 

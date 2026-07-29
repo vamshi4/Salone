@@ -17,7 +17,7 @@ spec:
         kubernetes.io/hostname: k8s-master
       containers:
         - name: superadmin
-          image: ghcr.io/vamshi4/salone-superadmin:PLACEHOLDER
+          image: ghcr.io/vamshi4/salone-superadmin:7125d3f
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
