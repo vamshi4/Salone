@@ -764,3 +764,12 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
    branch switcher, add a staff member (confirm commission default), submit a public booking via a
    real (non-localhost) QR/link, confirm it lands in the app.
 6. Then it's an owner-driven Play Console upload, same as every prior release in this file.
+
+### 2026-07-29 Codex handoff: web admin deploy push started
+- Pushed `feature/retention-and-redesign` through commit `641fe92` to `origin`, which should trigger
+  `.github/workflows/web-image.yml` for `ghcr.io/vamshi4/salone-web`.
+- Pinned `deploy/k8s/salone-web.yaml` to `ghcr.io/vamshi4/salone-web:641fe92` so the cluster config
+  no longer contains the placeholder tag.
+- Still needs operational verification from prod/ArgoCD once GitHub Actions finishes: confirm the
+  web image exists, ArgoCD syncs to the commit containing this pin, `https://web.slotvibe.buzz/login`
+  loads, TLS covers `web.slotvibe.buzz`, and the backend CORS change is live.

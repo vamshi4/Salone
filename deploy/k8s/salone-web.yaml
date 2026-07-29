@@ -17,10 +17,7 @@ spec:
         kubernetes.io/hostname: k8s-master
       containers:
         - name: web
-          # TODO: pin to the real short SHA that .github/workflows/web-image.yml
-          # pushes after the first run on this branch (same pattern as
-          # salone-api's image tag below).
-          image: ghcr.io/vamshi4/salone-web:REPLACE_WITH_COMMIT_SHA
+          image: ghcr.io/vamshi4/salone-web:641fe92
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
