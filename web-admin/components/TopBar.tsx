@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppStore } from '@/lib/store';
-import { Search, Bell, ChevronDown, Plus, MapPin, User, Scissors, Zap, X } from 'lucide-react';
+import { Search, Bell, ChevronDown, Plus, MapPin, User, Scissors, Zap, X, Menu } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AddBranchModal } from './AddBranchModal';
@@ -10,7 +10,7 @@ import type { Customer } from '@/lib/salon-api';
 import { needsAction } from '@/lib/booking-helpers';
 import { useBookings, useCurrentSalon, useCustomers, useSelectedSalonId } from '@/lib/salon-queries';
 
-export function TopBar() {
+export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const router = useRouter();
   const user = useAppStore((state) => state.user);
   const selectedSalonId = useSelectedSalonId();
@@ -54,6 +54,15 @@ export function TopBar() {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="px-4 py-2 flex items-center justify-between gap-3">
+        {/* Mobile nav trigger — sidebar is a hidden drawer below md */}
+        <button
+          onClick={onOpenMobileNav}
+          className="md:hidden p-1.5 -ml-1 hover:bg-gray-100 rounded-md transition-colors flex-shrink-0"
+          aria-label="Open menu"
+        >
+          <Menu size={18} className="text-gray-600" />
+        </button>
+
         {/* Salon switcher — the name is the control */}
         <div className="relative">
           <button

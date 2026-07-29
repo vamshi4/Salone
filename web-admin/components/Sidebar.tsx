@@ -13,25 +13,63 @@ import {
   LogOut,
   ChevronLeft,
   Scissors,
+  X,
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { logoutLocal } from '@/lib/auth';
 import { useState, useEffect } from 'react';
 
-export function Sidebar() {
+// Below this width the sidebar becomes a slide-in overlay drawer instead of
+// a permanent rail — a fixed 128px rail eats too much of a ~375-430px phone
+// viewport to be usable (confirmed via a mobile-emulator screenshot).
+const MOBILE_BREAKPOINT = 768;
+
+export function Sidebar({
+  mobileOpen,
+  onCloseMobile,
+}: {
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
+}) {
   const pathname = usePathname();
   const logout = useAppStore((state) => state.logout);
   const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('sidebar-collapsed');
     if (saved) setCollapsed(JSON.parse(saved));
   }, []);
 
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // Body scroll-lock while the mobile drawer is open, same pattern as Modal.
+  useEffect(() => {
+    if (isMobile && mobileOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isMobile, mobileOpen]);
+
   const toggleCollapse = () => {
     const newState = !collapsed;
     setCollapsed(newState);
     localStorage.setItem('sidebar-collapsed', JSON.stringify(newState));
+  };
+
+  // The drawer is a full overlay on mobile — an icon-only collapsed rail
+  // doesn't make sense there, so always show full labels in that mode.
+  const effectiveCollapsed = isMobile ? false : collapsed;
+
+  const closeOnMobileNav = () => {
+    if (isMobile) onCloseMobile();
   };
 
   const mainItems = [
@@ -50,7 +88,7 @@ export function Sidebar() {
 
   const itemClass = (active: boolean) =>
     `flex items-center rounded-lg text-xs transition-all ${
-      collapsed ? 'justify-center p-2' : 'gap-2 px-2 py-1.5'
+      effectiveCollapsed ? 'justify-center p-2' : 'gap-2 px-2 py-1.5'
     } ${
       active
         ? 'bg-white/15 text-white font-semibold shadow-sm'
@@ -58,101 +96,120 @@ export function Sidebar() {
     }`;
 
   const sectionLabel = (label: string) =>
-    !collapsed && (
+    !effectiveCollapsed && (
       <p className="px-2 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-teal-100/40 truncate">{label}</p>
     );
 
   return (
-    <aside
-      className={`bg-gradient-to-b from-primary to-primary-dark flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'w-14' : 'w-32'}`}
-    >
-      {/* Brand */}
-      <div className={`flex items-center ${collapsed ? 'justify-center py-3' : 'justify-between px-2.5 py-3'}`}>
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center">
-              <Scissors size={13} className="text-white" />
+    <>
+      {/* Backdrop — mobile drawer only */}
+      {isMobile && mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-gray-900/40" onClick={onCloseMobile} />
+      )}
+      <aside
+        className={`bg-gradient-to-b from-primary to-primary-dark flex flex-col min-h-screen flex-shrink-0 ${
+          isMobile
+            ? `fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ${
+                mobileOpen ? 'translate-x-0' : '-translate-x-full'
+              }`
+            : `relative transition-all duration-300 ${collapsed ? 'w-14' : 'w-32'}`
+        }`}
+      >
+        {/* Brand */}
+        <div className={`flex items-center ${effectiveCollapsed ? 'justify-center py-3' : 'justify-between px-2.5 py-3'}`}>
+          {!effectiveCollapsed && (
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center">
+                <Scissors size={13} className="text-white" />
+              </div>
+              <h1 className="text-sm font-bold text-white leading-tight">Salone</h1>
             </div>
-            <h1 className="text-sm font-bold text-white leading-tight">Salone</h1>
-          </div>
-        )}
-        <button
-          onClick={toggleCollapse}
-          className="p-1 hover:bg-white/10 rounded-md text-teal-100/60 hover:text-white transition-colors flex-shrink-0"
-          title={collapsed ? 'Expand' : 'Collapse'}
-        >
-          <ChevronLeft size={14} className={`transition-transform ${collapsed ? 'rotate-180' : ''}`} />
-        </button>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto no-scrollbar px-2 pb-2">
-        {sectionLabel('Main')}
-        <div className="space-y-1">
-          {mainItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.label : ''}
-                className={itemClass(isActive(item.href))}
-              >
-                <Icon size={16} />
-                {!collapsed && <span>{item.label}</span>}
-              </Link>
-            );
-          })}
-        </div>
-
-        {sectionLabel('Management')}
-        <div className="space-y-1">
-          {managementItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.label : ''}
-                className={itemClass(isActive(item.href))}
-              >
-                <Icon size={16} />
-                {!collapsed && <span>{item.label}</span>}
-              </Link>
-            );
-          })}
-        </div>
-
-        {sectionLabel('Account')}
-        <div className="space-y-1">
-          <Link
-            href="/account"
-            title={collapsed ? 'Account' : ''}
-            className={itemClass(isActive('/account'))}
+          )}
+          <button
+            onClick={isMobile ? onCloseMobile : toggleCollapse}
+            className="p-1 hover:bg-white/10 rounded-md text-teal-100/60 hover:text-white transition-colors flex-shrink-0"
+            title={isMobile ? 'Close' : collapsed ? 'Expand' : 'Collapse'}
           >
-            <Settings size={16} />
-            {!collapsed && <span>Account</span>}
-          </Link>
+            {isMobile ? (
+              <X size={16} />
+            ) : (
+              <ChevronLeft size={14} className={`transition-transform ${collapsed ? 'rotate-180' : ''}`} />
+            )}
+          </button>
         </div>
-      </nav>
 
-      {/* Logout */}
-      <div className="p-2 border-t border-white/10">
-        <button
-          onClick={() => {
-            logoutLocal();
-            logout();
-            window.location.href = '/login';
-          }}
-          title={collapsed ? 'Logout' : ''}
-          className={`flex items-center rounded-lg text-xs transition-colors text-teal-100/60 hover:text-white hover:bg-white/10 w-full ${
-            collapsed ? 'justify-center p-2' : 'gap-2 px-2 py-1.5'
-          }`}
-        >
-          <LogOut size={16} />
-          {!collapsed && <span>Logout</span>}
-        </button>
-      </div>
-    </aside>
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto no-scrollbar px-2 pb-2">
+          {sectionLabel('Main')}
+          <div className="space-y-1">
+            {mainItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={effectiveCollapsed ? item.label : ''}
+                  onClick={closeOnMobileNav}
+                  className={itemClass(isActive(item.href))}
+                >
+                  <Icon size={16} />
+                  {!effectiveCollapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+
+          {sectionLabel('Management')}
+          <div className="space-y-1">
+            {managementItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={effectiveCollapsed ? item.label : ''}
+                  onClick={closeOnMobileNav}
+                  className={itemClass(isActive(item.href))}
+                >
+                  <Icon size={16} />
+                  {!effectiveCollapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+
+          {sectionLabel('Account')}
+          <div className="space-y-1">
+            <Link
+              href="/account"
+              title={effectiveCollapsed ? 'Account' : ''}
+              onClick={closeOnMobileNav}
+              className={itemClass(isActive('/account'))}
+            >
+              <Settings size={16} />
+              {!effectiveCollapsed && <span>Account</span>}
+            </Link>
+          </div>
+        </nav>
+
+        {/* Logout */}
+        <div className="p-2 border-t border-white/10">
+          <button
+            onClick={() => {
+              logoutLocal();
+              logout();
+              window.location.href = '/login';
+            }}
+            title={effectiveCollapsed ? 'Logout' : ''}
+            className={`flex items-center rounded-lg text-xs transition-colors text-teal-100/60 hover:text-white hover:bg-white/10 w-full ${
+              effectiveCollapsed ? 'justify-center p-2' : 'gap-2 px-2 py-1.5'
+            }`}
+          >
+            <LogOut size={16} />
+            {!effectiveCollapsed && <span>Logout</span>}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

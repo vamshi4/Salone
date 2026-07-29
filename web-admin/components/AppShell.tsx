@@ -16,6 +16,7 @@ function ShellContent({ children }: { children: React.ReactNode }) {
   const setSalons = useAppStore((state) => state.setSalons);
   const [status, setStatus] = useState<'checking' | 'ready' | 'error'>('checking');
   const [error, setError] = useState('');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const boot = async () => {
     setStatus('checking');
@@ -61,9 +62,9 @@ function ShellContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar mobileOpen={mobileNavOpen} onCloseMobile={() => setMobileNavOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+        <TopBar onOpenMobileNav={() => setMobileNavOpen(true)} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
