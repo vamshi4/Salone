@@ -808,6 +808,8 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
   admin API route changes.
 - Confirmed `ghcr.io/vamshi4/salone-superadmin:7125d3f` exists in GHCR and pinned
   `deploy/k8s/salone-superadmin.yaml` to that tag.
+- Health probes for `salone-superadmin` must use `/admin/login` because the app is built with
+  Next.js `basePath: '/admin'`.
 
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 

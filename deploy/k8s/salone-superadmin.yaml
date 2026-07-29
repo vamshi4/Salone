@@ -28,13 +28,13 @@ spec:
               value: "production"
           readinessProbe:
             httpGet:
-              path: /login
+              path: /admin/login
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /login
+              path: /admin/login
               port: 3000
             initialDelaySeconds: 30
             periodSeconds: 30
