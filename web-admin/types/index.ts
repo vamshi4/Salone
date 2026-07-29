@@ -21,6 +21,7 @@ export interface User {
   name: string;
   role: 'SALON_OWNER' | 'STYLIST' | 'SUPER_ADMIN';
   salons: Salon[];
+  createdAt?: string;
 }
 
 export interface Booking {

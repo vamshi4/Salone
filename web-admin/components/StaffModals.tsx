@@ -177,7 +177,8 @@ export function PayoutModal({ member, onClose }: { member: Staff; onClose: () =>
         </div>
 
         <p className="text-xs text-gray-400">
-          Today: {today.length} services · {formatINR(today.reduce((s, b) => s + b.price, 0))}
+          Today: {today.length} {today.length === 1 ? 'service' : 'services'} ·{' '}
+          {formatINR(today.reduce((s, b) => s + b.price, 0))}
         </p>
       </div>
     </Modal>

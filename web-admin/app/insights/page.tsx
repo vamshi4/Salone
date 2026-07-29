@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { PageLayout } from '@/components/PageLayout';
 import { CustomerProfileModal } from '@/components/CustomerProfileModal';
+import { useAppStore } from '@/lib/store';
 import {
   useDataStore,
   earnings,
@@ -269,6 +270,9 @@ function CohortDonut({
 
 function RetentionTab({ onOpenCustomer }: { onOpenCustomer: (c: Customer) => void }) {
   const { bookings, customers, salon } = useDataStore();
+  const realSalons = useAppStore((s) => s.salons);
+  const realSelectedSalonId = useAppStore((s) => s.selectedSalonId);
+  const realSalonName = realSalons.find((s) => s.id === realSelectedSalonId)?.name;
   const [selected, setSelected] = useState<CohortKey | null>(null);
 
   const cohortData = useMemo(() => cohorts(customers, bookings), [customers, bookings]);
@@ -281,7 +285,7 @@ function RetentionTab({ onOpenCustomer }: { onOpenCustomer: (c: Customer) => voi
   const missed = cohortData.churned;
 
   const remind = (c: Customer) => {
-    window.open(whatsappReminderUrl(c, salon.name), '_blank');
+    window.open(whatsappReminderUrl(c, realSalonName ?? salon.name), '_blank');
   };
 
   return (
@@ -307,7 +311,9 @@ function RetentionTab({ onOpenCustomer }: { onOpenCustomer: (c: Customer) => voi
                       {h.overdueDays}d overdue
                     </span>
                   </p>
-                  <p className="text-xs text-gray-400">visits every ~{h.cadenceDays} days</p>
+                  <p className="text-xs text-gray-400">
+                    visits every ~{h.cadenceDays} {h.cadenceDays === 1 ? 'day' : 'days'}
+                  </p>
                 </button>
                 <button onClick={() => remind(h.customer)} className="btn-primary">
                   <MessageCircle size={12} />
@@ -372,7 +378,7 @@ function RetentionTab({ onOpenCustomer }: { onOpenCustomer: (c: Customer) => voi
                     <button className="text-left" onClick={() => onOpenCustomer(h.customer)}>
                       <p className="text-xs font-medium text-gray-900">{h.customer.name}</p>
                       <p className="text-xs text-gray-400">
-                        {h.visits} visits · {formatINR(h.totalSpend)} spent
+                        {h.visits} {h.visits === 1 ? 'visit' : 'visits'} · {formatINR(h.totalSpend)} spent
                       </p>
                     </button>
                     {sel.key === 'churned' && (
@@ -410,7 +416,7 @@ function RetentionTab({ onOpenCustomer }: { onOpenCustomer: (c: Customer) => voi
                 <button className="text-left" onClick={() => onOpenCustomer(h.customer)}>
                   <p className="text-xs font-medium text-gray-900">{h.customer.name}</p>
                   <p className="text-xs text-gray-400">
-                    {h.visits} visits · {formatINR(h.totalSpend)} spent
+                    {h.visits} {h.visits === 1 ? 'visit' : 'visits'} · {formatINR(h.totalSpend)} spent
                   </p>
                 </button>
                 <button

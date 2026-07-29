@@ -44,10 +44,17 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Endpoints where a 401 means something other than "your session token is
+// invalid" — e.g. change-password's 401 means "the current password you
+// typed is wrong," not "you've been logged out." Auto-redirecting on those
+// would silently kick the user out of the app over a form validation error.
+const SESSION_EXEMPT_401_PATHS = ['/auth/change-password'];
+
 apiClient.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
+    const isExempt = SESSION_EXEMPT_401_PATHS.some((p) => error.config?.url?.includes(p));
+    if (error.response?.status === 401 && !isExempt && typeof window !== 'undefined') {
       clearToken();
       if (!window.location.pathname.startsWith('/login')) {
         window.location.href = '/login';

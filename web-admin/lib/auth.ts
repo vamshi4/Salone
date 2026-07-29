@@ -29,6 +29,7 @@ function mapUser(u: ApiUser): User {
     name: u.name ?? '',
     role: u.role === 'STYLIST' || u.role === 'SUPER_ADMIN' || u.role === 'SALON_OWNER' ? u.role : 'SALON_OWNER',
     salons: [],
+    createdAt: u.createdAt,
   };
 }
 
@@ -115,6 +116,41 @@ export async function fetchMe(): Promise<{ user: User; salons: Salon[] } | null>
       return null;
     }
     throw extractError(e, 'Could not load your account.');
+  }
+}
+
+export interface UpdateProfilePayload {
+  ownerName?: string;
+  phone?: string;
+  email?: string;
+  // Legacy single-salon fields — only meaningful (and only accepted by the
+  // backend) when the account owns exactly one salon; see PATCH /auth/me.
+  salonName?: string;
+  address?: string;
+  dailyRevenueGoal?: number;
+  countryCode?: string;
+  currency?: string;
+}
+
+export async function updateProfile(
+  payload: UpdateProfilePayload
+): Promise<{ user: User; salon: Salon | null }> {
+  try {
+    const res = await apiClient.patch('/auth/me', payload);
+    return {
+      user: mapUser(res.data.user),
+      salon: res.data.salon ? mapSalon(res.data.salon) : null,
+    };
+  } catch (e) {
+    throw extractError(e, 'Could not save your changes.');
+  }
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  try {
+    await apiClient.post('/auth/change-password', { currentPassword, newPassword });
+  } catch (e) {
+    throw extractError(e, 'Could not update your password.');
   }
 }
 

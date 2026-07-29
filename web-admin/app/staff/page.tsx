@@ -125,7 +125,7 @@ export default function StaffPage() {
                   <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex items-center gap-2 text-xs">
                     <span className="text-gray-400">Today</span>
                     <span className="font-medium text-gray-900 tabular-nums">
-                      {tally.count} services · {formatINR(tally.revenue)}
+                      {tally.count} {tally.count === 1 ? 'service' : 'services'} · {formatINR(tally.revenue)}
                     </span>
                   </div>
                 )}

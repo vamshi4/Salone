@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { PageLayout } from '@/components/PageLayout';
 import { Field, inputClass } from '@/components/Modal';
-import { useDataStore, formatINR } from '@/lib/data';
+import { updateProfile, changePassword, AuthError } from '@/lib/auth';
+import { useAppStore } from '@/lib/store';
 import { User, Lock, Globe, Store } from 'lucide-react';
 
 const TABS = [
@@ -13,45 +14,114 @@ const TABS = [
   { id: 'preferences', label: 'Preferences', icon: Globe },
 ] as const;
 
+function formatJoined(iso?: string) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 export default function AccountPage() {
-  const { salon, updateSalon } = useDataStore();
+  const user = useAppStore((s) => s.user);
+  const setUser = useAppStore((s) => s.setUser);
+  const salons = useAppStore((s) => s.salons);
+  const selectedSalonId = useAppStore((s) => s.selectedSalonId);
+  const salon = salons.find((s) => s.id === selectedSalonId);
+  const setSalons = useAppStore((s) => s.setSalons);
+
   const [tab, setTab] = useState<(typeof TABS)[number]['id']>('profile');
 
-  const [ownerName, setOwnerName] = useState(salon.ownerName);
-  const [ownerPhone, setOwnerPhone] = useState(salon.ownerPhone);
-  const [ownerEmail, setOwnerEmail] = useState(salon.ownerEmail);
-  const [salonName, setSalonName] = useState(salon.name);
-  const [address, setAddress] = useState(salon.address);
-  const [goal, setGoal] = useState(salon.dailyRevenueGoal ? String(salon.dailyRevenueGoal) : '');
-  const [saved, setSaved] = useState(false);
+  const [ownerName, setOwnerName] = useState(user?.name ?? '');
+  const [ownerPhone, setOwnerPhone] = useState(user?.phone ?? '');
+  const [ownerEmail, setOwnerEmail] = useState(user?.email ?? '');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [profileError, setProfileError] = useState('');
+
+  const [salonName, setSalonName] = useState(salon?.name ?? '');
+  const [address, setAddress] = useState(salon?.address ?? '');
+  const [goal, setGoal] = useState(salon?.dailyRevenueGoal ? String(salon.dailyRevenueGoal) : '');
+  const [salonSaving, setSalonSaving] = useState(false);
+  const [salonSaved, setSalonSaved] = useState(false);
+  const [salonError, setSalonError] = useState('');
 
   const [pwCurrent, setPwCurrent] = useState('');
   const [pwNew, setPwNew] = useState('');
   const [pwConfirm, setPwConfirm] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
   const [pwMessage, setPwMessage] = useState('');
+  const [pwError, setPwError] = useState(false);
 
-  const saveProfile = () => {
-    updateSalon({
-      ownerName: ownerName.trim(),
-      ownerPhone: ownerPhone.trim(),
-      ownerEmail: ownerEmail.trim(),
-      name: salonName.trim(),
-      address: address.trim(),
-      dailyRevenueGoal: parseInt(goal, 10) || 0,
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+  const saveProfile = async () => {
+    setProfileError('');
+    setProfileSaving(true);
+    try {
+      const { user: updated } = await updateProfile({
+        ownerName: ownerName.trim(),
+        phone: ownerPhone.trim(),
+        email: ownerEmail.trim(),
+      });
+      setUser(updated);
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 1500);
+    } catch (e) {
+      setProfileError(e instanceof AuthError ? e.message : 'Could not save your changes.');
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
-  const changePassword = () => {
-    if (!pwCurrent || !pwNew) return setPwMessage('Fill in all password fields.');
-    if (pwNew !== pwConfirm) return setPwMessage("New passwords don't match.");
-    setPwCurrent('');
-    setPwNew('');
-    setPwConfirm('');
-    setPwMessage('Password updated.');
-    setTimeout(() => setPwMessage(''), 2000);
+  const saveSalon = async () => {
+    setSalonError('');
+    setSalonSaving(true);
+    try {
+      const { salon: updated } = await updateProfile({
+        salonName: salonName.trim(),
+        address: address.trim(),
+        dailyRevenueGoal: parseInt(goal, 10) || 0,
+      });
+      if (updated) {
+        setSalons(salons.map((s) => (s.id === updated.id ? updated : s)));
+      }
+      setSalonSaved(true);
+      setTimeout(() => setSalonSaved(false), 1500);
+    } catch (e) {
+      setSalonError(e instanceof AuthError ? e.message : 'Could not save your changes.');
+    } finally {
+      setSalonSaving(false);
+    }
   };
+
+  const submitPasswordChange = async () => {
+    setPwError(false);
+    if (!pwCurrent || !pwNew) {
+      setPwError(true);
+      return setPwMessage('Fill in all password fields.');
+    }
+    if (pwNew.length < 6) {
+      setPwError(true);
+      return setPwMessage('New password must be at least 6 characters.');
+    }
+    if (pwNew !== pwConfirm) {
+      setPwError(true);
+      return setPwMessage("New passwords don't match.");
+    }
+    setPwSaving(true);
+    setPwMessage('');
+    try {
+      await changePassword(pwCurrent, pwNew);
+      setPwCurrent('');
+      setPwNew('');
+      setPwConfirm('');
+      setPwMessage('Password updated.');
+      setTimeout(() => setPwMessage(''), 2500);
+    } catch (e) {
+      setPwError(true);
+      setPwMessage(e instanceof AuthError ? e.message : 'Could not update your password.');
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
+  const joined = formatJoined(user?.createdAt);
 
   return (
     <PageLayout title="Account" subtitle="Your profile and salon settings">
@@ -60,15 +130,15 @@ export default function AccountPage() {
         <div className="flex items-center justify-between card px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary-light rounded-full flex items-center justify-center text-primary-dark text-base font-medium">
-              {salon.ownerName.charAt(0)}
+              {(user?.name || '?').charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-900">{salon.ownerName}</p>
-              <p className="text-xs text-gray-400">Joined {salon.joined}</p>
+              <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+              {joined && <p className="text-xs text-gray-400">Joined {joined}</p>}
             </div>
           </div>
           <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium">
-            {salon.plan} plan
+            Free plan
           </span>
         </div>
 
@@ -102,34 +172,47 @@ export default function AccountPage() {
               </Field>
             </div>
             <Field label="Email">
-              <input className={inputClass} value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} />
+              <input className={inputClass} value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} placeholder="you@example.com" />
             </Field>
-            <button onClick={saveProfile} className="btn-primary">{saved ? 'Saved' : 'Save changes'}</button>
+            {profileError && <p className="text-xs text-red-600">{profileError}</p>}
+            <button onClick={saveProfile} disabled={profileSaving} className="btn-primary disabled:opacity-60">
+              {profileSaving ? 'Saving…' : profileSaved ? 'Saved' : 'Save changes'}
+            </button>
           </div>
         )}
 
         {tab === 'salon' && (
           <div className="card p-4 space-y-3 max-w-lg">
-            <Field label="Salon name">
-              <input className={inputClass} value={salonName} onChange={(e) => setSalonName(e.target.value)} />
-            </Field>
-            <Field label="Address">
-              <input className={inputClass} value={address} onChange={(e) => setAddress(e.target.value)} />
-            </Field>
-            <Field label="Daily revenue goal (₹)">
-              <input
-                type="number"
-                className={inputClass}
-                value={goal}
-                onChange={(e) => setGoal(e.target.value)}
-                placeholder="6000"
-              />
-            </Field>
-            <p className="text-xs text-gray-400">
-              The goal powers the pace bar on your Home briefing.
-              {salon.dailyRevenueGoal > 0 && ` Currently ${formatINR(salon.dailyRevenueGoal)}.`}
-            </p>
-            <button onClick={saveProfile} className="btn-primary">{saved ? 'Saved' : 'Save changes'}</button>
+            {!salon ? (
+              <p className="text-xs text-gray-400">No salon found on your account yet.</p>
+            ) : (
+              <>
+                <Field label="Salon name">
+                  <input className={inputClass} value={salonName} onChange={(e) => setSalonName(e.target.value)} />
+                </Field>
+                <Field label="Address">
+                  <input className={inputClass} value={address} onChange={(e) => setAddress(e.target.value)} />
+                </Field>
+                <Field label="Daily revenue goal (₹)">
+                  <input
+                    type="number"
+                    className={inputClass}
+                    value={goal}
+                    onChange={(e) => setGoal(e.target.value)}
+                    placeholder="6000"
+                  />
+                </Field>
+                <p className="text-xs text-gray-400">
+                  {salons.length > 1
+                    ? "You have multiple branches — this updates your account's primary salon record."
+                    : 'The goal powers the pace bar on your Home briefing.'}
+                </p>
+                {salonError && <p className="text-xs text-red-600">{salonError}</p>}
+                <button onClick={saveSalon} disabled={salonSaving} className="btn-primary disabled:opacity-60">
+                  {salonSaving ? 'Saving…' : salonSaved ? 'Saved' : 'Save changes'}
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -146,8 +229,12 @@ export default function AccountPage() {
                 <input type="password" className={inputClass} value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} />
               </Field>
             </div>
-            {pwMessage && <p className="text-xs text-gray-600">{pwMessage}</p>}
-            <button onClick={changePassword} className="btn-primary">Update password</button>
+            {pwMessage && (
+              <p className={`text-xs ${pwError ? 'text-red-600' : 'text-green-700'}`}>{pwMessage}</p>
+            )}
+            <button onClick={submitPasswordChange} disabled={pwSaving} className="btn-primary disabled:opacity-60">
+              {pwSaving ? 'Updating…' : 'Update password'}
+            </button>
           </div>
         )}
 

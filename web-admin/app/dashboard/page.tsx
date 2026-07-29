@@ -98,7 +98,10 @@ export default function DashboardPage() {
               {greeting()}, {salon.ownerName.split(' ')[0]} 👋
             </h1>
             <p className="text-sm text-teal-50/90 mt-2">
-              <span className="font-semibold text-white">{logged.length} services</span> logged today ·{' '}
+              <span className="font-semibold text-white">
+                {logged.length} {logged.length === 1 ? 'service' : 'services'}
+              </span>{' '}
+              logged today ·{' '}
               <span className="font-semibold text-white">{formatINR(todayRevenue)}</span> earned so far
             </p>
             {goal > 0 && (
@@ -161,7 +164,7 @@ export default function DashboardPage() {
                     <button
                       key={h.customer.id}
                       onClick={() => setProfileCustomer(h.customer)}
-                      className="flex items-center justify-between w-full text-left group"
+                      className="flex items-center justify-between w-full text-left group py-1 -mx-1 px-1 rounded hover:bg-amber-50/60 transition-colors"
                     >
                       <span className="text-xs font-medium text-gray-800 group-hover:text-primary-dark">
                         {h.customer.name}

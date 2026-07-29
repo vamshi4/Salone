@@ -59,7 +59,7 @@ export function BookingRow({
             e.stopPropagation();
             onRebook(booking);
           }}
-          className="p-1 hover:bg-gray-200 rounded transition-colors"
+          className="p-1.5 hover:bg-gray-200 rounded-md transition-colors"
         >
           <RotateCcw size={13} className="text-gray-400" />
         </button>

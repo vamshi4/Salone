@@ -109,22 +109,22 @@ export default function SignupPage() {
             )}
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Your name</label>
-              <input value={ownerName} onChange={(e) => setOwnerName(e.target.value)} placeholder="Priya Sharma" className={inputClass} required />
+              <label htmlFor="signup_owner" className="block text-xs font-medium text-gray-700 mb-1">Your name</label>
+              <input id="signup_owner" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} placeholder="Priya Sharma" className={inputClass} required />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
-                <select value={countryCode} onChange={(e) => setCountryCode(e.target.value)} className={inputClass}>
+                <label htmlFor="signup_country" className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+                <select id="signup_country" value={countryCode} onChange={(e) => setCountryCode(e.target.value)} className={inputClass}>
                   {COUNTRIES.map((c) => (
                     <option key={c.code} value={c.code}>{c.label}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Phone number</label>
-                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98765 43210" autoComplete="tel" className={inputClass} required />
+                <label htmlFor="signup_phone" className="block text-xs font-medium text-gray-700 mb-1">Phone number</label>
+                <input id="signup_phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98765 43210" autoComplete="tel" className={inputClass} required />
               </div>
             </div>
 
@@ -147,21 +147,23 @@ export default function SignupPage() {
               </div>
             ) : (
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                <label htmlFor="signup_password" className="block text-xs font-medium text-gray-700 mb-1">Password</label>
                 <div className="relative">
                   <input
+                    id="signup_password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="At least 6 characters"
                     autoComplete="new-password"
-                    className={`${inputClass} pr-8`}
+                    className={`${inputClass} pr-9`}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -173,13 +175,13 @@ export default function SignupPage() {
             <div className="pt-1 border-t border-gray-100" />
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Salon name</label>
-              <input value={salonName} onChange={(e) => setSalonName(e.target.value)} placeholder="Lotus Salon & Spa" className={inputClass} required />
+              <label htmlFor="signup_salon_name" className="block text-xs font-medium text-gray-700 mb-1">Salon name</label>
+              <input id="signup_salon_name" value={salonName} onChange={(e) => setSalonName(e.target.value)} placeholder="Lotus Salon & Spa" className={inputClass} required />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Salon address</label>
-              <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, area, city" className={inputClass} required />
+              <label htmlFor="signup_address" className="block text-xs font-medium text-gray-700 mb-1">Salon address</label>
+              <input id="signup_address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, area, city" className={inputClass} required />
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
