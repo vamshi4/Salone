@@ -1,0 +1,37 @@
+name: Web admin image
+
+on:
+  push:
+    branches:
+      - main
+      - feature/retention-and-redesign
+    paths:
+      - web-admin/**
+      - .github/workflows/web-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push
+        shell: bash
+        run: |
+          IMAGE="ghcr.io/vamshi4/salone-web"
+          BRANCH_TAG="${GITHUB_REF_NAME//\//-}"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=https://api.slotvibe.buzz \
+            --build-arg NEXT_PUBLIC_GOOGLE_CLIENT_ID=562611122778-qip8n4i7q2a1ad2fpo85l1g8ngt1u17d.apps.googleusercontent.com \
+            -t "$IMAGE:$SHORT_SHA" -t "$IMAGE:$BRANCH_TAG" web-admin
+          docker push "$IMAGE:$SHORT_SHA"
+          docker push "$IMAGE:$BRANCH_TAG"

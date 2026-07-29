@@ -150,7 +150,11 @@ spec:
             - name: DEMO_AUTH_ENABLED
               value: "false"
             - name: CORS_ORIGIN
-              value: "https://api.slotvibe.buzz"
+              # Comma-separated allowlist (see backend/src/index.ts).
+              # web.slotvibe.buzz is the real web admin domain; localhost:3001
+              # is only for developing against prod locally — drop it once
+              # that's no longer needed.
+              value: "https://api.slotvibe.buzz,https://web.slotvibe.buzz,http://localhost:3001"
             - name: GOOGLE_CLIENT_ID
               value: "562611122778-qip8n4i7q2a1ad2fpo85l1g8ngt1u17d.apps.googleusercontent.com"
             # Forces anyone still on v2 (versionCode <= 5, appVersion 2.x) to the
