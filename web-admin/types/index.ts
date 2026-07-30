@@ -8,6 +8,9 @@ export interface Salon {
   currency: string;
   countryCode: string;
   dailyRevenueGoal?: number | null;
+  upiId?: string | null;
+  gstEnabled?: boolean;
+  gstRate?: number;
   todayStats?: {
     count: number;
     revenue: number;

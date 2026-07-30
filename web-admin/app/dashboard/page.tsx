@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store';
 import { formatINR, type Booking, type Customer } from '@/lib/salon-api';
-import { loggedToday, repeatCustomerIds } from '@/lib/booking-helpers';
+import { loggedToday, needsAction, repeatCustomerIds } from '@/lib/booking-helpers';
 import {
   useAtRisk,
   useBookings,
@@ -82,8 +82,10 @@ export default function DashboardPage() {
   const todayRevenue = logged.reduce((s, b) => s + b.price, 0);
   const repeats = repeatCustomerIds(bookings);
   const repeatCount = logged.filter((b) => repeats.has(b.customerId)).length;
+  const pending = needsAction(bookings);
   const atRisk = (atRiskData?.customers ?? []).slice(0, 2);
   const lowStock = (salon?.products ?? []).filter((p) => p.stockQty <= p.lowStockThreshold);
+  const alertCount = [pending.length > 0, atRisk.length > 0, lowStock.length > 0].filter(Boolean).length;
   const goal = salon?.dailyRevenueGoal ?? 0;
   const pace = goal > 0 ? Math.min(1, todayRevenue / goal) : 0;
 
@@ -177,8 +179,25 @@ export default function DashboardPage() {
         {isError && <p className="text-xs text-red-600">Could not load bookings. Try refreshing.</p>}
 
         {/* Alerts row */}
-        {(atRisk.length > 0 || lowStock.length > 0) && (
-          <div className="grid gap-3" style={{ gridTemplateColumns: atRisk.length && lowStock.length ? '1fr 1fr' : '1fr' }}>
+        {alertCount > 0 && (
+          <div
+            className="grid gap-3"
+            style={{ gridTemplateColumns: `repeat(${alertCount}, minmax(0, 1fr))` }}
+          >
+            {pending.length > 0 && (
+              <Link href="/bookings" className="card p-4 border-l-4 border-l-primary flex items-center gap-3 hover:shadow-md transition-shadow">
+                <div className="w-9 h-9 rounded-lg bg-primary-light flex items-center justify-center flex-shrink-0">
+                  <CalendarCheck size={16} className="text-primary-dark" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-gray-900">Needs your response</p>
+                  <p className="text-[11px] text-gray-500">
+                    {pending.length} {pending.length === 1 ? 'booking needs' : 'bookings need'} confirmation
+                  </p>
+                </div>
+                <ChevronRight size={16} className="text-gray-300" />
+              </Link>
+            )}
             {atRisk.length > 0 && (
               <div className="card p-4 border-l-4 border-l-amber-400">
                 <div className="flex items-center gap-2">

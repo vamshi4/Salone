@@ -19,6 +19,9 @@ export interface ApiSalon {
   currency: string;
   countryCode: string;
   dailyRevenueGoal?: number | null;
+  upiId?: string | null;
+  gstEnabled?: boolean;
+  gstRate?: number;
 }
 
 function mapUser(u: ApiUser): User {
@@ -42,6 +45,9 @@ function mapSalon(s: ApiSalon): Salon {
     currency: s.currency,
     countryCode: s.countryCode,
     dailyRevenueGoal: s.dailyRevenueGoal ?? null,
+    upiId: s.upiId ?? null,
+    gstEnabled: s.gstEnabled ?? false,
+    gstRate: s.gstRate ?? 18,
   };
 }
 
@@ -130,6 +136,9 @@ export interface UpdateProfilePayload {
   dailyRevenueGoal?: number;
   countryCode?: string;
   currency?: string;
+  upiId?: string;
+  gstEnabled?: boolean;
+  gstRate?: number;
 }
 
 export async function updateProfile(

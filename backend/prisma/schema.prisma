@@ -99,6 +99,9 @@ model Salon {
   currency        String   @default("INR")
   countryCode     String   @default("IN")
   dailyRevenueGoal Int?
+  upiId           String?
+  gstEnabled      Boolean  @default(false)
+  gstRate         Int      @default(18)
   deletedAt       DateTime?
 
   owner             User            @relation("SalonOwner", fields: [ownerId], references: [id])

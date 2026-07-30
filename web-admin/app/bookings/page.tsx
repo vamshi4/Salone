@@ -4,8 +4,9 @@ import { useMemo, useState } from 'react';
 import { PageLayout } from '@/components/PageLayout';
 import { NewBookingModal } from '@/components/NewBookingModal';
 import { CustomerProfileModal } from '@/components/CustomerProfileModal';
+import { CompleteBookingModal } from '@/components/CompleteBookingModal';
 import { BookingRow } from '@/components/BookingRow';
-import { formatINR, type Booking, type Customer } from '@/lib/salon-api';
+import { formatINR, type Booking, type Customer, type SalonSummary } from '@/lib/salon-api';
 import { formatDay, formatTime, startOfDay, needsAction, todaySchedule, repeatCustomerIds } from '@/lib/booking-helpers';
 import {
   useBookings,
@@ -25,9 +26,10 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
 }
 
 /** Pending / scheduled item with confirm–cancel actions. */
-function ActionCard({ booking, salonId }: { booking: Booking; salonId: string }) {
-  const setStatus = useSetBookingStatus(salonId);
+function ActionCard({ booking, salon }: { booking: Booking; salon: SalonSummary }) {
+  const setStatus = useSetBookingStatus(salon.id);
   const isPending = booking.status === 'PENDING' || booking.status === 'PENDING_RESCHEDULE';
+  const [completing, setCompleting] = useState(false);
 
   return (
     <div className="flex items-center justify-between px-3.5 py-2.5 bg-white border border-amber-200 rounded-lg">
@@ -55,7 +57,7 @@ function ActionCard({ booking, salonId }: { booking: Booking; salonId: string })
         )}
         {!isPending && (
           <button
-            onClick={() => setStatus.mutate({ bookingId: booking.id, status: 'COMPLETED' })}
+            onClick={() => setCompleting(true)}
             disabled={setStatus.isPending}
             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
           >
@@ -72,6 +74,9 @@ function ActionCard({ booking, salonId }: { booking: Booking; salonId: string })
           Cancel
         </button>
       </div>
+      {completing && (
+        <CompleteBookingModal booking={booking} salon={salon} onClose={() => setCompleting(false)} />
+      )}
     </div>
   );
 }
@@ -178,28 +183,28 @@ export default function BookingsPage() {
         {isError && <p className="text-xs text-red-600">Could not load bookings. Try refreshing.</p>}
 
         {/* Needs action */}
-        {pending.length > 0 && (
+        {pending.length > 0 && salon && (
           <div>
             <h2 className="text-sm font-semibold text-gray-900 mb-2">
               Needs your response <span className="text-amber-600">({pending.length})</span>
             </h2>
             <div className="space-y-2">
               {pending.map((b) => (
-                <ActionCard key={b.id} booking={b} salonId={salonId} />
+                <ActionCard key={b.id} booking={b} salon={salon} />
               ))}
             </div>
           </div>
         )}
 
         {/* Today's schedule */}
-        {schedule.length > 0 && (
+        {schedule.length > 0 && salon && (
           <div>
             <h2 className="text-sm font-semibold text-gray-900 mb-2">
               Today's schedule <span className="text-gray-400">({schedule.length})</span>
             </h2>
             <div className="space-y-2">
               {schedule.map((b) => (
-                <ActionCard key={b.id} booking={b} salonId={salonId} />
+                <ActionCard key={b.id} booking={b} salon={salon} />
               ))}
             </div>
           </div>

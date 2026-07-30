@@ -230,7 +230,7 @@ router.get('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) =>
 // body here only via the v3-compatibility shim below — v4_1+ should call
 // PATCH /api/v2/salons/:salonId instead, which this shim redirects to
 // internally for single-salon owners.
-const LEGACY_SALON_FIELDS = ['salonName', 'address', 'lat', 'lng', 'countryCode', 'currency', 'dailyRevenueGoal'];
+const LEGACY_SALON_FIELDS = ['salonName', 'address', 'lat', 'lng', 'countryCode', 'currency', 'dailyRevenueGoal', 'upiId', 'gstEnabled', 'gstRate'];
 
 router.patch('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
@@ -267,7 +267,8 @@ router.patch('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) 
         error: 'This account has multiple salons — update a specific one via PATCH /api/v2/salons/:salonId',
       });
     }
-    const { salonName, address, lat, lng, countryCode, currency, dailyRevenueGoal } = legacyBody as any;
+    const { salonName, address, lat, lng, countryCode, currency, dailyRevenueGoal, upiId, gstEnabled, gstRate } =
+      legacyBody as any;
     const targetSalon = user.salonOwned[0];
     if (hasLegacySalonFields && !targetSalon) {
       return res.status(404).json({ error: 'No salon found for this account' });
@@ -302,6 +303,11 @@ router.patch('/me', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) 
               ...(currency ? { currency: String(currency).trim().toUpperCase() } : {}),
               ...(dailyRevenueGoal != null && Number.isFinite(Number(dailyRevenueGoal))
                 ? { dailyRevenueGoal: Math.max(0, Math.round(Number(dailyRevenueGoal))) }
+                : {}),
+              ...(upiId != null ? { upiId: String(upiId).trim() || null } : {}),
+              ...(gstEnabled != null ? { gstEnabled: Boolean(gstEnabled) } : {}),
+              ...(gstRate != null && Number.isFinite(Number(gstRate))
+                ? { gstRate: Math.min(100, Math.max(0, Math.round(Number(gstRate)))) }
                 : {}),
             },
           })

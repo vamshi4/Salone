@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { Modal, Field, inputClass } from './Modal';
+import { PaymentMethodPicker } from './PaymentMethodPicker';
+import { PaymentQr } from './PaymentQr';
 import { formatINR, type Booking, type PaymentMethod } from '@/lib/salon-api';
 import { useCurrentSalon, useCustomers, useLogBooking, useSelectedSalonId } from '@/lib/salon-queries';
 import { AuthError } from '@/lib/auth';
@@ -203,23 +205,14 @@ export function NewBookingModal({
         </Field>
 
         {completed ? (
-          <Field label="Payment method">
-            <div className="flex gap-1.5">
-              {(['CASH', 'UPI', 'CARD'] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPayment(p)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    payment === p
-                      ? 'bg-primary-light text-primary-dark'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {p === 'CASH' ? 'Cash' : p === 'UPI' ? 'UPI' : 'Card'}
-                </button>
-              ))}
-            </div>
-          </Field>
+          <>
+            <Field label="Payment method">
+              <PaymentMethodPicker value={payment} onChange={setPayment} />
+            </Field>
+            {payment === 'UPI' && salon && (
+              <PaymentQr salon={salon} price={total} note={`${name.trim() || 'Booking'} · ${salon.name}`} />
+            )}
+          </>
         ) : (
           <div className="grid grid-cols-2 gap-2">
             <Field label="Date">

@@ -83,6 +83,9 @@ export interface SalonSummary {
   currency: string;
   countryCode: string;
   dailyRevenueGoal: number;
+  upiId: string | null;
+  gstEnabled: boolean;
+  gstRate: number;
   services: Service[];
   products: Product[];
   staff: Staff[];
@@ -161,6 +164,9 @@ function mapSalonSummary(s: any): SalonSummary {
     currency: s.currency,
     countryCode: s.countryCode,
     dailyRevenueGoal: toRupees(s.dailyRevenueGoal ?? 0),
+    upiId: s.upiId ?? null,
+    gstEnabled: s.gstEnabled ?? false,
+    gstRate: s.gstRate ?? 18,
     services: (s.services ?? []).map(mapService),
     products: (s.products ?? []).map(mapProduct),
     staff: (s.stylists ?? []).map(mapStaff),

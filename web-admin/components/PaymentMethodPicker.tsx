@@ -1,0 +1,27 @@
+import type { PaymentMethod } from '@/lib/salon-api';
+
+const LABELS: Record<PaymentMethod, string> = { CASH: 'Cash', UPI: 'UPI', CARD: 'Card' };
+
+export function PaymentMethodPicker({
+  value,
+  onChange,
+}: {
+  value: PaymentMethod;
+  onChange: (method: PaymentMethod) => void;
+}) {
+  return (
+    <div className="flex gap-1.5">
+      {(['CASH', 'UPI', 'CARD'] as const).map((p) => (
+        <button
+          key={p}
+          onClick={() => onChange(p)}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            value === p ? 'bg-primary-light text-primary-dark' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {LABELS[p]}
+        </button>
+      ))}
+    </div>
+  );
+}

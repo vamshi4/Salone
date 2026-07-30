@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { PageLayout } from '@/components/PageLayout';
+import { BookingLinkCard } from '@/components/BookingLinkCard';
 import { Field, inputClass } from '@/components/Modal';
 import { updateProfile, changePassword, AuthError } from '@/lib/auth';
 import { useAppStore } from '@/lib/store';
@@ -41,6 +42,9 @@ export default function AccountPage() {
   // dailyRevenueGoal is stored in paise (minor units) like every other money
   // field on the backend — /100 for display, *100 when saving (see saveSalon).
   const [goal, setGoal] = useState(salon?.dailyRevenueGoal ? String(Math.round(salon.dailyRevenueGoal / 100)) : '');
+  const [upiId, setUpiId] = useState(salon?.upiId ?? '');
+  const [gstEnabled, setGstEnabled] = useState(salon?.gstEnabled ?? false);
+  const [gstRate, setGstRate] = useState(String(salon?.gstRate ?? 18));
   const [salonSaving, setSalonSaving] = useState(false);
   const [salonSaved, setSalonSaved] = useState(false);
   const [salonError, setSalonError] = useState('');
@@ -79,6 +83,9 @@ export default function AccountPage() {
         salonName: salonName.trim(),
         address: address.trim(),
         dailyRevenueGoal: (parseInt(goal, 10) || 0) * 100,
+        upiId: upiId.trim(),
+        gstEnabled,
+        gstRate: parseInt(gstRate, 10) || 0,
       });
       if (updated) {
         setSalons(salons.map((s) => (s.id === updated.id ? updated : s)));
@@ -209,12 +216,54 @@ export default function AccountPage() {
                     ? "You have multiple branches — this updates your account's primary salon record."
                     : 'The goal powers the pace bar on your Home briefing.'}
                 </p>
+                <Field label="UPI ID">
+                  <input
+                    className={inputClass}
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    placeholder="yoursalon@okhdfcbank"
+                  />
+                </Field>
+                <p className="text-xs text-gray-400 -mt-2">
+                  Shown as a scannable payment QR when you complete a booking with UPI.
+                </p>
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-md bg-gray-50">
+                  <div>
+                    <p className="text-xs font-medium text-gray-900">GST registered</p>
+                    <p className="text-xs text-gray-400">Adds GST on top of the total shown on the UPI QR</p>
+                  </div>
+                  <button
+                    onClick={() => setGstEnabled((v) => !v)}
+                    className={`relative w-9 h-5 rounded-full transition-colors ${gstEnabled ? 'bg-primary' : 'bg-gray-300'}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${gstEnabled ? 'translate-x-4' : 'translate-x-0.5'}`}
+                    />
+                  </button>
+                </div>
+                {gstEnabled && (
+                  <Field label="GST rate (%)">
+                    <input
+                      type="number"
+                      className={inputClass}
+                      value={gstRate}
+                      onChange={(e) => setGstRate(e.target.value)}
+                      placeholder="18"
+                    />
+                  </Field>
+                )}
                 {salonError && <p className="text-xs text-red-600">{salonError}</p>}
                 <button onClick={saveSalon} disabled={salonSaving} className="btn-primary disabled:opacity-60">
                   {salonSaving ? 'Saving…' : salonSaved ? 'Saved' : 'Save changes'}
                 </button>
               </>
             )}
+          </div>
+        )}
+
+        {tab === 'salon' && salon && (
+          <div className="max-w-lg">
+            <BookingLinkCard salonId={salon.id} salonName={salon.name} />
           </div>
         )}
 
