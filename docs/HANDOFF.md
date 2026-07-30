@@ -811,6 +811,13 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
 - Health probes for `salone-superadmin` must use `/admin/login` because the app is built with
   Next.js `basePath: '/admin'`.
 
+### 2026-07-30 Codex handoff: UPI/GST web admin rollout
+- Confirmed `ghcr.io/vamshi4/salone-backend:6842071` and `ghcr.io/vamshi4/salone-web:6842071`
+  exist in GHCR.
+- Ran one-off production `npx prisma db push --accept-data-loss` using backend image `6842071`
+  before swapping app pods; this added/synced the salon UPI/GST fields safely.
+- Pinned `salone-api` and `salone-web` manifests to image tag `6842071`.
+
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
 Continuation of the `web-admin` work referenced in the two Codex handoff notes just above (those
