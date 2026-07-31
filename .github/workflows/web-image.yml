@@ -32,6 +32,7 @@ jobs:
           docker build \
             --build-arg NEXT_PUBLIC_API_URL=https://api.slotvibe.buzz \
             --build-arg NEXT_PUBLIC_GOOGLE_CLIENT_ID=562611122778-qip8n4i7q2a1ad2fpo85l1g8ngt1u17d.apps.googleusercontent.com \
+            --build-arg NEXT_PUBLIC_META_PIXEL_ID=1584117199735448 \
             -t "$IMAGE:$SHORT_SHA" -t "$IMAGE:$BRANCH_TAG" web-admin
           docker push "$IMAGE:$SHORT_SHA"
           docker push "$IMAGE:$BRANCH_TAG"
