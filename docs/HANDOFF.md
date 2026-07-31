@@ -830,6 +830,8 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
   before `fetchMe()` and before redirecting to `/dashboard`.
 - Added an explicit `window.fbq('track', 'CompleteRegistration')` helper so Meta Pixel
   verification tools can see the exact conversion call.
+- Confirmed `ghcr.io/vamshi4/salone-web:39b0896` exists, then pinned `salone-web`
+  to that tag for production rollout; backend stays on `9d966e9`.
 
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
