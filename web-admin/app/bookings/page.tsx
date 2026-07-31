@@ -126,7 +126,7 @@ export default function BookingsPage() {
       }));
   }, [bookings, query, staffId, periodDays]);
 
-  const periodTotal = byDay.reduce((s, d) => s + d.bookings.reduce((x, b) => x + b.price, 0), 0);
+  const periodTotal = byDay.reduce((s, d) => s + d.bookings.reduce((x, b) => x + b.price + b.retailTotal, 0), 0);
   const periodCount = byDay.reduce((s, d) => s + d.bookings.length, 0);
   const avgTicket = periodCount ? Math.round(periodTotal / periodCount) : 0;
 
@@ -237,7 +237,7 @@ export default function BookingsPage() {
               <div className="flex items-center justify-between mb-1.5">
                 <p className="text-xs font-semibold text-gray-500">{formatDay(day)}</p>
                 <p className="text-xs text-gray-400 tabular-nums">
-                  {formatINR(list.reduce((s, b) => s + b.price, 0))} · {list.length}{' '}
+                  {formatINR(list.reduce((s, b) => s + b.price + b.retailTotal, 0))} · {list.length}{' '}
                   {list.length === 1 ? 'service' : 'services'}
                 </p>
               </div>

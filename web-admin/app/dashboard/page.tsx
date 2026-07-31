@@ -79,7 +79,7 @@ export default function DashboardPage() {
   const [profileCustomer, setProfileCustomer] = useState<Customer | undefined>();
 
   const logged = loggedToday(bookings);
-  const todayRevenue = logged.reduce((s, b) => s + b.price, 0);
+  const todayRevenue = logged.reduce((s, b) => s + b.price + b.retailTotal, 0);
   const repeats = repeatCustomerIds(bookings);
   const repeatCount = logged.filter((b) => repeats.has(b.customerId)).length;
   const pending = needsAction(bookings);

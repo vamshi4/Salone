@@ -184,8 +184,26 @@ model Product {
   deletedAt         DateTime?
 
   salon Salon @relation(fields: [salonId], references: [id])
+  bookingItems BookingProductItem[]
 
   @@index([salonId])
+}
+
+// Retail products sold alongside a booking at completion time. price is a
+// retailPrice snapshot (paise) so a later price edit doesn't rewrite past
+// earnings — same reasoning as Booking.commissionSnapshot.
+model BookingProductItem {
+  id        String @id @default(cuid())
+  bookingId String
+  productId String
+  quantity  Int    @default(1)
+  price     Int
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([bookingId, productId])
+  @@index([productId])
 }
 
 model Booking {
@@ -222,6 +240,7 @@ model Booking {
   stylist   Stylist?  @relation(fields: [stylistId], references: [id])
   service   Service   @relation(fields: [serviceId], references: [id])
   services  BookingServiceItem[]
+  products  BookingProductItem[]
   review    Review?
   payout    StylistPayout? @relation(fields: [payoutId], references: [id])
 

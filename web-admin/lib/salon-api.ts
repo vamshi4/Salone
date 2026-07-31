@@ -61,6 +61,13 @@ export interface Staff {
   serviceIds: string[];
 }
 
+export interface BookingProduct {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number; // rupees, per unit, snapshot at time of sale
+}
+
 export interface Booking {
   id: string;
   customerId: string;
@@ -71,6 +78,8 @@ export interface Booking {
   serviceIds: string[];
   serviceNames: string[];
   price: number;
+  products: BookingProduct[];
+  retailTotal: number;
   status: BookingStatus;
   time: string; // ISO
   paymentMethod: PaymentMethod | null;
@@ -140,6 +149,14 @@ function mapBooking(b: any): Booking {
     : b.service
       ? [b.service]
       : [];
+  const products: BookingProduct[] = (b.products ?? [])
+    .filter((x: any) => x.product)
+    .map((x: any) => ({
+      productId: x.productId,
+      name: x.product.name,
+      quantity: x.quantity,
+      price: toRupees(x.price ?? 0),
+    }));
   return {
     id: b.id,
     customerId: b.customerId,
@@ -150,6 +167,8 @@ function mapBooking(b: any): Booking {
     serviceIds: items.map((s: any) => s.id),
     serviceNames: items.map((s: any) => s.name),
     price: toRupees(b.price ?? 0),
+    products,
+    retailTotal: products.reduce((sum, p) => sum + p.quantity * p.price, 0),
     status: b.status,
     time: b.slotStart,
     paymentMethod: b.paymentMethod ?? null,
@@ -206,6 +225,11 @@ export async function fetchBookings(salonId: string): Promise<Booking[]> {
   return (res.data as any[]).map(mapBooking);
 }
 
+export interface ProductSaleItem {
+  productId: string;
+  quantity: number;
+}
+
 export interface LogBookingPayload {
   salonId: string;
   stylistId: string;
@@ -215,6 +239,7 @@ export interface LogBookingPayload {
   completed: boolean;
   dateTime?: string; // ISO, required unless completed
   paymentMethod?: PaymentMethod;
+  products?: ProductSaleItem[];
 }
 
 export async function logBooking(payload: LogBookingPayload): Promise<Booking> {
@@ -227,6 +252,7 @@ export async function logBooking(payload: LogBookingPayload): Promise<Booking> {
     completed: payload.completed,
     dateTime: payload.dateTime,
     paymentMethod: payload.paymentMethod,
+    products: payload.products,
   });
   return mapBooking(res.data);
 }
@@ -234,9 +260,10 @@ export async function logBooking(payload: LogBookingPayload): Promise<Booking> {
 export async function setBookingStatus(
   bookingId: string,
   status: BookingStatus,
-  paymentMethod?: PaymentMethod
+  paymentMethod?: PaymentMethod,
+  products?: ProductSaleItem[]
 ): Promise<Booking> {
-  const res = await apiClient.patch(`/bookings/${bookingId}/status`, { status, paymentMethod });
+  const res = await apiClient.patch(`/bookings/${bookingId}/status`, { status, paymentMethod, products });
   return mapBooking(res.data);
 }
 
@@ -305,8 +332,8 @@ export interface AddStaffPayload {
   days?: number[];
 }
 
-export async function addStaff(salonId: string, payload: AddStaffPayload): Promise<void> {
-  await apiClient.post(`/salons/${salonId}/staff-setup`, {
+export async function addStaff(salonId: string, payload: AddStaffPayload): Promise<{ stylistId: string }> {
+  const res = await apiClient.post(`/salons/${salonId}/staff-setup`, {
     name: payload.name,
     phone: payload.phone,
     serviceName: payload.serviceName,
@@ -315,6 +342,7 @@ export async function addStaff(salonId: string, payload: AddStaffPayload): Promi
     endTime: payload.endTime,
     days: payload.days,
   });
+  return { stylistId: res.data.id };
 }
 
 export interface UpdateStaffPayload {

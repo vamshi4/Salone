@@ -167,6 +167,9 @@ router.get('/:salonId/bookings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asyn
           include: { service: true },
           orderBy: { sortOrder: 'asc' },
         },
+        products: {
+          include: { product: true },
+        },
       },
     });
 
@@ -423,11 +426,15 @@ async function getEarningsRange(salonId: string, periodParam: unknown) {
       stylist: { select: { user: { select: { name: true } } } },
       stylistPayout: true,
       payoutId: true,
+      products: { select: { quantity: true, price: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
 
   const earnedAt = (b: { completedAt: Date | null; createdAt: Date }) => b.completedAt ?? b.createdAt;
+  // Retail products sold alongside the booking, on top of the service price.
+  const retailFor = (b: { products: { quantity: number; price: number }[] }) =>
+    b.products.reduce((sum, p) => sum + p.quantity * p.price, 0);
   const inRange = completed.filter((b) => {
     const d = earnedAt(b);
     return d >= from && d <= now;
@@ -442,7 +449,7 @@ async function getEarningsRange(salonId: string, periodParam: unknown) {
     return d >= previousFrom && d < from;
   });
 
-  return { period, days, now, from, inRange, previousRange, earnedAt };
+  return { period, days, now, from, inRange, previousRange, earnedAt, retailFor };
 }
 
 router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
@@ -451,12 +458,14 @@ router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asyn
     const salon = await findOwnedSalon(salonId, req.user);
     if (!salon) return res.status(404).json({ error: 'Salon not found' });
 
-    const { period, days, now, from, inRange, previousRange, earnedAt } = await getEarningsRange(
+    const { period, days, now, from, inRange, previousRange, earnedAt, retailFor } = await getEarningsRange(
       salonId,
       req.query.period,
     );
 
-    // Seed every day in the range so the chart has no gaps.
+    // Seed every day in the range so the chart has no gaps. Totals here
+    // include retail products sold alongside a booking, not just the service
+    // price — this is meant to read as "money made that day."
     const byDay = new Map<string, { total: number; count: number }>();
     for (let i = days - 1; i >= 0; i -= 1) {
       const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
@@ -465,7 +474,7 @@ router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asyn
     for (const b of inRange) {
       const bucket = byDay.get(istDayKey(earnedAt(b)));
       if (bucket) {
-        bucket.total += b.price;
+        bucket.total += b.price + retailFor(b);
         bucket.count += 1;
       }
     }
@@ -506,9 +515,10 @@ router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asyn
       period,
       from,
       to: now,
-      total: inRange.reduce((sum, b) => sum + b.price, 0),
+      total: inRange.reduce((sum, b) => sum + b.price + retailFor(b), 0),
+      retailTotal: inRange.reduce((sum, b) => sum + retailFor(b), 0),
       count: inRange.length,
-      previousTotal: previousRange.reduce((sum, b) => sum + b.price, 0),
+      previousTotal: previousRange.reduce((sum, b) => sum + b.price + retailFor(b), 0),
       daily: [...byDay.entries()].map(([date, v]) => ({ date, ...v })),
       topServices,
       byStylist,
@@ -518,6 +528,7 @@ router.get('/:salonId/earnings', requireRole('SALON_OWNER', 'SUPER_ADMIN'), asyn
         customerName: b.customer?.name ?? b.customer?.phone ?? 'Customer',
         serviceName: b.service?.name ?? '',
         price: b.price,
+        retail: retailFor(b),
         paymentMethod: b.paymentMethod,
       })),
     });
@@ -542,9 +553,9 @@ router.get('/:salonId/earnings/export', requireRole('SALON_OWNER', 'SUPER_ADMIN'
     const salon = await findOwnedSalon(salonId, req.user);
     if (!salon) return res.status(404).json({ error: 'Salon not found' });
 
-    const { period, inRange, earnedAt } = await getEarningsRange(salonId, req.query.period);
+    const { period, inRange, earnedAt, retailFor } = await getEarningsRange(salonId, req.query.period);
 
-    const header = ['Date', 'Time', 'Customer', 'Stylist', 'Service', 'Price', 'Payment method'];
+    const header = ['Date', 'Time', 'Customer', 'Stylist', 'Service', 'Price', 'Retail', 'Payment method'];
     const rows = inRange.map((b) => {
       const at = new Date(earnedAt(b).getTime() + IST_OFFSET_MS);
       const date = at.toISOString().slice(0, 10);
@@ -556,6 +567,7 @@ router.get('/:salonId/earnings/export', requireRole('SALON_OWNER', 'SUPER_ADMIN'
         b.stylist?.user?.name ?? '',
         b.service?.name ?? '',
         (b.price / 100).toFixed(2),
+        (retailFor(b) / 100).toFixed(2),
         b.paymentMethod ?? '',
       ];
     });

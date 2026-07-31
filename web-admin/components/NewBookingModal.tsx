@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Modal, Field, inputClass } from './Modal';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PaymentQr } from './PaymentQr';
+import { ProductPicker, productsTotal, toProductSaleItems } from './ProductPicker';
 import { formatINR, type Booking, type PaymentMethod } from '@/lib/salon-api';
 import { useCurrentSalon, useCustomers, useLogBooking, useSelectedSalonId } from '@/lib/salon-queries';
 import { AuthError } from '@/lib/auth';
@@ -30,6 +31,7 @@ export function NewBookingModal({
   const [phone, setPhone] = useState(prefill?.customerPhone ?? '');
   const [stylistId, setStylistId] = useState(prefill?.stylistId ?? activeStaff[0]?.stylistId ?? '');
   const [selected, setSelected] = useState<Set<string>>(new Set(prefill?.serviceIds ?? []));
+  const [productQty, setProductQty] = useState<Map<string, number>>(new Map());
   const [payment, setPayment] = useState<PaymentMethod>('CASH');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [time, setTime] = useState('17:00');
@@ -48,10 +50,12 @@ export function NewBookingModal({
       .slice(0, 4);
   }, [customers, name, phone]);
 
-  const total = [...selected].reduce(
+  const servicesSubtotal = [...selected].reduce(
     (sum, id) => sum + (services.find((s) => s.id === id)?.price ?? 0),
     0
   );
+  const retailAddOn = completed ? productsTotal(salon?.products ?? [], productQty) : 0;
+  const total = servicesSubtotal + retailAddOn;
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -81,6 +85,7 @@ export function NewBookingModal({
         completed,
         dateTime: completed ? undefined : new Date(`${date}T${time}`).toISOString(),
         paymentMethod: completed ? payment : undefined,
+        products: completed ? toProductSaleItems(productQty) : undefined,
       },
       {
         onSuccess: () => onClose(),
@@ -206,6 +211,11 @@ export function NewBookingModal({
 
         {completed ? (
           <>
+            {salon && salon.products.some((p) => p.stockQty > 0) && (
+              <Field label="Add products sold (optional)">
+                <ProductPicker products={salon.products} selected={productQty} onChange={setProductQty} />
+              </Field>
+            )}
             <Field label="Payment method">
               <PaymentMethodPicker value={payment} onChange={setPayment} />
             </Field>

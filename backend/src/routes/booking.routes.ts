@@ -15,7 +15,56 @@ const bookingInclude = {
     include: { service: true },
     orderBy: { sortOrder: 'asc' as const },
   },
+  products: {
+    include: { product: true },
+  },
 };
+
+// Thrown (never returned) so a Prisma transaction actually rolls back —
+// returning an error value from inside $transaction's callback does NOT
+// roll it back, only a thrown error does. Caught by name in each route's
+// catch block to turn it into a 400 instead of a 500.
+class ProductSaleError extends Error {}
+
+// Validates stock, decrements it, and records the sale for a booking that
+// just completed. Only called for a booking transitioning to COMPLETED — an
+// unstarted/scheduled booking hasn't sold anything yet. Must run inside the
+// same transaction as the booking create/update so a mid-way failure can't
+// leave stock decremented with no booking (or vice versa).
+async function attachProductSale(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  bookingId: string,
+  salonId: string,
+  items: { productId: string; quantity: number }[],
+): Promise<void> {
+  if (!items.length) return;
+  const ids = items.map((i) => i.productId);
+  const products = await tx.product.findMany({ where: { id: { in: ids }, salonId, deletedAt: null } });
+  if (products.length !== ids.length) throw new ProductSaleError('One or more products were not found for this salon');
+
+  const byId = new Map(products.map((p) => [p.id, p]));
+  for (const item of items) {
+    const product = byId.get(item.productId)!;
+    const qty = Number(item.quantity);
+    if (!Number.isInteger(qty) || qty < 1) throw new ProductSaleError(`Invalid quantity for ${product.name}`);
+    if (product.stockQty < qty) throw new ProductSaleError(`Not enough stock for ${product.name} (${product.stockQty} left)`);
+  }
+
+  for (const item of items) {
+    await tx.product.update({
+      where: { id: item.productId },
+      data: { stockQty: { decrement: Number(item.quantity) } },
+    });
+  }
+  await tx.bookingProductItem.createMany({
+    data: items.map((item) => ({
+      bookingId,
+      productId: item.productId,
+      quantity: Number(item.quantity),
+      price: byId.get(item.productId)!.retailPrice,
+    })),
+  });
+}
 
 // Returns true when the acting user is allowed to view/modify this specific booking.
 // SUPER_ADMIN can always act. Otherwise the booking must belong to the requester:
@@ -404,6 +453,7 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
       customerPhone,
       completed = false, // "Done service": logged after the fact, no future slot
       paymentMethod,
+      products = [],
     } = req.body;
 
     const requestedServiceIds = Array.isArray(serviceIds)
@@ -411,6 +461,9 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
       : serviceId
           ? [serviceId]
           : [];
+    const requestedProducts: { productId: string; quantity: number }[] = Array.isArray(products)
+      ? products.filter((p: any) => p?.productId)
+      : [];
 
     // dateTime is only required for a future (scheduled) booking. A completed
     // walk-in is stamped with the server's current time.
@@ -496,41 +549,59 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
     const primaryService = services[0];
     const price = services.reduce((total, item) => total + item.basePrice, 0);
     const { stylistPct, salonPct } = await commissionSplit(prisma, salonId, stylistId);
-    const booking = await prisma.booking.create({
-      data: {
-        customerId: customer.id,
-        providerType: 'SALON',
-        salonId,
-        stylistId,
-        serviceId: primaryService.id,
-        bookedVia: 'SALONS_TAB',
-        serviceType: 'IN_SALON',
-        slotStart: start,
-        slotEnd: end,
-        originalDateTime: start,
-        price,
-        platformFee: 0,
-        travelFee: 0,
-        stylistPayout: Math.round(price * (stylistPct / 100)),
-        salonPayout: Math.round(price * (salonPct / 100)),
-        commissionSnapshot: { stylist: stylistPct, salon: salonPct, source: 'SALON_MANUAL' },
-        status: completed ? 'COMPLETED' : 'CONFIRMED',
-        completedAt: completed ? start : null,
-        // Only meaningful when payment was actually collected at logging time;
-        // a "Schedule later" booking hasn't been paid for yet.
-        paymentMethod: completed ? (paymentMethod ?? null) : null,
-        services: {
-          create: services.map((item, index) => ({
-            serviceId: item.id,
-            sortOrder: index,
-          })),
+
+    // Products are only sold on a completed walk-in (a "Schedule later"
+    // booking hasn't happened yet), so validate that up front rather than
+    // silently ignoring products sent alongside a future booking.
+    if (!completed && requestedProducts.length > 0) {
+      return res.status(400).json({ error: 'Products can only be attached to a completed booking' });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.create({
+        data: {
+          customerId: customer.id,
+          providerType: 'SALON',
+          salonId,
+          stylistId,
+          serviceId: primaryService.id,
+          bookedVia: 'SALONS_TAB',
+          serviceType: 'IN_SALON',
+          slotStart: start,
+          slotEnd: end,
+          originalDateTime: start,
+          price,
+          platformFee: 0,
+          travelFee: 0,
+          stylistPayout: Math.round(price * (stylistPct / 100)),
+          salonPayout: Math.round(price * (salonPct / 100)),
+          commissionSnapshot: { stylist: stylistPct, salon: salonPct, source: 'SALON_MANUAL' },
+          status: completed ? 'COMPLETED' : 'CONFIRMED',
+          completedAt: completed ? start : null,
+          // Only meaningful when payment was actually collected at logging time;
+          // a "Schedule later" booking hasn't been paid for yet.
+          paymentMethod: completed ? (paymentMethod ?? null) : null,
+          services: {
+            create: services.map((item, index) => ({
+              serviceId: item.id,
+              sortOrder: index,
+            })),
+          },
         },
-      },
-      include: bookingInclude,
+      });
+
+      if (completed && requestedProducts.length > 0) {
+        await attachProductSale(tx, booking.id, salonId, requestedProducts);
+      }
+
+      return tx.booking.findUniqueOrThrow({ where: { id: booking.id }, include: bookingInclude });
     });
 
-    res.status(201).json(booking);
+    res.status(201).json(result);
   } catch (e: any) {
+    if (e instanceof ProductSaleError) {
+      return res.status(400).json({ error: e.message });
+    }
     res.status(500).json({ error: e.message });
   }
 });
@@ -538,12 +609,18 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
 // PATCH /api/v2/bookings/:id/status - Confirm/cancel a booking request.
 router.patch('/:id/status', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
-    const { status, paymentMethod } = req.body;
+    const { status, paymentMethod, products = [] } = req.body;
     if (!['PENDING', 'PENDING_RESCHEDULE', 'CONFIRMED', 'IN_PROGRESS', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(status)) {
       return res.status(400).json({ error: 'Invalid booking status' });
     }
     if (paymentMethod != null && !['CASH', 'CARD', 'UPI'].includes(paymentMethod)) {
       return res.status(400).json({ error: 'paymentMethod must be one of CASH, CARD, UPI' });
+    }
+    const requestedProducts: { productId: string; quantity: number }[] = Array.isArray(products)
+      ? products.filter((p: any) => p?.productId)
+      : [];
+    if (status !== 'COMPLETED' && requestedProducts.length > 0) {
+      return res.status(400).json({ error: 'Products can only be attached when completing a booking' });
     }
 
     const existing = await prisma.booking.findUnique({
@@ -568,21 +645,35 @@ router.patch('/:id/status', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN')
       }
     }
 
-    const booking = await prisma.booking.update({
-      where: { id: req.params.id },
-      data: {
-        status,
-        // Earnings are keyed off completedAt; without this a booking marked
-        // done via this endpoint (rather than created already-completed via
-        // /salon-manual) would be mis-dated to createdAt in the earnings report.
-        ...(status === 'COMPLETED' && !existing.completedAt ? { completedAt: new Date() } : {}),
-        ...(status === 'COMPLETED' && paymentMethod != null ? { paymentMethod } : {}),
-      },
-      include: bookingInclude,
+    if (status === 'COMPLETED' && requestedProducts.length > 0 && !existing.salonId) {
+      return res.status(400).json({ error: 'This booking has no salon to sell products from' });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.booking.update({
+        where: { id: req.params.id },
+        data: {
+          status,
+          // Earnings are keyed off completedAt; without this a booking marked
+          // done via this endpoint (rather than created already-completed via
+          // /salon-manual) would be mis-dated to createdAt in the earnings report.
+          ...(status === 'COMPLETED' && !existing.completedAt ? { completedAt: new Date() } : {}),
+          ...(status === 'COMPLETED' && paymentMethod != null ? { paymentMethod } : {}),
+        },
+      });
+
+      if (status === 'COMPLETED' && requestedProducts.length > 0) {
+        await attachProductSale(tx, req.params.id, existing.salonId!, requestedProducts);
+      }
+
+      return tx.booking.findUniqueOrThrow({ where: { id: req.params.id }, include: bookingInclude });
     });
 
-    res.json(booking);
+    res.json(result);
   } catch (e: any) {
+    if (e instanceof ProductSaleError) {
+      return res.status(400).json({ error: e.message });
+    }
     res.status(500).json({ error: e.message });
   }
 });

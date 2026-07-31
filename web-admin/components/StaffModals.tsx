@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Modal, Field, inputClass } from './Modal';
 import { formatINR, type AvailabilityRule, type Staff } from '@/lib/salon-api';
+import { X } from 'lucide-react';
 import {
   useAddAvailabilityRule,
   useAddStaff,
@@ -10,6 +11,7 @@ import {
   useDeleteAvailabilityRule,
   usePaySalary,
   usePayouts,
+  useSaveService,
   useSelectedSalonId,
   useSettleCommissionPayout,
   useStylistEarnings,
@@ -25,14 +27,22 @@ const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 export function AddStaffModal({ onClose }: { onClose: () => void }) {
   const salonId = useSelectedSalonId();
   const addStaff = useAddStaff(salonId ?? '');
+  const saveService = useSaveService(salonId ?? '');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [serviceName, setServiceName] = useState('');
   const [price, setPrice] = useState('');
+  // Extra services beyond the required starter one, added up front — mirrors
+  // the mobile app's add_staff_sheet.dart, which chains one POST per extra
+  // service to /stylists/:id/services since staff-setup only takes one.
+  const [extraServices, setExtraServices] = useState<{ name: string; price: number }[]>([]);
+  const [extraName, setExtraName] = useState('');
+  const [extraPrice, setExtraPrice] = useState('');
   const [openTime, setOpenTime] = useState('09:00');
   const [closeTime, setCloseTime] = useState('18:00');
   const [workDays, setWorkDays] = useState<Set<number>>(new Set([1, 2, 3, 4, 5, 6]));
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const toggleDay = (day: number) => {
     setWorkDays((prev) => {
@@ -43,7 +53,21 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
     });
   };
 
-  const save = () => {
+  const addExtraService = () => {
+    const n = extraName.trim();
+    const p = parseFloat(extraPrice);
+    if (n.length < 2 || !p || p <= 0) return setError('Enter a name and price for that service');
+    setError('');
+    setExtraServices((prev) => [...prev, { name: n, price: p }]);
+    setExtraName('');
+    setExtraPrice('');
+  };
+
+  const removeExtraService = (index: number) => {
+    setExtraServices((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const save = async () => {
     if (!salonId) return setError('No salon selected');
     if (!name.trim() || name.trim().length < 2) return setError('Enter a name');
     if (!phone.trim() || phone.trim().length < 6) return setError('Enter a valid phone number');
@@ -52,8 +76,10 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
     if (!p || p <= 0) return setError('Enter a valid price for that service');
     if (workDays.size === 0) return setError('Select at least one working day');
 
-    addStaff.mutate(
-      {
+    setError('');
+    setSaving(true);
+    try {
+      const { stylistId } = await addStaff.mutateAsync({
         name: name.trim(),
         phone: phone.trim(),
         serviceName: serviceName.trim(),
@@ -61,12 +87,22 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
         startTime: openTime,
         endTime: closeTime,
         days: [...workDays].sort(),
-      },
-      {
-        onSuccess: () => onClose(),
-        onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not add this staff member.'),
+      });
+      for (const svc of extraServices) {
+        await saveService.mutateAsync({
+          name: svc.name,
+          category: 'Salon',
+          duration: 60,
+          price: svc.price,
+          stylistId,
+        });
       }
-    );
+      onClose();
+    } catch (e) {
+      setError(e instanceof AuthError ? e.message : 'Could not add this staff member.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -97,8 +133,43 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
             />
           </Field>
         </div>
+        {extraServices.length > 0 && (
+          <div className="space-y-1">
+            {extraServices.map((svc, i) => (
+              <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-md border border-gray-200 text-xs">
+                <span className="font-medium text-gray-900">{svc.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 tabular-nums">{formatINR(svc.price)}</span>
+                  <button onClick={() => removeExtraService(i)} className="p-0.5 hover:bg-gray-100 rounded">
+                    <X size={12} className="text-gray-400" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex items-end gap-2">
+          <Field label="Add another service">
+            <input
+              className={inputClass}
+              value={extraName}
+              onChange={(e) => setExtraName(e.target.value)}
+              placeholder="Beard trim"
+            />
+          </Field>
+          <input
+            type="number"
+            className={`${inputClass} w-20`}
+            value={extraPrice}
+            onChange={(e) => setExtraPrice(e.target.value)}
+            placeholder="₹"
+          />
+          <button type="button" onClick={addExtraService} className="btn-secondary">
+            Add
+          </button>
+        </div>
         <p className="text-xs text-gray-400">
-          You can add more services for them afterwards from the Services tab.
+          You can also add more services for them later from the Services tab.
         </p>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Opens">
@@ -126,8 +197,8 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
         </Field>
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex justify-end pt-2 border-t border-gray-200">
-          <button onClick={save} disabled={addStaff.isPending} className="btn-primary disabled:opacity-60">
-            {addStaff.isPending ? 'Adding…' : 'Add staff'}
+          <button onClick={save} disabled={saving} className="btn-primary disabled:opacity-60">
+            {saving ? 'Adding…' : 'Add staff'}
           </button>
         </div>
       </div>

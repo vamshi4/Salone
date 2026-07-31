@@ -42,10 +42,13 @@ export function BookingRow({
             </span>
           )}
           <span> · {formatTime(booking.time)}</span>
+          {booking.products.length > 0 && (
+            <span> · + {booking.products.map((p) => p.name).join(', ')}</span>
+          )}
         </p>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-        <span className="text-xs text-gray-900 tabular-nums">{formatINR(booking.price)}</span>
+        <span className="text-xs text-gray-900 tabular-nums">{formatINR(booking.price + booking.retailTotal)}</span>
         <StatusBadge status={booking.status} />
         <button
           title="Rebook"

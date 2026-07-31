@@ -72,11 +72,12 @@ export function useLogBooking() {
 export function useSetBookingStatus(salonId: string) {
   const inv = useInvalidate();
   return useMutation({
-    mutationFn: ({ bookingId, status, paymentMethod }: {
+    mutationFn: ({ bookingId, status, paymentMethod, products }: {
       bookingId: string;
       status: api.BookingStatus;
       paymentMethod?: api.PaymentMethod;
-    }) => api.setBookingStatus(bookingId, status, paymentMethod),
+      products?: api.ProductSaleItem[];
+    }) => api.setBookingStatus(bookingId, status, paymentMethod, products),
     onSuccess: () => {
       inv.bookings(salonId);
       inv.salons();
