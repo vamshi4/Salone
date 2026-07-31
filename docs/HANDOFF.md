@@ -835,6 +835,8 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
 - Follow-up: changed the helper to call the global `fbq('track', ...)` directly and
   fire both `CompleteRegistration` and `Lead` after successful signup, matching Meta's
   checker expectations more closely.
+- Confirmed `ghcr.io/vamshi4/salone-web:1ae72ab` exists, then pinned `salone-web`
+  to that tag for production rollout.
 
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
