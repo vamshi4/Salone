@@ -8,12 +8,25 @@ declare global {
   }
 }
 
+declare const fbq: undefined | ((...args: unknown[]) => void);
+
 export function trackPixelEvent(eventName: string, params?: Record<string, unknown>) {
-  if (typeof window === 'undefined' || typeof window.fbq !== 'function') return;
-  window.fbq('track', eventName, params);
+  if (typeof window === 'undefined') return;
+  if (typeof fbq === 'function') {
+    fbq('track', eventName, params);
+    return;
+  }
+  if (typeof window.fbq === 'function') window.fbq('track', eventName, params);
 }
 
 export function trackCompleteRegistration() {
-  if (typeof window === 'undefined' || typeof window.fbq !== 'function') return;
+  if (typeof window === 'undefined') return;
+  if (typeof fbq === 'function') {
+    fbq('track', 'CompleteRegistration');
+    fbq('track', 'Lead');
+    return;
+  }
+  if (typeof window.fbq !== 'function') return;
   window.fbq('track', 'CompleteRegistration');
+  window.fbq('track', 'Lead');
 }

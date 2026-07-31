@@ -832,6 +832,9 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
   verification tools can see the exact conversion call.
 - Confirmed `ghcr.io/vamshi4/salone-web:39b0896` exists, then pinned `salone-web`
   to that tag for production rollout; backend stays on `9d966e9`.
+- Follow-up: changed the helper to call the global `fbq('track', ...)` directly and
+  fire both `CompleteRegistration` and `Lead` after successful signup, matching Meta's
+  checker expectations more closely.
 
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
