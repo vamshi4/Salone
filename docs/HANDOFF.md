@@ -825,6 +825,12 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
   before swapping app pods; this synced the booking product-item schema safely.
 - Pinned `salone-api` and `salone-web` manifests to image tag `9d966e9`.
 
+### 2026-07-31 Codex handoff: Meta Pixel signup conversion fix
+- Moved the web-admin signup conversion event to fire immediately after `signup()` succeeds,
+  before `fetchMe()` and before redirecting to `/dashboard`.
+- Added an explicit `window.fbq('track', 'CompleteRegistration')` helper so Meta Pixel
+  verification tools can see the exact conversion call.
+
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
 Continuation of the `web-admin` work referenced in the two Codex handoff notes just above (those

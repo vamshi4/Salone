@@ -8,7 +8,7 @@ import { signup, fetchMe } from '@/lib/auth';
 import { useAppStore } from '@/lib/store';
 import { GoogleButton } from '@/components/GoogleButton';
 import { inputClass } from '@/components/Modal';
-import { trackPixelEvent } from '@/lib/pixel';
+import { trackCompleteRegistration } from '@/lib/pixel';
 
 const COUNTRIES = [
   { code: 'IN', label: 'India', currency: 'INR' },
@@ -79,13 +79,11 @@ export default function SignupPage() {
         countryCode: country.code,
         currency: country.currency,
       });
+      // Fires only after the backend has created the salon owner account.
+      trackCompleteRegistration();
       setUser(user);
       const me = await fetchMe();
       setSalons(me?.salons ?? [salon]);
-      // Fired here — after signup() has actually resolved and the account
-      // exists — not on form submit/click, so a failed signup (bad phone,
-      // duplicate account, network error) never counts as a conversion.
-      trackPixelEvent('CompleteRegistration');
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign up failed. Please try again.');

@@ -12,3 +12,8 @@ export function trackPixelEvent(eventName: string, params?: Record<string, unkno
   if (typeof window === 'undefined' || typeof window.fbq !== 'function') return;
   window.fbq('track', eventName, params);
 }
+
+export function trackCompleteRegistration() {
+  if (typeof window === 'undefined' || typeof window.fbq !== 'function') return;
+  window.fbq('track', 'CompleteRegistration');
+}
