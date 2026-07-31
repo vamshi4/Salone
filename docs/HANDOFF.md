@@ -818,6 +818,13 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
   before swapping app pods; this added/synced the salon UPI/GST fields safely.
 - Pinned `salone-api` and `salone-web` manifests to image tag `6842071`.
 
+### 2026-07-31 Codex handoff: booking products + Meta Pixel rollout
+- Confirmed `ghcr.io/vamshi4/salone-backend:9d966e9` and `ghcr.io/vamshi4/salone-web:9d966e9`
+  exist in GHCR.
+- Ran one-off production `npx prisma db push --accept-data-loss` using backend image `9d966e9`
+  before swapping app pods; this synced the booking product-item schema safely.
+- Pinned `salone-api` and `salone-web` manifests to image tag `9d966e9`.
+
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
 Continuation of the `web-admin` work referenced in the two Codex handoff notes just above (those
