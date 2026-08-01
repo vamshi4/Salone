@@ -2,7 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import { StatusBadge } from './StatusBadge';
-import { formatINR, type Booking } from '@/lib/salon-api';
+import { formatCurrency, type Booking } from '@/lib/salon-api';
 import { RotateCcw } from 'lucide-react';
 import { Avatar } from './Avatar';
 
@@ -15,11 +15,13 @@ function formatTime(iso: string, locale: string) {
 export function BookingRow({
   booking,
   isRepeat,
+  currency,
   onOpenCustomer,
   onRebook,
 }: {
   booking: Booking;
   isRepeat?: boolean;
+  currency?: string | null;
   onOpenCustomer: (b: Booking) => void;
   onRebook: (b: Booking) => void;
 }) {
@@ -52,7 +54,7 @@ export function BookingRow({
         </p>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-        <span className="text-xs text-gray-900 tabular-nums">{formatINR(booking.price + booking.retailTotal)}</span>
+        <span className="text-xs text-gray-900 tabular-nums">{formatCurrency(booking.price + booking.retailTotal, currency)}</span>
         <StatusBadge status={booking.status} />
         <button
           title={t('rebook')}

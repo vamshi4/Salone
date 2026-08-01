@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PageLayout } from '@/components/PageLayout';
 import { ProductModal } from '@/components/ProductModal';
-import { formatINR, type Product } from '@/lib/salon-api';
+import { formatCurrency, type Product } from '@/lib/salon-api';
 import { useCurrentSalon, useSelectedSalonId } from '@/lib/salon-queries';
 import { Plus, Search, Package } from 'lucide-react';
 
@@ -136,7 +136,7 @@ function ProductsContent() {
                         </span>
                       </span>
                       <span className="text-xs font-medium text-gray-900 tabular-nums">
-                        {formatINR(p.retailPrice)}
+                        {formatCurrency(p.retailPrice, salon?.currency)}
                       </span>
                     </button>
                   );

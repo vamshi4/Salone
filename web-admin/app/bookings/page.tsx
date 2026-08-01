@@ -7,7 +7,7 @@ import { NewBookingModal } from '@/components/NewBookingModal';
 import { CustomerProfileModal } from '@/components/CustomerProfileModal';
 import { CompleteBookingModal } from '@/components/CompleteBookingModal';
 import { BookingRow } from '@/components/BookingRow';
-import { formatINR, type Booking, type Customer, type SalonSummary } from '@/lib/salon-api';
+import { formatCurrency, type Booking, type Customer, type SalonSummary } from '@/lib/salon-api';
 import { formatDay, formatTime, startOfDay, needsAction, todaySchedule, repeatCustomerIds } from '@/lib/booking-helpers';
 import {
   useBookings,
@@ -45,7 +45,7 @@ function ActionCard({ booking, salon }: { booking: Booking; salon: SalonSummary 
         </p>
         <p className="text-xs text-gray-400 mt-0.5">
           {booking.customerName} · {'key' in dayLabel ? t(dayLabel.key) : dayLabel.text} {formatTime(booking.time, locale)} ·{' '}
-          {formatINR(booking.price)}
+          {formatCurrency(booking.price, salon.currency)}
         </p>
       </div>
       <div className="flex items-center gap-1.5 ml-3">
@@ -220,7 +220,7 @@ export default function BookingsPage() {
         <div className="grid grid-cols-3 gap-3">
           <div className="stat-tile">
             <p className="text-xs text-gray-500">{t('total')}</p>
-            <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatINR(periodTotal)}</p>
+            <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatCurrency(periodTotal, salon?.currency)}</p>
           </div>
           <div className="stat-tile">
             <p className="text-xs text-gray-500">{t('servicesLabel')}</p>
@@ -228,7 +228,7 @@ export default function BookingsPage() {
           </div>
           <div className="stat-tile">
             <p className="text-xs text-gray-500">{t('avgTicket')}</p>
-            <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatINR(avgTicket)}</p>
+            <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatCurrency(avgTicket, salon?.currency)}</p>
           </div>
         </div>
 
@@ -245,7 +245,7 @@ export default function BookingsPage() {
                 <div className="flex items-center justify-between mb-1.5">
                   <p className="text-xs font-semibold text-gray-500">{'key' in dayLabel ? t(dayLabel.key) : dayLabel.text}</p>
                   <p className="text-xs text-gray-400 tabular-nums">
-                    {formatINR(list.reduce((s, b) => s + b.price + b.retailTotal, 0))} ·{' '}
+                    {formatCurrency(list.reduce((s, b) => s + b.price + b.retailTotal, 0), salon?.currency)} ·{' '}
                     {t('serviceCount', { count: list.length })}
                   </p>
                 </div>
@@ -255,6 +255,7 @@ export default function BookingsPage() {
                       key={b.id}
                       booking={b}
                       isRepeat={repeats.has(b.customerId)}
+                      currency={salon?.currency}
                       onOpenCustomer={openCustomer}
                       onRebook={setRebook}
                     />

@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Modal, Field, inputClass } from './Modal';
-import { formatINR, type AvailabilityRule, type Staff } from '@/lib/salon-api';
+import { CURRENCY_SYMBOLS, formatCurrency, type AvailabilityRule, type Staff } from '@/lib/salon-api';
 import { X } from 'lucide-react';
 import {
   useAddAvailabilityRule,
   useAddStaff,
   useAvailabilityRules,
+  useCurrentSalon,
   useDeleteAvailabilityRule,
   usePaySalary,
   usePayouts,
@@ -28,6 +29,7 @@ const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 export function AddStaffModal({ onClose }: { onClose: () => void }) {
   const t = useTranslations('staffModals');
   const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
   const addStaff = useAddStaff(salonId ?? '');
   const saveService = useSaveService(salonId ?? '');
   const [name, setName] = useState('');
@@ -141,7 +143,7 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
               <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-md border border-gray-200 text-xs">
                 <span className="font-medium text-gray-900">{svc.name}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-500 tabular-nums">{formatINR(svc.price)}</span>
+                  <span className="text-gray-500 tabular-nums">{formatCurrency(svc.price, salon?.currency)}</span>
                   <button onClick={() => removeExtraService(i)} className="p-0.5 hover:bg-gray-100 rounded">
                     <X size={12} className="text-gray-400" />
                   </button>
@@ -164,7 +166,7 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
             className={`${inputClass} w-20`}
             value={extraPrice}
             onChange={(e) => setExtraPrice(e.target.value)}
-            placeholder="₹"
+            placeholder={CURRENCY_SYMBOLS[salon?.currency ?? 'INR'] ?? salon?.currency ?? '₹'}
           />
           <button type="button" onClick={addExtraService} className="btn-secondary">
             {t('add.addBtn')}
@@ -432,6 +434,7 @@ export function PayoutModal({ member, onClose }: { member: Staff; onClose: () =>
   const t = useTranslations('staffModals');
   const locale = useLocale();
   const salonId = useSelectedSalonId();
+  const salon = useCurrentSalon();
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
   const { data, isLoading } = useStylistEarnings(salonId ?? '', member.stylistId, period);
   const { data: payouts = [] } = usePayouts(salonId ?? '', member.stylistId);
@@ -469,18 +472,18 @@ export function PayoutModal({ member, onClose }: { member: Staff; onClose: () =>
               </div>
               <div className="bg-gray-50 rounded-md px-3 py-2">
                 <p className="text-xs text-gray-500">{t('payout.gross')}</p>
-                <p className="text-base font-semibold text-gray-900 tabular-nums">{formatINR(data.grossRevenue)}</p>
+                <p className="text-base font-semibold text-gray-900 tabular-nums">{formatCurrency(data.grossRevenue, salon?.currency)}</p>
               </div>
               <div className="bg-primary-light rounded-md px-3 py-2">
                 <p className="text-xs text-primary-dark/70">{t('payout.theirPayout')}</p>
-                <p className="text-base font-semibold text-primary-dark tabular-nums">{formatINR(data.totalPayout)}</p>
+                <p className="text-base font-semibold text-primary-dark tabular-nums">{formatCurrency(data.totalPayout, salon?.currency)}</p>
               </div>
             </div>
 
             {showCommission && (
               <div className="rounded-md bg-amber-50 px-3 py-2.5 space-y-2">
                 <p className="text-xs font-medium text-amber-800">{t('payout.unpaidCommission', { count: data.unpaidCount })}</p>
-                <p className="text-lg font-bold text-amber-900 tabular-nums">{formatINR(data.unpaidTotal)}</p>
+                <p className="text-lg font-bold text-amber-900 tabular-nums">{formatCurrency(data.unpaidTotal, salon?.currency)}</p>
                 <button
                   onClick={() => settleCommission.mutate()}
                   disabled={data.unpaidCount === 0 || settleCommission.isPending}
@@ -496,7 +499,7 @@ export function PayoutModal({ member, onClose }: { member: Staff; onClose: () =>
                 <p className={`text-xs font-medium ${data.salaryPaidThisMonth ? 'text-green-800' : 'text-amber-800'}`}>
                   {t('payout.salaryThisMonth')}
                 </p>
-                <p className="text-lg font-bold text-gray-900 tabular-nums">{formatINR(data.salaryAmount)}</p>
+                <p className="text-lg font-bold text-gray-900 tabular-nums">{formatCurrency(data.salaryAmount, salon?.currency)}</p>
                 {data.salaryPaidThisMonth ? (
                   <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-white text-green-700">{t('payout.paid')}</span>
                 ) : (
@@ -527,7 +530,7 @@ export function PayoutModal({ member, onClose }: { member: Staff; onClose: () =>
                     </p>
                     <p className="text-xs text-gray-400">{p.isSalaryPayout ? t('payout.salaryLabel') : t('payout.bookingsCount', { count: p.bookingCount })}</p>
                   </div>
-                  <span className="text-xs font-semibold text-gray-900 tabular-nums">{formatINR(p.totalPayout)}</span>
+                  <span className="text-xs font-semibold text-gray-900 tabular-nums">{formatCurrency(p.totalPayout, salon?.currency)}</span>
                 </div>
               ))}
             </div>

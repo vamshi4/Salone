@@ -10,6 +10,8 @@ import { updateProfile, changePassword, AuthError } from '@/lib/auth';
 import { useAppStore } from '@/lib/store';
 import { locales, localeNames, type Locale } from '@/i18n/locales';
 import { setLocaleCookie } from '@/lib/locale';
+import { COUNTRIES } from '@/lib/countries';
+import { CURRENCY_SYMBOLS } from '@/lib/salon-api';
 import { User, Lock, Globe, Store } from 'lucide-react';
 
 const TABS = [
@@ -26,6 +28,7 @@ function formatJoined(iso: string | undefined, locale: string) {
 
 export default function AccountPage() {
   const t = useTranslations('account');
+  const tSignup = useTranslations('signup');
   const locale = useLocale();
   const router = useRouter();
   const user = useAppStore((s) => s.user);
@@ -140,6 +143,23 @@ export default function AccountPage() {
   const changeLocale = (next: Locale) => {
     setLocaleCookie(next);
     router.refresh();
+  };
+
+  const [currencySaving, setCurrencySaving] = useState(false);
+  const [currencySaved, setCurrencySaved] = useState(false);
+
+  const changeCountryCurrency = async (code: string) => {
+    const country = COUNTRIES.find((c) => c.code === code);
+    if (!country) return;
+    setCurrencySaving(true);
+    try {
+      const { salon: updated } = await updateProfile({ countryCode: country.code, currency: country.currency });
+      if (updated) setSalons(salons.map((s) => (s.id === updated.id ? updated : s)));
+      setCurrencySaved(true);
+      setTimeout(() => setCurrencySaved(false), 1500);
+    } finally {
+      setCurrencySaving(false);
+    }
   };
 
   const joined = formatJoined(user?.createdAt, locale);
@@ -316,18 +336,31 @@ export default function AccountPage() {
                 ))}
               </select>
             </div>
-            <div className="flex items-center justify-between px-3 py-2.5 rounded-md bg-gray-50">
-              <div>
-                <p className="text-xs font-medium text-gray-900">{t('countryCurrency')}</p>
-                <p className="text-xs text-gray-400">{t('countryCurrencyHelper')}</p>
-              </div>
-              <select className={`${inputClass} w-36`}>
-                <option>India (₹)</option>
-                <option>UAE (د.إ)</option>
-                <option>USA ($)</option>
-              </select>
-            </div>
             <p className="text-xs text-gray-400">{t('savedLocally')}</p>
+            {salon && (
+              <div className="flex items-center justify-between px-3 py-2.5 rounded-md bg-gray-50">
+                <div>
+                  <p className="text-xs font-medium text-gray-900">{t('countryCurrency')}</p>
+                  <p className="text-xs text-gray-400">{t('countryCurrencyHelper')}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {currencySaving && <span className="text-xs text-gray-400">{t('saving')}</span>}
+                  {!currencySaving && currencySaved && <span className="text-xs text-green-600">{t('saved')}</span>}
+                  <select
+                    className={`${inputClass} w-36`}
+                    value={salon.countryCode}
+                    disabled={currencySaving}
+                    onChange={(e) => changeCountryCurrency(e.target.value)}
+                  >
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {tSignup(`countries.${c.code}`)} ({CURRENCY_SYMBOLS[c.currency]})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

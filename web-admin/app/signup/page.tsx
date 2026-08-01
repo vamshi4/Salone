@@ -11,13 +11,7 @@ import { GoogleButton } from '@/components/GoogleButton';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { inputClass } from '@/components/Modal';
 import { trackCompleteRegistration } from '@/lib/pixel';
-
-const COUNTRIES = [
-  { code: 'IN', currency: 'INR' },
-  { code: 'AE', currency: 'AED' },
-  { code: 'US', currency: 'USD' },
-  { code: 'GB', currency: 'GBP' },
-] as const;
+import { COUNTRIES } from '@/lib/countries';
 
 export default function SignupPage() {
   const t = useTranslations('signup');

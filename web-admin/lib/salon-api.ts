@@ -7,7 +7,28 @@ import apiClient from './api';
 const toRupees = (paise: number) => Math.round(paise) / 100;
 const toPaise = (rupees: number) => Math.round(rupees * 100);
 
-export const formatINR = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+// Mirrors mobile's CurrencyController symbol table (lib/core/prefs.dart) —
+// the salon's own `currency` field is the source of truth, so both apps
+// agree on how to display the same salon's numbers.
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  INR: '₹',
+  AED: 'د.إ',
+  USD: '$',
+  GBP: '£',
+};
+
+const CURRENCY_LOCALES: Record<string, string> = {
+  INR: 'en-IN',
+  AED: 'en-AE',
+  USD: 'en-US',
+  GBP: 'en-GB',
+};
+
+export function formatCurrency(amount: number, currency?: string | null): string {
+  const code = currency || 'INR';
+  const symbol = CURRENCY_SYMBOLS[code] ?? code;
+  return `${symbol}${amount.toLocaleString(CURRENCY_LOCALES[code] ?? 'en-US')}`;
+}
 
 // ---------- Types (rupee-denominated) ----------
 

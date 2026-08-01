@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { PageLayout } from '@/components/PageLayout';
 import { CustomerProfileModal } from '@/components/CustomerProfileModal';
 import { useAppStore } from '@/lib/store';
-import { formatINR, type Customer } from '@/lib/salon-api';
+import { formatCurrency, type Customer } from '@/lib/salon-api';
 import {
   useAtRisk,
   useDownloadEarningsCsv,
@@ -52,6 +52,7 @@ function SegTabs({ tab, onChange }: { tab: number; onChange: (i: number) => void
 function EarningsTab({ salonId }: { salonId: string }) {
   const t = useTranslations('insights');
   const locale = useLocale();
+  const salon = useAppStore((s) => s.salons.find((x) => x.id === salonId));
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('day');
   const { data, isLoading, isError } = useEarnings(salonId, period);
   const downloadCsv = useDownloadEarningsCsv();
@@ -109,7 +110,7 @@ function EarningsTab({ salonId }: { salonId: string }) {
             <div className="absolute -bottom-20 right-16 w-36 h-36 rounded-full bg-white/5" />
             <div className="relative">
               <p className="text-xs text-teal-100/80">{periodLabel}</p>
-              <p className="text-3xl font-bold tabular-nums mt-1">{formatINR(data.total)}</p>
+              <p className="text-3xl font-bold tabular-nums mt-1">{formatCurrency(data.total, salon?.currency)}</p>
               <div className="flex items-center gap-3 mt-2">
                 <p className="text-xs text-teal-100/80">{t('completedServicesCount', { count: data.count })}</p>
                 {(data.total > 0 || data.previousTotal > 0) && (
@@ -138,7 +139,7 @@ function EarningsTab({ salonId }: { salonId: string }) {
                       <div
                         className="w-full bg-primary/70 rounded-t"
                         style={{ height: `${Math.max(4, (d.total / maxDaily) * 100)}%` }}
-                        title={`${date.getDate()}: ${formatINR(d.total)}`}
+                        title={`${date.getDate()}: ${formatCurrency(d.total, salon?.currency)}`}
                       />
                       <span className="text-[10px] text-gray-400 h-3">
                         {i % labelStep === 0 || i === daily.length - 1 ? date.getDate() : ''}
@@ -162,7 +163,7 @@ function EarningsTab({ salonId }: { salonId: string }) {
                         <p className="text-xs font-medium text-gray-900">{s.name}</p>
                         <p className="text-xs text-gray-400">{t('serviceCount', { count: s.count })}</p>
                       </div>
-                      <p className="text-xs text-gray-900 tabular-nums">{formatINR(s.total)}</p>
+                      <p className="text-xs text-gray-900 tabular-nums">{formatCurrency(s.total, salon?.currency)}</p>
                     </div>
                   ))}
                 </div>
@@ -178,7 +179,7 @@ function EarningsTab({ salonId }: { salonId: string }) {
                         <p className="text-xs font-medium text-gray-900">{s.name}</p>
                         <p className="text-xs text-gray-400">{t('serviceCount', { count: s.count })}</p>
                       </div>
-                      <p className="text-xs text-gray-900 tabular-nums">{formatINR(s.total)}</p>
+                      <p className="text-xs text-gray-900 tabular-nums">{formatCurrency(s.total, salon?.currency)}</p>
                     </div>
                   ))}
                 </div>
@@ -208,7 +209,7 @@ function EarningsTab({ salonId }: { salonId: string }) {
                         </p>
                       )}
                     </div>
-                    <span className="text-xs text-gray-900 tabular-nums">{formatINR(b.price)}</span>
+                    <span className="text-xs text-gray-900 tabular-nums">{formatCurrency(b.price, salon?.currency)}</span>
                   </div>
                 ))}
               </div>
@@ -306,7 +307,7 @@ function RetentionTab({ salonId, onOpenCustomer }: { salonId: string; onOpenCust
             <p className="text-sm font-semibold text-gray-900">{t('reachOutNow')}</p>
           </div>
           <p className="text-xs text-gray-500 mt-0.5">
-            {t('overdueAtStake', { count: atRisk.length, amount: formatINR(atRiskData?.atRiskRevenue ?? 0) })}
+            {t('overdueAtStake', { count: atRisk.length, amount: formatCurrency(atRiskData?.atRiskRevenue ?? 0, salon?.currency) })}
           </p>
           <div className="mt-2.5 space-y-2">
             {atRisk.slice(0, 2).map((c) => (
@@ -387,7 +388,7 @@ function RetentionTab({ salonId, onOpenCustomer }: { salonId: string; onOpenCust
                       onClick={() => onOpenCustomer({ id: m.customerId, name: m.name ?? t('customerFallback'), phone: m.phone })}
                     >
                       <p className="text-xs font-medium text-gray-900">{m.name ?? t('customerFallback')}</p>
-                      <p className="text-xs text-gray-400">{t('visitsSpent', { count: m.visits, amount: formatINR(m.totalSpend) })}</p>
+                      <p className="text-xs text-gray-400">{t('visitsSpent', { count: m.visits, amount: formatCurrency(m.totalSpend, salon?.currency) })}</p>
                     </button>
                     {selected === 'churned' && (
                       <button
@@ -426,7 +427,7 @@ function RetentionTab({ salonId, onOpenCustomer }: { salonId: string; onOpenCust
                   onClick={() => onOpenCustomer({ id: m.customerId, name: m.name ?? t('customerFallback'), phone: m.phone })}
                 >
                   <p className="text-xs font-medium text-gray-900">{m.name ?? t('customerFallback')}</p>
-                  <p className="text-xs text-gray-400">{t('visitsSpent', { count: m.visits, amount: formatINR(m.totalSpend) })}</p>
+                  <p className="text-xs text-gray-400">{t('visitsSpent', { count: m.visits, amount: formatCurrency(m.totalSpend, salon?.currency) })}</p>
                 </button>
                 <button
                   onClick={() => remind(m.name, m.phone)}

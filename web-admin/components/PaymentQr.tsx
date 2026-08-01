@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { QRCodeSVG } from 'qrcode.react';
-import { formatINR, type SalonSummary } from '@/lib/salon-api';
+import { formatCurrency, type SalonSummary } from '@/lib/salon-api';
 import { buildUpiLink, totalWithGst } from '@/lib/upi';
 
 /** Shown when payment method is UPI: computes the GST-adjusted total and
@@ -24,7 +24,7 @@ export function PaymentQr({ salon, price, note }: { salon: SalonSummary; price: 
   return (
     <div className="flex flex-col items-center gap-1.5 py-2 bg-gray-50 rounded-lg border border-gray-200">
       <QRCodeSVG value={link} size={140} />
-      <p className="text-base font-semibold text-gray-900 tabular-nums">{formatINR(amount)}</p>
+      <p className="text-base font-semibold text-gray-900 tabular-nums">{formatCurrency(amount, salon.currency)}</p>
       <p className="text-[11px] text-gray-400">
         {salon.gstEnabled ? t('includesGst', { rate: salon.gstRate }) : ''}
         {t('scanToPay')}

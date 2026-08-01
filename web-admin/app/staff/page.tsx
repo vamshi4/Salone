@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { PageLayout } from '@/components/PageLayout';
 import { AddStaffModal, ManageStaffModal, PayoutModal } from '@/components/StaffModals';
 import { Avatar } from '@/components/Avatar';
-import { formatINR, type Staff } from '@/lib/salon-api';
+import { formatCurrency, type Staff } from '@/lib/salon-api';
 import { isSameDay } from '@/lib/booking-helpers';
 import { useBookings, useCurrentSalon, useSelectedSalonId } from '@/lib/salon-queries';
 import { Plus, Search, Wallet, MoreHorizontal } from 'lucide-react';
@@ -83,7 +83,7 @@ export default function StaffPage() {
           </div>
           <div className="stat-tile">
             <p className="text-xs text-gray-500">{t('todaysTotal')}</p>
-            <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatINR(todayTotal)}</p>
+            <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatCurrency(todayTotal, salon?.currency)}</p>
           </div>
         </div>
 
@@ -141,7 +141,7 @@ export default function StaffPage() {
                   <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex items-center gap-2 text-xs">
                     <span className="text-gray-400">{t('today')}</span>
                     <span className="font-medium text-gray-900 tabular-nums">
-                      {t('serviceCount', { count: tally.count })} · {formatINR(tally.revenue)}
+                      {t('serviceCount', { count: tally.count })} · {formatCurrency(tally.revenue, salon?.currency)}
                     </span>
                   </div>
                 )}

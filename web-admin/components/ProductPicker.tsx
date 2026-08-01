@@ -1,5 +1,5 @@
 import { Minus, Plus } from 'lucide-react';
-import { formatINR, type Product, type ProductSaleItem } from '@/lib/salon-api';
+import { formatCurrency, type Product, type ProductSaleItem } from '@/lib/salon-api';
 
 export function productsTotal(products: Product[], selected: Map<string, number>): number {
   let total = 0;
@@ -23,10 +23,12 @@ export function ProductPicker({
   products,
   selected,
   onChange,
+  currency,
 }: {
   products: Product[];
   selected: Map<string, number>;
   onChange: (next: Map<string, number>) => void;
+  currency?: string | null;
 }) {
   const inStock = products.filter((p) => p.stockQty > 0);
   if (inStock.length === 0) return null;
@@ -49,7 +51,7 @@ export function ProductPicker({
           >
             <div className="min-w-0">
               <span className="font-medium text-gray-900">{p.name}</span>
-              <span className="text-gray-400 ml-1.5">{formatINR(p.retailPrice)}</span>
+              <span className="text-gray-400 ml-1.5">{formatCurrency(p.retailPrice, currency)}</span>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button

@@ -33,6 +33,3 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export function formatINR(amount: number) {
-  return `₹${amount.toLocaleString('en-IN')}`;
-}

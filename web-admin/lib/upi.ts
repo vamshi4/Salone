@@ -4,7 +4,9 @@ export function totalWithGst(amount: number, salon?: { gstEnabled?: boolean; gst
   return Math.round(amount * (1 + (salon.gstRate ?? 18) / 100) * 100) / 100;
 }
 
-/** Builds a `upi://pay` deep link that any UPI app can scan and pre-fill. */
+/** Builds a `upi://pay` deep link that any UPI app can scan and pre-fill.
+ * UPI is India-only, so `cu=INR` is hardcoded — PaymentMethodPicker only
+ * ever offers UPI as a payment method when the salon's currency is INR. */
 export function buildUpiLink({
   vpa,
   payeeName,

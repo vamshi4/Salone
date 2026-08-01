@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { PageLayout } from '@/components/PageLayout';
 import { ServiceModal } from '@/components/ServiceModal';
-import { formatINR, categoryIcon, type Service } from '@/lib/salon-api';
+import { formatCurrency, categoryIcon, type Service } from '@/lib/salon-api';
 import { useAddStarterServices, useCurrentSalon, useSelectedSalonId } from '@/lib/salon-queries';
 import { Plus, Search, Sparkles } from 'lucide-react';
 
@@ -114,7 +114,7 @@ export default function ServicesPage() {
                           {t('minutes', { count: s.duration })}{assignee ? ` · ${assignee}` : ''}
                         </span>
                       </span>
-                      <span className="text-xs font-medium text-gray-900 tabular-nums">{formatINR(s.price)}</span>
+                      <span className="text-xs font-medium text-gray-900 tabular-nums">{formatCurrency(s.price, salon?.currency)}</span>
                     </button>
                   );
                 })}

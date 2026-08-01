@@ -6,16 +6,22 @@ import type { PaymentMethod } from '@/lib/salon-api';
 export function PaymentMethodPicker({
   value,
   onChange,
+  currency,
 }: {
   value: PaymentMethod;
   onChange: (method: PaymentMethod) => void;
+  currency?: string | null;
 }) {
   const t = useTranslations('paymentMethod');
   const LABELS: Record<PaymentMethod, string> = { CASH: t('cash'), UPI: t('upi'), CARD: t('card') };
+  // UPI is India's real-time bank-transfer network — the deep link and GST
+  // math it drives (lib/upi.ts) are meaningless outside INR, so it's simply
+  // not offered as an option for salons priced in another currency.
+  const methods = (currency ?? 'INR') === 'INR' ? (['CASH', 'UPI', 'CARD'] as const) : (['CASH', 'CARD'] as const);
 
   return (
     <div className="flex gap-1.5">
-      {(['CASH', 'UPI', 'CARD'] as const).map((p) => (
+      {methods.map((p) => (
         <button
           key={p}
           onClick={() => onChange(p)}

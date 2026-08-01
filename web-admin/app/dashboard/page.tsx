@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAppStore } from '@/lib/store';
-import { formatINR, type Booking, type Customer } from '@/lib/salon-api';
+import { formatCurrency, type Booking, type Customer } from '@/lib/salon-api';
 import { loggedToday, needsAction, repeatCustomerIds } from '@/lib/booking-helpers';
 import {
   useAtRisk,
@@ -25,7 +25,7 @@ import {
   AlertTriangle,
   ChevronRight,
   Sparkles,
-  IndianRupee,
+  Banknote,
   Repeat,
   CalendarCheck,
 } from 'lucide-react';
@@ -123,7 +123,7 @@ export default function DashboardPage() {
             <p className="text-sm text-teal-50/90 mt-2">
               {t.rich('todaySummary', {
                 count: logged.length,
-                amount: formatINR(todayRevenue),
+                amount: formatCurrency(todayRevenue, salon?.currency),
                 bold: (chunks) => <span className="font-semibold text-white">{chunks}</span>,
               })}
             </p>
@@ -136,7 +136,7 @@ export default function DashboardPage() {
                   />
                 </div>
                 <p className="text-[11px] text-teal-100/80 mt-1.5">
-                  {t('goalProgress', { percent: Math.round(pace * 100), goal: formatINR(goal) })}
+                  {t('goalProgress', { percent: Math.round(pace * 100), goal: formatCurrency(goal, salon?.currency) })}
                 </p>
               </div>
             )}
@@ -253,9 +253,9 @@ export default function DashboardPage() {
           />
           <StatTile
             label={t('revenueToday')}
-            value={formatINR(todayRevenue)}
+            value={formatCurrency(todayRevenue, salon?.currency)}
             helper={t('allStaff')}
-            icon={IndianRupee}
+            icon={Banknote}
             iconClass="bg-emerald-50 text-emerald-600"
           />
           <StatTile
@@ -287,6 +287,7 @@ export default function DashboardPage() {
                   key={b.id}
                   booking={b}
                   isRepeat={repeats.has(b.customerId)}
+                  currency={salon?.currency}
                   onOpenCustomer={openCustomer}
                   onRebook={(bk) => setRebook(bk)}
                 />

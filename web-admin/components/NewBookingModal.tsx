@@ -6,7 +6,7 @@ import { Modal, Field, inputClass } from './Modal';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PaymentQr } from './PaymentQr';
 import { ProductPicker, productsTotal, toProductSaleItems } from './ProductPicker';
-import { formatINR, type Booking, type PaymentMethod } from '@/lib/salon-api';
+import { formatCurrency, type Booking, type PaymentMethod } from '@/lib/salon-api';
 import { useCurrentSalon, useCustomers, useLogBooking, useSelectedSalonId } from '@/lib/salon-queries';
 import { AuthError } from '@/lib/auth';
 
@@ -202,7 +202,7 @@ export function NewBookingModal({
                   {s.name}
                   <span className="text-gray-400">{t('minutes', { count: s.duration })}</span>
                 </span>
-                <span className="text-xs text-gray-900 tabular-nums">{formatINR(s.price)}</span>
+                <span className="text-xs text-gray-900 tabular-nums">{formatCurrency(s.price, salon?.currency)}</span>
               </label>
             ))}
             {availableServices.length === 0 && (
@@ -215,11 +215,11 @@ export function NewBookingModal({
           <>
             {salon && salon.products.some((p) => p.stockQty > 0) && (
               <Field label={t('addProducts')}>
-                <ProductPicker products={salon.products} selected={productQty} onChange={setProductQty} />
+                <ProductPicker products={salon.products} selected={productQty} onChange={setProductQty} currency={salon.currency} />
               </Field>
             )}
             <Field label={t('paymentMethod')}>
-              <PaymentMethodPicker value={payment} onChange={setPayment} />
+              <PaymentMethodPicker value={payment} onChange={setPayment} currency={salon?.currency} />
             </Field>
             {payment === 'UPI' && salon && (
               <PaymentQr salon={salon} price={total} note={`${name.trim() || t('bookingFallback')} · ${salon.name}`} />
@@ -242,7 +242,7 @@ export function NewBookingModal({
         <div className="flex items-center justify-between pt-3 border-t border-gray-200">
           <div>
             <p className="text-xs text-gray-400">{t('total')}</p>
-            <p className="text-base font-semibold text-gray-900 tabular-nums">{formatINR(total)}</p>
+            <p className="text-base font-semibold text-gray-900 tabular-nums">{formatCurrency(total, salon?.currency)}</p>
           </div>
           <button onClick={save} disabled={logBooking.isPending} className="btn-primary disabled:opacity-60">
             {logBooking.isPending ? t('saving') : completed ? t('logService') : t('scheduleBooking')}

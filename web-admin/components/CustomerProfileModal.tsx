@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Modal, Field, inputClass } from './Modal';
 import { StatusBadge } from './StatusBadge';
-import { formatINR, type Booking, type Customer } from '@/lib/salon-api';
+import { formatCurrency, type Booking, type Customer } from '@/lib/salon-api';
 import {
   useBookings,
   useCurrentSalon,
@@ -93,7 +93,7 @@ export function CustomerProfileModal({
           </div>
           <div className="bg-gray-50 rounded-md px-3 py-2">
             <p className="text-xs text-gray-500">{t('totalSpend')}</p>
-            <p className="text-base font-semibold text-gray-900 tabular-nums">{formatINR(totalSpend)}</p>
+            <p className="text-base font-semibold text-gray-900 tabular-nums">{formatCurrency(totalSpend, salon?.currency)}</p>
           </div>
           <div className="bg-gray-50 rounded-md px-3 py-2">
             <p className="text-xs text-gray-500">{t('lastVisit')}</p>
@@ -157,7 +157,7 @@ export function CustomerProfileModal({
                   </p>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xs text-gray-900 tabular-nums">{formatINR(b.price)}</span>
+                  <span className="text-xs text-gray-900 tabular-nums">{formatCurrency(b.price, salon?.currency)}</span>
                   <StatusBadge status={b.status} />
                 </div>
               </div>

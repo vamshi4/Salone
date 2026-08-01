@@ -6,7 +6,7 @@ import { Modal, Field } from './Modal';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PaymentQr } from './PaymentQr';
 import { ProductPicker, productsTotal, toProductSaleItems } from './ProductPicker';
-import { formatINR, type Booking, type PaymentMethod, type SalonSummary } from '@/lib/salon-api';
+import { formatCurrency, type Booking, type PaymentMethod, type SalonSummary } from '@/lib/salon-api';
 import { useSetBookingStatus } from '@/lib/salon-queries';
 
 export function CompleteBookingModal({
@@ -39,23 +39,23 @@ export function CompleteBookingModal({
   };
 
   return (
-    <Modal title={t('title')} subtitle={`${booking.customerName} · ${formatINR(booking.price)}`} onClose={onClose}>
+    <Modal title={t('title')} subtitle={`${booking.customerName} · ${formatCurrency(booking.price, salon.currency)}`} onClose={onClose}>
       <div className="space-y-3">
         {salon.products.some((p) => p.stockQty > 0) && (
           <Field label={t('addProducts')}>
-            <ProductPicker products={salon.products} selected={productQty} onChange={setProductQty} />
+            <ProductPicker products={salon.products} selected={productQty} onChange={setProductQty} currency={salon.currency} />
           </Field>
         )}
         <Field label={t('paymentMethod')}>
-          <PaymentMethodPicker value={payment} onChange={setPayment} />
+          <PaymentMethodPicker value={payment} onChange={setPayment} currency={salon.currency} />
         </Field>
         {payment === 'UPI' && (
           <PaymentQr salon={salon} price={total} note={`${booking.customerName} · ${salon.name}`} />
         )}
         {retailAddOn > 0 && (
           <p className="text-xs text-gray-500">
-            {t('breakdown', { service: formatINR(booking.price), products: formatINR(retailAddOn) })}{' '}
-            <span className="font-medium text-gray-900">{formatINR(total)}</span>
+            {t('breakdown', { service: formatCurrency(booking.price, salon.currency), products: formatCurrency(retailAddOn, salon.currency) })}{' '}
+            <span className="font-medium text-gray-900">{formatCurrency(total, salon.currency)}</span>
           </p>
         )}
         <button
