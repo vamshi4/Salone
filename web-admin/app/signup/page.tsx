@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -11,7 +11,7 @@ import { GoogleButton } from '@/components/GoogleButton';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { inputClass } from '@/components/Modal';
 import { trackCompleteRegistration } from '@/lib/pixel';
-import { COUNTRIES } from '@/lib/countries';
+import { COUNTRIES, detectCountryCode } from '@/lib/countries';
 
 export default function SignupPage() {
   const t = useTranslations('signup');
@@ -26,6 +26,9 @@ export default function SignupPage() {
   const [salonName, setSalonName] = useState('');
   const [address, setAddress] = useState('');
   const [countryCode, setCountryCode] = useState('IN');
+  // Detected post-hydration (not via useState's initializer) so the server
+  // and first client render match — navigator isn't available during SSR.
+  useEffect(() => setCountryCode(detectCountryCode()), []);
 
   const [googleIdToken, setGoogleIdToken] = useState<string | null>(null);
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);

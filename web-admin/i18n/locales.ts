@@ -12,6 +12,25 @@ export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = 'en';
 
+// Picks the best-supported locale out of a browser's `Accept-Language`
+// header (e.g. "en-US,en;q=0.9,hi;q=0.8") — used to pick a sensible first
+// render for visitors who haven't set the `locale` cookie yet, instead of
+// always defaulting to English. Falls back to defaultLocale on no match.
+export function parseAcceptLanguage(header: string | null | undefined): Locale {
+  if (!header) return defaultLocale;
+  const tags = header
+    .split(',')
+    .map((part) => {
+      const [tag, q] = part.trim().split(';q=');
+      return { tag: tag.split('-')[0].toLowerCase(), quality: q ? parseFloat(q) : 1 };
+    })
+    .sort((a, b) => b.quality - a.quality);
+  for (const { tag } of tags) {
+    if (locales.includes(tag as Locale)) return tag as Locale;
+  }
+  return defaultLocale;
+}
+
 export const localeNames: Record<Locale, string> = {
   en: 'English',
   hi: 'हिन्दी',

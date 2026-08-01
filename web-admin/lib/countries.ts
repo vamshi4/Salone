@@ -8,3 +8,19 @@ export const COUNTRIES = [
   { code: 'US', currency: 'USD' },
   { code: 'GB', currency: 'GBP' },
 ] as const;
+
+// Pre-fills the signup country/currency picker from the browser's own
+// language list (e.g. "en-GB" -> GB, "ar-AE" -> AE) — it stays a manual,
+// editable choice, never used to silently change an existing salon's
+// already-saved currency. Falls back to India, this product's home market.
+export function detectCountryCode(): (typeof COUNTRIES)[number]['code'] {
+  if (typeof navigator === 'undefined') return 'IN';
+  const codes = new Set(COUNTRIES.map((c) => c.code));
+  for (const tag of navigator.languages ?? [navigator.language]) {
+    const region = tag.split('-')[1]?.toUpperCase();
+    if (region && codes.has(region as (typeof COUNTRIES)[number]['code'])) {
+      return region as (typeof COUNTRIES)[number]['code'];
+    }
+  }
+  return 'IN';
+}
