@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import Script from 'next/script'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale } from 'next-intl/server'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -11,14 +13,17 @@ export const metadata: Metadata = {
 }
 
 const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
+const RTL_LOCALES = new Set(['ar', 'fa', 'ur']);
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const locale = await getLocale();
+  const dir = RTL_LOCALES.has(locale) ? 'rtl' : 'ltr';
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang={locale} dir={dir} className={inter.variable}>
       <head>
         {/* Meta Pixel base code — loads on every page and auto-fires
             PageView. Event-specific tracking (e.g. CompleteRegistration on
@@ -41,7 +46,7 @@ export default function RootLayout({
         )}
       </head>
       <body className={inter.className}>
-        {children}
+        <NextIntlClientProvider>{children}</NextIntlClientProvider>
         {PIXEL_ID && (
           <noscript>
             {/* eslint-disable-next-line @next/next/no-img-element */}

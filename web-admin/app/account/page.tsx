@@ -1,26 +1,33 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { PageLayout } from '@/components/PageLayout';
 import { BookingLinkCard } from '@/components/BookingLinkCard';
 import { Field, inputClass } from '@/components/Modal';
 import { updateProfile, changePassword, AuthError } from '@/lib/auth';
 import { useAppStore } from '@/lib/store';
+import { locales, localeNames, type Locale } from '@/i18n/locales';
+import { setLocaleCookie } from '@/lib/locale';
 import { User, Lock, Globe, Store } from 'lucide-react';
 
 const TABS = [
-  { id: 'profile', label: 'Profile', icon: User },
-  { id: 'salon', label: 'Salon', icon: Store },
-  { id: 'security', label: 'Security', icon: Lock },
-  { id: 'preferences', label: 'Preferences', icon: Globe },
+  { id: 'profile', labelKey: 'tabProfile', icon: User },
+  { id: 'salon', labelKey: 'tabSalon', icon: Store },
+  { id: 'security', labelKey: 'tabSecurity', icon: Lock },
+  { id: 'preferences', labelKey: 'tabPreferences', icon: Globe },
 ] as const;
 
-function formatJoined(iso?: string) {
+function formatJoined(iso: string | undefined, locale: string) {
   if (!iso) return null;
-  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export default function AccountPage() {
+  const t = useTranslations('account');
+  const locale = useLocale();
+  const router = useRouter();
   const user = useAppStore((s) => s.user);
   const setUser = useAppStore((s) => s.setUser);
   const salons = useAppStore((s) => s.salons);
@@ -130,10 +137,15 @@ export default function AccountPage() {
     }
   };
 
-  const joined = formatJoined(user?.createdAt);
+  const changeLocale = (next: Locale) => {
+    setLocaleCookie(next);
+    router.refresh();
+  };
+
+  const joined = formatJoined(user?.createdAt, locale);
 
   return (
-    <PageLayout title="Account" subtitle="Your profile and salon settings">
+    <PageLayout title={t('title')} subtitle={t('subtitle')}>
       <div className="space-y-4">
         {/* Plan banner */}
         <div className="flex items-center justify-between card px-4 py-3">
@@ -143,28 +155,28 @@ export default function AccountPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-              {joined && <p className="text-xs text-gray-400">Joined {joined}</p>}
+              {joined && <p className="text-xs text-gray-400">{t('joined', { date: joined })}</p>}
             </div>
           </div>
           <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium">
-            Free plan
+            {t('freePlan')}
           </span>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-1 bg-gray-100 p-0.5 rounded-md w-fit">
-          {TABS.map((t) => {
-            const Icon = t.icon;
+          {TABS.map((tabItem) => {
+            const Icon = tabItem.icon;
             return (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
+                key={tabItem.id}
+                onClick={() => setTab(tabItem.id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-medium text-xs transition-colors ${
-                  tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                  tab === tabItem.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
                 <Icon size={13} />
-                {t.label}
+                {t(tabItem.labelKey)}
               </button>
             );
           })}
@@ -173,19 +185,19 @@ export default function AccountPage() {
         {tab === 'profile' && (
           <div className="card p-4 space-y-3 max-w-lg">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Your name">
+              <Field label={t('yourName')}>
                 <input className={inputClass} value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
               </Field>
-              <Field label="Phone">
+              <Field label={t('phone')}>
                 <input className={inputClass} value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} />
               </Field>
             </div>
-            <Field label="Email">
-              <input className={inputClass} value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} placeholder="you@example.com" />
+            <Field label={t('email')}>
+              <input className={inputClass} value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} placeholder={t('emailPlaceholder')} />
             </Field>
             {profileError && <p className="text-xs text-red-600">{profileError}</p>}
             <button onClick={saveProfile} disabled={profileSaving} className="btn-primary disabled:opacity-60">
-              {profileSaving ? 'Saving…' : profileSaved ? 'Saved' : 'Save changes'}
+              {profileSaving ? t('saving') : profileSaved ? t('saved') : t('save')}
             </button>
           </div>
         )}
@@ -193,16 +205,16 @@ export default function AccountPage() {
         {tab === 'salon' && (
           <div className="card p-4 space-y-3 max-w-lg">
             {!salon ? (
-              <p className="text-xs text-gray-400">No salon found on your account yet.</p>
+              <p className="text-xs text-gray-400">{t('noSalon')}</p>
             ) : (
               <>
-                <Field label="Salon name">
+                <Field label={t('salonName')}>
                   <input className={inputClass} value={salonName} onChange={(e) => setSalonName(e.target.value)} />
                 </Field>
-                <Field label="Address">
+                <Field label={t('address')}>
                   <input className={inputClass} value={address} onChange={(e) => setAddress(e.target.value)} />
                 </Field>
-                <Field label="Daily revenue goal (₹)">
+                <Field label={t('dailyGoal')}>
                   <input
                     type="number"
                     className={inputClass}
@@ -212,11 +224,9 @@ export default function AccountPage() {
                   />
                 </Field>
                 <p className="text-xs text-gray-400">
-                  {salons.length > 1
-                    ? "You have multiple branches — this updates your account's primary salon record."
-                    : 'The goal powers the pace bar on your Home briefing.'}
+                  {salons.length > 1 ? t('goalHelperMulti') : t('goalHelperSingle')}
                 </p>
-                <Field label="UPI ID">
+                <Field label={t('upiId')}>
                   <input
                     className={inputClass}
                     value={upiId}
@@ -224,13 +234,11 @@ export default function AccountPage() {
                     placeholder="yoursalon@okhdfcbank"
                   />
                 </Field>
-                <p className="text-xs text-gray-400 -mt-2">
-                  Shown as a scannable payment QR when you complete a booking with UPI.
-                </p>
+                <p className="text-xs text-gray-400 -mt-2">{t('upiHelper')}</p>
                 <div className="flex items-center justify-between px-3 py-2.5 rounded-md bg-gray-50">
                   <div>
-                    <p className="text-xs font-medium text-gray-900">GST registered</p>
-                    <p className="text-xs text-gray-400">Adds GST on top of the total shown on the UPI QR</p>
+                    <p className="text-xs font-medium text-gray-900">{t('gstRegistered')}</p>
+                    <p className="text-xs text-gray-400">{t('gstHelper')}</p>
                   </div>
                   <button
                     onClick={() => setGstEnabled((v) => !v)}
@@ -242,7 +250,7 @@ export default function AccountPage() {
                   </button>
                 </div>
                 {gstEnabled && (
-                  <Field label="GST rate (%)">
+                  <Field label={t('gstRate')}>
                     <input
                       type="number"
                       className={inputClass}
@@ -254,7 +262,7 @@ export default function AccountPage() {
                 )}
                 {salonError && <p className="text-xs text-red-600">{salonError}</p>}
                 <button onClick={saveSalon} disabled={salonSaving} className="btn-primary disabled:opacity-60">
-                  {salonSaving ? 'Saving…' : salonSaved ? 'Saved' : 'Save changes'}
+                  {salonSaving ? t('saving') : salonSaved ? t('saved') : t('save')}
                 </button>
               </>
             )}
@@ -269,14 +277,14 @@ export default function AccountPage() {
 
         {tab === 'security' && (
           <div className="card p-4 space-y-3 max-w-lg">
-            <Field label="Current password">
+            <Field label={t('currentPassword')}>
               <input type="password" className={inputClass} value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="New password">
+              <Field label={t('newPassword')}>
                 <input type="password" className={inputClass} value={pwNew} onChange={(e) => setPwNew(e.target.value)} />
               </Field>
-              <Field label="Confirm new password">
+              <Field label={t('confirmNewPassword')}>
                 <input type="password" className={inputClass} value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} />
               </Field>
             </div>
@@ -284,7 +292,7 @@ export default function AccountPage() {
               <p className={`text-xs ${pwError ? 'text-red-600' : 'text-green-700'}`}>{pwMessage}</p>
             )}
             <button onClick={submitPasswordChange} disabled={pwSaving} className="btn-primary disabled:opacity-60">
-              {pwSaving ? 'Updating…' : 'Update password'}
+              {pwSaving ? t('updating') : t('updatePassword')}
             </button>
           </div>
         )}
@@ -293,20 +301,25 @@ export default function AccountPage() {
           <div className="card p-4 space-y-3 max-w-lg">
             <div className="flex items-center justify-between px-3 py-2.5 rounded-md bg-gray-50">
               <div>
-                <p className="text-xs font-medium text-gray-900">Language</p>
-                <p className="text-xs text-gray-400">Interface language</p>
+                <p className="text-xs font-medium text-gray-900">{t('language')}</p>
+                <p className="text-xs text-gray-400">{t('languageHelper')}</p>
               </div>
-              <select className={`${inputClass} w-36`}>
-                <option>English</option>
-                <option>हिन्दी</option>
-                <option>తెలుగు</option>
-                <option>தமிழ்</option>
+              <select
+                className={`${inputClass} w-36`}
+                value={locale}
+                onChange={(e) => changeLocale(e.target.value as Locale)}
+              >
+                {locales.map((code) => (
+                  <option key={code} value={code}>
+                    {localeNames[code]}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="flex items-center justify-between px-3 py-2.5 rounded-md bg-gray-50">
               <div>
-                <p className="text-xs font-medium text-gray-900">Country and currency</p>
-                <p className="text-xs text-gray-400">Formats prices and phone numbers</p>
+                <p className="text-xs font-medium text-gray-900">{t('countryCurrency')}</p>
+                <p className="text-xs text-gray-400">{t('countryCurrencyHelper')}</p>
               </div>
               <select className={`${inputClass} w-36`}>
                 <option>India (₹)</option>
@@ -314,7 +327,7 @@ export default function AccountPage() {
                 <option>USA ($)</option>
               </select>
             </div>
-            <p className="text-xs text-gray-400">Preferences are saved on this device only.</p>
+            <p className="text-xs text-gray-400">{t('savedLocally')}</p>
           </div>
         )}
       </div>

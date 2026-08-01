@@ -18,6 +18,7 @@ import {
 import { useAppStore } from '@/lib/store';
 import { logoutLocal } from '@/lib/auth';
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 // Below this width the sidebar becomes a slide-in overlay drawer instead of
 // a permanent rail — a fixed 128px rail eats too much of a ~375-430px phone
@@ -31,6 +32,7 @@ export function Sidebar({
   mobileOpen: boolean;
   onCloseMobile: () => void;
 }) {
+  const t = useTranslations('nav');
   const pathname = usePathname();
   const logout = useAppStore((state) => state.logout);
   const [collapsed, setCollapsed] = useState(false);
@@ -73,15 +75,15 @@ export function Sidebar({
   };
 
   const mainItems = [
-    { href: '/dashboard', label: 'Home', icon: Home },
-    { href: '/bookings', label: 'Bookings', icon: Calendar },
-    { href: '/staff', label: 'Staff', icon: Users },
-    { href: '/insights', label: 'Insights', icon: BarChart3 },
-    { href: '/services', label: 'Services', icon: Zap },
+    { href: '/dashboard', label: t('home'), icon: Home },
+    { href: '/bookings', label: t('bookings'), icon: Calendar },
+    { href: '/staff', label: t('staff'), icon: Users },
+    { href: '/insights', label: t('insights'), icon: BarChart3 },
+    { href: '/services', label: t('services'), icon: Zap },
   ];
 
   const managementItems = [
-    { href: '/products', label: 'Inventory', icon: Package },
+    { href: '/products', label: t('inventory'), icon: Package },
   ];
 
   const isActive = (href: string) => pathname === href;
@@ -128,7 +130,7 @@ export function Sidebar({
           <button
             onClick={isMobile ? onCloseMobile : toggleCollapse}
             className="p-1 hover:bg-white/10 rounded-md text-teal-100/60 hover:text-white transition-colors flex-shrink-0"
-            title={isMobile ? 'Close' : collapsed ? 'Expand' : 'Collapse'}
+            title={isMobile ? t('close') : collapsed ? t('expand') : t('collapse')}
           >
             {isMobile ? (
               <X size={16} />
@@ -140,7 +142,7 @@ export function Sidebar({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto no-scrollbar px-2 pb-2">
-          {sectionLabel('Main')}
+          {sectionLabel(t('main'))}
           <div className="space-y-1">
             {mainItems.map((item) => {
               const Icon = item.icon;
@@ -159,7 +161,7 @@ export function Sidebar({
             })}
           </div>
 
-          {sectionLabel('Management')}
+          {sectionLabel(t('management'))}
           <div className="space-y-1">
             {managementItems.map((item) => {
               const Icon = item.icon;
@@ -178,16 +180,16 @@ export function Sidebar({
             })}
           </div>
 
-          {sectionLabel('Account')}
+          {sectionLabel(t('account'))}
           <div className="space-y-1">
             <Link
               href="/account"
-              title={effectiveCollapsed ? 'Account' : ''}
+              title={effectiveCollapsed ? t('account') : ''}
               onClick={closeOnMobileNav}
               className={itemClass(isActive('/account'))}
             >
               <Settings size={16} />
-              {!effectiveCollapsed && <span>Account</span>}
+              {!effectiveCollapsed && <span>{t('account')}</span>}
             </Link>
           </div>
         </nav>
@@ -200,13 +202,13 @@ export function Sidebar({
               logout();
               window.location.href = '/login';
             }}
-            title={effectiveCollapsed ? 'Logout' : ''}
+            title={effectiveCollapsed ? t('logout') : ''}
             className={`flex items-center rounded-lg text-xs transition-colors text-teal-100/60 hover:text-white hover:bg-white/10 w-full ${
               effectiveCollapsed ? 'justify-center p-2' : 'gap-2 px-2 py-1.5'
             }`}
           >
             <LogOut size={16} />
-            {!effectiveCollapsed && <span>Logout</span>}
+            {!effectiveCollapsed && <span>{t('logout')}</span>}
           </button>
         </div>
       </aside>

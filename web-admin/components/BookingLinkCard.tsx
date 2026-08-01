@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Copy, Check, Share2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { API_URL } from '@/lib/api';
 
 export function BookingLinkCard({ salonId, salonName }: { salonId: string; salonName: string }) {
+  const t = useTranslations('bookingLink');
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
   const link = `${API_URL}/book/${salonId}`;
@@ -37,7 +39,7 @@ export function BookingLinkCard({ salonId, salonName }: { salonId: string; salon
 
   const shareLink = async () => {
     if (navigator.share) {
-      await navigator.share({ title: salonName, text: `Book with ${salonName}`, url: link });
+      await navigator.share({ title: salonName, text: t('shareText', { salonName }), url: link });
     } else {
       await copyLink();
     }
@@ -49,25 +51,23 @@ export function BookingLinkCard({ salonId, salonName }: { salonId: string; salon
         <QRCodeSVG value={link} size={72} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-gray-900">Customer booking link</p>
+        <p className="text-xs font-medium text-gray-900">{t('title')}</p>
         <p className="text-xs text-gray-400 truncate mt-0.5">{link}</p>
-        <p className="text-xs text-gray-400 mt-1">
-          Customers can scan this QR code or use the link to book with you directly — no app needed.
-        </p>
+        <p className="text-xs text-gray-400 mt-1">{t('helper')}</p>
         <div className="flex items-center gap-3 mt-2">
           <button
             onClick={copyLink}
             className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 hover:text-primary-dark"
           >
             {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
-            {copied ? 'Copied' : copyFailed ? "Couldn't copy — select manually" : 'Copy link'}
+            {copied ? t('copied') : copyFailed ? t('copyFailed') : t('copy')}
           </button>
           <button
             onClick={shareLink}
             className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 hover:text-primary-dark"
           >
             <Share2 size={14} />
-            Share
+            {t('share')}
           </button>
         </div>
       </div>
