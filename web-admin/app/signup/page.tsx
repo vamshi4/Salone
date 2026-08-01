@@ -11,7 +11,7 @@ import { GoogleButton } from '@/components/GoogleButton';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { inputClass } from '@/components/Modal';
 import { trackCompleteRegistration } from '@/lib/pixel';
-import { COUNTRIES, detectCountryCode } from '@/lib/countries';
+import { COUNTRIES, DIAL_CODES, PHONE_PLACEHOLDERS, detectCountryCode } from '@/lib/countries';
 
 export default function SignupPage() {
   const t = useTranslations('signup');
@@ -127,7 +127,20 @@ export default function SignupPage() {
               </div>
               <div>
                 <label htmlFor="signup_phone" className="block text-xs font-medium text-gray-700 mb-1">{t('phoneNumber')}</label>
-                <input id="signup_phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98765 43210" autoComplete="tel" className={inputClass} required />
+                <div className="flex items-stretch">
+                  <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-xs text-gray-500">
+                    +{DIAL_CODES[country.code]}
+                  </span>
+                  <input
+                    id="signup_phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={PHONE_PLACEHOLDERS[country.code]}
+                    autoComplete="tel"
+                    className={`${inputClass} rounded-l-none`}
+                    required
+                  />
+                </div>
               </div>
             </div>
 
