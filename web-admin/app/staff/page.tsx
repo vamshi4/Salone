@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { PageLayout } from '@/components/PageLayout';
 import { AddStaffModal, ManageStaffModal, PayoutModal } from '@/components/StaffModals';
 import { Avatar } from '@/components/Avatar';
@@ -18,6 +19,7 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
 }
 
 export default function StaffPage() {
+  const t = useTranslations('staff');
   const salonId = useSelectedSalonId();
   const salon = useCurrentSalon();
   const { data: bookings = [] } = useBookings(salonId);
@@ -49,9 +51,9 @@ export default function StaffPage() {
 
   if (!salonId) {
     return (
-      <PageLayout title="Staff" subtitle="Your team">
+      <PageLayout title={t('title')} subtitle={t('subtitle')}>
         <div className="card px-4 py-6 text-center">
-          <p className="text-xs text-gray-400">No salon selected yet.</p>
+          <p className="text-xs text-gray-400">{t('noSalonYet')}</p>
         </div>
       </PageLayout>
     );
@@ -59,12 +61,12 @@ export default function StaffPage() {
 
   return (
     <PageLayout
-      title="Staff"
-      subtitle="Your team"
+      title={t('title')}
+      subtitle={t('subtitle')}
       action={
         <button onClick={() => setShowAdd(true)} className="btn-primary">
           <Plus size={13} />
-          Add staff
+          {t('addStaff')}
         </button>
       }
     >
@@ -72,15 +74,15 @@ export default function StaffPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="stat-tile">
-            <p className="text-xs text-gray-500">Staff</p>
+            <p className="text-xs text-gray-500">{t('staffLabel')}</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{staff.length}</p>
           </div>
           <div className="stat-tile">
-            <p className="text-xs text-gray-500">Active</p>
+            <p className="text-xs text-gray-500">{t('active')}</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{activeCount}</p>
           </div>
           <div className="stat-tile">
-            <p className="text-xs text-gray-500">Today's total</p>
+            <p className="text-xs text-gray-500">{t('todaysTotal')}</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatINR(todayTotal)}</p>
           </div>
         </div>
@@ -91,14 +93,14 @@ export default function StaffPage() {
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               className="w-full pl-8 pr-3 py-1.5 rounded-md text-xs bg-white border border-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary/40"
-              placeholder="Search name or phone"
+              placeholder={t('searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <Chip label="All" selected={filter === 'all'} onClick={() => setFilter('all')} />
-          <Chip label="Active" selected={filter === 'active'} onClick={() => setFilter('active')} />
-          <Chip label="Inactive" selected={filter === 'inactive'} onClick={() => setFilter('inactive')} />
+          <Chip label={t('all')} selected={filter === 'all'} onClick={() => setFilter('all')} />
+          <Chip label={t('active')} selected={filter === 'active'} onClick={() => setFilter('active')} />
+          <Chip label={t('inactive')} selected={filter === 'inactive'} onClick={() => setFilter('inactive')} />
         </div>
 
         {/* Staff cards */}
@@ -117,18 +119,18 @@ export default function StaffPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900">{m.name}</p>
                     <p className="text-xs text-gray-400 truncate">
-                      {isActive ? (svcNames || 'No services yet') : 'Not active'}
+                      {isActive ? (svcNames || t('noServicesYet')) : t('notActive')}
                     </p>
                   </div>
                   <button
-                    title="Payouts"
+                    title={t('payouts')}
                     onClick={() => setPayout(m)}
                     className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
                   >
                     <Wallet size={15} className="text-gray-400" />
                   </button>
                   <button
-                    title="Manage"
+                    title={t('manage')}
                     onClick={() => setManage(m)}
                     className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
                   >
@@ -137,9 +139,9 @@ export default function StaffPage() {
                 </div>
                 {isActive && (
                   <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex items-center gap-2 text-xs">
-                    <span className="text-gray-400">Today</span>
+                    <span className="text-gray-400">{t('today')}</span>
                     <span className="font-medium text-gray-900 tabular-nums">
-                      {tally.count} {tally.count === 1 ? 'service' : 'services'} · {formatINR(tally.revenue)}
+                      {t('serviceCount', { count: tally.count })} · {formatINR(tally.revenue)}
                     </span>
                   </div>
                 )}
@@ -148,7 +150,7 @@ export default function StaffPage() {
           })}
           {filtered.length === 0 && (
             <div className="card px-4 py-6 text-center">
-              <p className="text-xs text-gray-400">No staff match this filter.</p>
+              <p className="text-xs text-gray-400">{t('noMatch')}</p>
             </div>
           )}
         </div>

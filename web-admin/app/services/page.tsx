@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { PageLayout } from '@/components/PageLayout';
 import { ServiceModal } from '@/components/ServiceModal';
 import { formatINR, categoryIcon, type Service } from '@/lib/salon-api';
@@ -16,6 +17,7 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
 }
 
 export default function ServicesPage() {
+  const t = useTranslations('services');
   const salonId = useSelectedSalonId();
   const salon = useCurrentSalon();
   const addStarter = useAddStarterServices(salonId ?? '');
@@ -42,9 +44,9 @@ export default function ServicesPage() {
 
   if (!salonId) {
     return (
-      <PageLayout title="Services" subtitle="Your service catalog">
+      <PageLayout title={t('title')} subtitle={t('subtitle')}>
         <div className="card px-4 py-6 text-center">
-          <p className="text-xs text-gray-400">No salon selected yet.</p>
+          <p className="text-xs text-gray-400">{t('noSalonYet')}</p>
         </div>
       </PageLayout>
     );
@@ -52,12 +54,12 @@ export default function ServicesPage() {
 
   return (
     <PageLayout
-      title="Services"
-      subtitle="Your service catalog"
+      title={t('title')}
+      subtitle={t('subtitle')}
       action={
         <button onClick={() => setShowAdd(true)} className="btn-primary">
           <Plus size={13} />
-          Add service
+          {t('addService')}
         </button>
       }
     >
@@ -67,13 +69,13 @@ export default function ServicesPage() {
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               className="w-full pl-8 pr-3 py-1.5 rounded-md text-xs bg-white border border-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary/40"
-              placeholder="Search services"
+              placeholder={t('searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
           <div className="flex gap-1 overflow-x-auto">
-            <Chip label="All categories" selected={category === null} onClick={() => setCategory(null)} />
+            <Chip label={t('allCategories')} selected={category === null} onClick={() => setCategory(null)} />
             {categories.map((c) => (
               <Chip key={c} label={c} selected={category === c} onClick={() => setCategory(c)} />
             ))}
@@ -82,11 +84,11 @@ export default function ServicesPage() {
 
         {filtered.length === 0 ? (
           <div className="card px-4 py-8 text-center space-y-3">
-            <p className="text-xs text-gray-400">No services in the catalog yet.</p>
+            <p className="text-xs text-gray-400">{t('noCatalogYet')}</p>
             {services.length === 0 && (
               <button onClick={() => addStarter.mutate()} disabled={addStarter.isPending} className="btn-secondary mx-auto disabled:opacity-60">
                 <Sparkles size={13} />
-                {addStarter.isPending ? 'Adding…' : 'Add a starter set of common services'}
+                {addStarter.isPending ? t('adding') : t('addStarterSet')}
               </button>
             )}
           </div>
@@ -109,7 +111,7 @@ export default function ServicesPage() {
                       <span className="flex-1 min-w-0">
                         <span className="block text-xs font-medium text-gray-900">{s.name}</span>
                         <span className="block text-xs text-gray-400">
-                          {s.duration} min{assignee ? ` · ${assignee}` : ''}
+                          {t('minutes', { count: s.duration })}{assignee ? ` · ${assignee}` : ''}
                         </span>
                       </span>
                       <span className="text-xs font-medium text-gray-900 tabular-nums">{formatINR(s.price)}</span>

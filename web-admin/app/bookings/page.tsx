@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { PageLayout } from '@/components/PageLayout';
 import { NewBookingModal } from '@/components/NewBookingModal';
 import { CustomerProfileModal } from '@/components/CustomerProfileModal';
@@ -27,20 +28,23 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
 
 /** Pending / scheduled item with confirm–cancel actions. */
 function ActionCard({ booking, salon }: { booking: Booking; salon: SalonSummary }) {
+  const t = useTranslations('bookings');
+  const locale = useLocale();
   const setStatus = useSetBookingStatus(salon.id);
   const isPending = booking.status === 'PENDING' || booking.status === 'PENDING_RESCHEDULE';
   const [completing, setCompleting] = useState(false);
+  const dayLabel = formatDay(new Date(booking.time), locale);
 
   return (
     <div className="flex items-center justify-between px-3.5 py-2.5 bg-white border border-amber-200 rounded-lg">
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-900">
-          <span className="font-medium">{booking.serviceNames.join(' + ') || 'Service'}</span>
+          <span className="font-medium">{booking.serviceNames.join(' + ') || t('serviceFallback')}</span>
           <span className="text-gray-400"> · </span>
           <span className="text-gray-600">{booking.stylistName}</span>
         </p>
         <p className="text-xs text-gray-400 mt-0.5">
-          {booking.customerName} · {formatDay(new Date(booking.time))} {formatTime(booking.time)} ·{' '}
+          {booking.customerName} · {'key' in dayLabel ? t(dayLabel.key) : dayLabel.text} {formatTime(booking.time, locale)} ·{' '}
           {formatINR(booking.price)}
         </p>
       </div>
@@ -52,7 +56,7 @@ function ActionCard({ booking, salon }: { booking: Booking; salon: SalonSummary 
             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
           >
             <Check size={12} />
-            Confirm
+            {t('confirm')}
           </button>
         )}
         {!isPending && (
@@ -62,7 +66,7 @@ function ActionCard({ booking, salon }: { booking: Booking; salon: SalonSummary 
             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
           >
             <Check size={12} />
-            Done
+            {t('done')}
           </button>
         )}
         <button
@@ -71,7 +75,7 @@ function ActionCard({ booking, salon }: { booking: Booking; salon: SalonSummary 
           className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-60"
         >
           <X size={12} />
-          Cancel
+          {t('cancel')}
         </button>
       </div>
       {completing && (
@@ -82,6 +86,8 @@ function ActionCard({ booking, salon }: { booking: Booking; salon: SalonSummary 
 }
 
 export default function BookingsPage() {
+  const t = useTranslations('bookings');
+  const locale = useLocale();
   const salonId = useSelectedSalonId();
   const salon = useCurrentSalon();
   const { data: bookings = [], isLoading, isError } = useBookings(salonId);
@@ -137,9 +143,9 @@ export default function BookingsPage() {
 
   if (!salonId) {
     return (
-      <PageLayout title="Bookings" subtitle="The full service log">
+      <PageLayout title={t('title')} subtitle={t('subtitle')}>
         <div className="card px-4 py-6 text-center">
-          <p className="text-xs text-gray-400">No salon selected yet.</p>
+          <p className="text-xs text-gray-400">{t('noSalonYet')}</p>
         </div>
       </PageLayout>
     );
@@ -147,12 +153,12 @@ export default function BookingsPage() {
 
   return (
     <PageLayout
-      title="Bookings"
-      subtitle="The full service log"
+      title={t('title')}
+      subtitle={t('subtitle')}
       action={
         <button onClick={() => setShowNew(true)} className="btn-primary">
           <Plus size={13} />
-          New booking
+          {t('newBooking')}
         </button>
       }
     >
@@ -163,30 +169,30 @@ export default function BookingsPage() {
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               className="w-full pl-8 pr-3 py-1.5 rounded-md text-xs bg-white border border-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary/40"
-              placeholder="Search customer or service"
+              placeholder={t('searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
           <div className="flex gap-1 overflow-x-auto">
-            <Chip label="This week" selected={periodDays === 7} onClick={() => setPeriodDays(7)} />
-            <Chip label="All time" selected={periodDays === 0} onClick={() => setPeriodDays(0)} />
+            <Chip label={t('thisWeek')} selected={periodDays === 7} onClick={() => setPeriodDays(7)} />
+            <Chip label={t('allTime')} selected={periodDays === 0} onClick={() => setPeriodDays(0)} />
             <span className="w-px bg-gray-200 mx-1" />
-            <Chip label="All staff" selected={staffId === null} onClick={() => setStaffId(null)} />
+            <Chip label={t('allStaff')} selected={staffId === null} onClick={() => setStaffId(null)} />
             {staff.filter((s) => s.status === 'ACTIVE').map((s) => (
               <Chip key={s.stylistId} label={s.name} selected={staffId === s.stylistId} onClick={() => setStaffId(s.stylistId)} />
             ))}
           </div>
         </div>
 
-        {isLoading && <p className="text-xs text-gray-400">Loading bookings…</p>}
-        {isError && <p className="text-xs text-red-600">Could not load bookings. Try refreshing.</p>}
+        {isLoading && <p className="text-xs text-gray-400">{t('loading')}</p>}
+        {isError && <p className="text-xs text-red-600">{t('loadError')}</p>}
 
         {/* Needs action */}
         {pending.length > 0 && salon && (
           <div>
             <h2 className="text-sm font-semibold text-gray-900 mb-2">
-              Needs your response <span className="text-amber-600">({pending.length})</span>
+              {t('needsResponse')} <span className="text-amber-600">({pending.length})</span>
             </h2>
             <div className="space-y-2">
               {pending.map((b) => (
@@ -200,7 +206,7 @@ export default function BookingsPage() {
         {schedule.length > 0 && salon && (
           <div>
             <h2 className="text-sm font-semibold text-gray-900 mb-2">
-              Today's schedule <span className="text-gray-400">({schedule.length})</span>
+              {t('todaysSchedule')} <span className="text-gray-400">({schedule.length})</span>
             </h2>
             <div className="space-y-2">
               {schedule.map((b) => (
@@ -213,15 +219,15 @@ export default function BookingsPage() {
         {/* Period stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="stat-tile">
-            <p className="text-xs text-gray-500">Total</p>
+            <p className="text-xs text-gray-500">{t('total')}</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatINR(periodTotal)}</p>
           </div>
           <div className="stat-tile">
-            <p className="text-xs text-gray-500">Services</p>
+            <p className="text-xs text-gray-500">{t('servicesLabel')}</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{periodCount}</p>
           </div>
           <div className="stat-tile">
-            <p className="text-xs text-gray-500">Avg ticket</p>
+            <p className="text-xs text-gray-500">{t('avgTicket')}</p>
             <p className="text-xl font-semibold text-gray-900 tabular-nums mt-0.5">{formatINR(avgTicket)}</p>
           </div>
         </div>
@@ -229,31 +235,34 @@ export default function BookingsPage() {
         {/* Grouped log */}
         {byDay.length === 0 ? (
           <div className="card px-4 py-6 text-center">
-            <p className="text-xs text-gray-400">No bookings match this filter.</p>
+            <p className="text-xs text-gray-400">{t('noMatch')}</p>
           </div>
         ) : (
-          byDay.map(({ day, bookings: list }) => (
-            <div key={day.getTime()}>
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-xs font-semibold text-gray-500">{formatDay(day)}</p>
-                <p className="text-xs text-gray-400 tabular-nums">
-                  {formatINR(list.reduce((s, b) => s + b.price + b.retailTotal, 0))} · {list.length}{' '}
-                  {list.length === 1 ? 'service' : 'services'}
-                </p>
+          byDay.map(({ day, bookings: list }) => {
+            const dayLabel = formatDay(day, locale);
+            return (
+              <div key={day.getTime()}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs font-semibold text-gray-500">{'key' in dayLabel ? t(dayLabel.key) : dayLabel.text}</p>
+                  <p className="text-xs text-gray-400 tabular-nums">
+                    {formatINR(list.reduce((s, b) => s + b.price + b.retailTotal, 0))} ·{' '}
+                    {t('serviceCount', { count: list.length })}
+                  </p>
+                </div>
+                <div className="card divide-y divide-gray-100">
+                  {list.map((b) => (
+                    <BookingRow
+                      key={b.id}
+                      booking={b}
+                      isRepeat={repeats.has(b.customerId)}
+                      onOpenCustomer={openCustomer}
+                      onRebook={setRebook}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="card divide-y divide-gray-100">
-                {list.map((b) => (
-                  <BookingRow
-                    key={b.id}
-                    booking={b}
-                    isRepeat={repeats.has(b.customerId)}
-                    onOpenCustomer={openCustomer}
-                    onRebook={setRebook}
-                  />
-                ))}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

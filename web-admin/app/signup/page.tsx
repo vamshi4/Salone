@@ -3,21 +3,24 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Scissors, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { signup, fetchMe } from '@/lib/auth';
 import { useAppStore } from '@/lib/store';
 import { GoogleButton } from '@/components/GoogleButton';
+import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { inputClass } from '@/components/Modal';
 import { trackCompleteRegistration } from '@/lib/pixel';
 
 const COUNTRIES = [
-  { code: 'IN', label: 'India', currency: 'INR' },
-  { code: 'AE', label: 'UAE', currency: 'AED' },
-  { code: 'US', label: 'USA', currency: 'USD' },
-  { code: 'GB', label: 'UK', currency: 'GBP' },
-];
+  { code: 'IN', currency: 'INR' },
+  { code: 'AE', currency: 'AED' },
+  { code: 'US', currency: 'USD' },
+  { code: 'GB', currency: 'GBP' },
+] as const;
 
 export default function SignupPage() {
+  const t = useTranslations('signup');
   const router = useRouter();
   const setUser = useAppStore((s) => s.setUser);
   const setSalons = useAppStore((s) => s.setSalons);
@@ -54,11 +57,11 @@ export default function SignupPage() {
   };
 
   const validate = () => {
-    if (ownerName.trim().length < 2) return 'Enter your name';
-    if (phone.trim().length < 6) return 'Enter a valid phone number';
-    if (!googleIdToken && password.length < 6) return 'Password must be at least 6 characters';
-    if (salonName.trim().length < 2) return 'Enter your salon name';
-    if (address.trim().length < 5) return 'Enter your salon address';
+    if (ownerName.trim().length < 2) return t('errName');
+    if (phone.trim().length < 6) return t('errPhone');
+    if (!googleIdToken && password.length < 6) return t('errPasswordLength');
+    if (salonName.trim().length < 2) return t('errSalonName');
+    if (address.trim().length < 5) return t('errAddress');
     return null;
   };
 
@@ -86,7 +89,7 @@ export default function SignupPage() {
       setSalons(me?.salons ?? [salon]);
       router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign up failed. Please try again.');
+      setError(err instanceof Error ? err.message : t('errSignupFailed'));
     } finally {
       setLoading(false);
     }
@@ -94,14 +97,14 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-[#F4F6F8] flex items-center justify-center p-4 py-6">
-      <div className="w-full max-w-[300px]">
+      <div className="w-full max-w-[300px] space-y-3">
         <div className="card p-4 space-y-3">
           <div className="text-center">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center mx-auto shadow-sm">
               <Scissors size={16} className="text-white" />
             </div>
-            <h1 className="text-sm font-bold text-gray-900 mt-2">Create your account</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Set up your salon on Salone</p>
+            <h1 className="text-sm font-bold text-gray-900 mt-2">{t('title')}</h1>
+            <p className="text-xs text-gray-400 mt-0.5">{t('subtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-2">
@@ -112,21 +115,21 @@ export default function SignupPage() {
             )}
 
             <div>
-              <label htmlFor="signup_owner" className="block text-xs font-medium text-gray-700 mb-1">Your name</label>
-              <input id="signup_owner" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} placeholder="Priya Sharma" className={inputClass} required />
+              <label htmlFor="signup_owner" className="block text-xs font-medium text-gray-700 mb-1">{t('yourName')}</label>
+              <input id="signup_owner" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} placeholder={t('namePlaceholder')} className={inputClass} required />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label htmlFor="signup_country" className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+                <label htmlFor="signup_country" className="block text-xs font-medium text-gray-700 mb-1">{t('country')}</label>
                 <select id="signup_country" value={countryCode} onChange={(e) => setCountryCode(e.target.value)} className={inputClass}>
                   {COUNTRIES.map((c) => (
-                    <option key={c.code} value={c.code}>{c.label}</option>
+                    <option key={c.code} value={c.code}>{t(`countries.${c.code}`)}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label htmlFor="signup_phone" className="block text-xs font-medium text-gray-700 mb-1">Phone number</label>
+                <label htmlFor="signup_phone" className="block text-xs font-medium text-gray-700 mb-1">{t('phoneNumber')}</label>
                 <input id="signup_phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98765 43210" autoComplete="tel" className={inputClass} required />
               </div>
             </div>
@@ -135,7 +138,7 @@ export default function SignupPage() {
               <div className="flex items-center gap-2 px-2.5 py-1.5 bg-primary-50 border border-primary/20 rounded-md">
                 <CheckCircle2 size={13} className="text-primary flex-shrink-0" />
                 <span className="text-xs text-gray-700 flex-1 truncate">
-                  {googleEmail ? `Signed in as ${googleEmail}` : 'Signed in with Google'}
+                  {googleEmail ? t('signedInAs', { email: googleEmail }) : t('signedInGoogle')}
                 </span>
                 <button
                   type="button"
@@ -145,19 +148,19 @@ export default function SignupPage() {
                   }}
                   className="text-xs text-primary font-medium hover:underline flex-shrink-0"
                 >
-                  Use password
+                  {t('usePassword')}
                 </button>
               </div>
             ) : (
               <div>
-                <label htmlFor="signup_password" className="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                <label htmlFor="signup_password" className="block text-xs font-medium text-gray-700 mb-1">{t('password')}</label>
                 <div className="relative">
                   <input
                     id="signup_password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 6 characters"
+                    placeholder={t('passwordPlaceholder')}
                     autoComplete="new-password"
                     className={`${inputClass} pr-9`}
                     required
@@ -165,7 +168,7 @@ export default function SignupPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('hidePassword') : t('showPassword')}
                     className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                     tabIndex={-1}
                   >
@@ -178,17 +181,17 @@ export default function SignupPage() {
             <div className="pt-1 border-t border-gray-100" />
 
             <div>
-              <label htmlFor="signup_salon_name" className="block text-xs font-medium text-gray-700 mb-1">Salon name</label>
-              <input id="signup_salon_name" value={salonName} onChange={(e) => setSalonName(e.target.value)} placeholder="Lotus Salon & Spa" className={inputClass} required />
+              <label htmlFor="signup_salon_name" className="block text-xs font-medium text-gray-700 mb-1">{t('salonName')}</label>
+              <input id="signup_salon_name" value={salonName} onChange={(e) => setSalonName(e.target.value)} placeholder={t('salonNamePlaceholder')} className={inputClass} required />
             </div>
 
             <div>
-              <label htmlFor="signup_address" className="block text-xs font-medium text-gray-700 mb-1">Salon address</label>
-              <input id="signup_address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, area, city" className={inputClass} required />
+              <label htmlFor="signup_address" className="block text-xs font-medium text-gray-700 mb-1">{t('salonAddress')}</label>
+              <input id="signup_address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('addressPlaceholder')} className={inputClass} required />
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-              {loading ? 'Creating account…' : 'Create account'}
+              {loading ? t('creatingAccount') : t('createAccount')}
             </button>
           </form>
 
@@ -196,7 +199,7 @@ export default function SignupPage() {
             <>
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-px bg-gray-200" />
-                <span className="text-xs text-gray-400">or</span>
+                <span className="text-xs text-gray-400">{t('or')}</span>
                 <div className="flex-1 h-px bg-gray-200" />
               </div>
               <GoogleButton onToken={handleGoogleToken} onError={setError} text="signup_with" />
@@ -204,12 +207,13 @@ export default function SignupPage() {
           )}
 
           <p className="text-center text-xs text-gray-500">
-            Already have an account?{' '}
+            {t('alreadyHaveAccount')}{' '}
             <Link href="/login" className="text-primary font-semibold hover:underline">
-              Sign in
+              {t('signIn')}
             </Link>
           </p>
         </div>
+        <LocaleSwitcher />
       </div>
     </div>
   );

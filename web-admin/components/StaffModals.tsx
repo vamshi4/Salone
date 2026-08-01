@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Modal, Field, inputClass } from './Modal';
 import { formatINR, type AvailabilityRule, type Staff } from '@/lib/salon-api';
 import { X } from 'lucide-react';
@@ -20,11 +21,12 @@ import {
 } from '@/lib/salon-queries';
 import { AuthError } from '@/lib/auth';
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 // Mon..Sun display order, matching the mobile app's staff_manage_sheet.dart.
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 export function AddStaffModal({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('staffModals');
   const salonId = useSelectedSalonId();
   const addStaff = useAddStaff(salonId ?? '');
   const saveService = useSaveService(salonId ?? '');
@@ -56,7 +58,7 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
   const addExtraService = () => {
     const n = extraName.trim();
     const p = parseFloat(extraPrice);
-    if (n.length < 2 || !p || p <= 0) return setError('Enter a name and price for that service');
+    if (n.length < 2 || !p || p <= 0) return setError(t('add.errServicePrice'));
     setError('');
     setExtraServices((prev) => [...prev, { name: n, price: p }]);
     setExtraName('');
@@ -68,13 +70,13 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
   };
 
   const save = async () => {
-    if (!salonId) return setError('No salon selected');
-    if (!name.trim() || name.trim().length < 2) return setError('Enter a name');
-    if (!phone.trim() || phone.trim().length < 6) return setError('Enter a valid phone number');
-    if (!serviceName.trim() || serviceName.trim().length < 2) return setError('Enter a starter service they offer');
+    if (!salonId) return setError(t('add.errNoSalon'));
+    if (!name.trim() || name.trim().length < 2) return setError(t('add.errName'));
+    if (!phone.trim() || phone.trim().length < 6) return setError(t('add.errPhone'));
+    if (!serviceName.trim() || serviceName.trim().length < 2) return setError(t('add.errService'));
     const p = parseFloat(price);
-    if (!p || p <= 0) return setError('Enter a valid price for that service');
-    if (workDays.size === 0) return setError('Select at least one working day');
+    if (!p || p <= 0) return setError(t('add.errPrice'));
+    if (workDays.size === 0) return setError(t('add.errWorkDays'));
 
     setError('');
     setSaving(true);
@@ -99,31 +101,31 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
       }
       onClose();
     } catch (e) {
-      setError(e instanceof AuthError ? e.message : 'Could not add this staff member.');
+      setError(e instanceof AuthError ? e.message : t('add.errGeneric'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal title="Add staff" subtitle="New team member" onClose={onClose}>
+    <Modal title={t('add.title')} subtitle={t('add.subtitle')} onClose={onClose}>
       <div className="space-y-3">
-        <Field label="Name">
-          <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
+        <Field label={t('add.name')}>
+          <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('add.namePlaceholder')} />
         </Field>
-        <Field label="Phone">
+        <Field label={t('add.phone')}>
           <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98765 43210" />
         </Field>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="A service they offer">
+          <Field label={t('add.serviceOffered')}>
             <input
               className={inputClass}
               value={serviceName}
               onChange={(e) => setServiceName(e.target.value)}
-              placeholder="Haircut"
+              placeholder={t('add.serviceNamePlaceholder')}
             />
           </Field>
-          <Field label="Price (₹)">
+          <Field label={t('add.price')}>
             <input
               type="number"
               className={inputClass}
@@ -149,12 +151,12 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
         <div className="flex items-end gap-2">
-          <Field label="Add another service">
+          <Field label={t('add.addAnotherService')}>
             <input
               className={inputClass}
               value={extraName}
               onChange={(e) => setExtraName(e.target.value)}
-              placeholder="Beard trim"
+              placeholder={t('add.extraServicePlaceholder')}
             />
           </Field>
           <input
@@ -165,21 +167,19 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
             placeholder="₹"
           />
           <button type="button" onClick={addExtraService} className="btn-secondary">
-            Add
+            {t('add.addBtn')}
           </button>
         </div>
-        <p className="text-xs text-gray-400">
-          You can also add more services for them later from the Services tab.
-        </p>
+        <p className="text-xs text-gray-400">{t('add.laterHint')}</p>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Opens">
+          <Field label={t('add.opens')}>
             <input type="time" className={inputClass} value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
           </Field>
-          <Field label="Closes">
+          <Field label={t('add.closes')}>
             <input type="time" className={inputClass} value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
           </Field>
         </div>
-        <Field label="Working days">
+        <Field label={t('add.workingDays')}>
           <div className="flex flex-wrap gap-1.5">
             {DAY_ORDER.map((day) => (
               <button
@@ -190,7 +190,7 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
                   workDays.has(day) ? 'bg-primary-light text-primary-dark' : 'bg-gray-100 text-gray-500'
                 }`}
               >
-                {DAY_LABELS[day]}
+                {t(`days.${DAY_KEYS[day]}`)}
               </button>
             ))}
           </div>
@@ -198,7 +198,7 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex justify-end pt-2 border-t border-gray-200">
           <button onClick={save} disabled={saving} className="btn-primary disabled:opacity-60">
-            {saving ? 'Adding…' : 'Add staff'}
+            {saving ? t('add.adding') : t('add.title')}
           </button>
         </div>
       </div>
@@ -211,6 +211,7 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
  * + recreate the rule, since the backend rejects overlapping windows), no
  * separate "save hours" button. */
 function WorkingHoursSection({ stylistId }: { stylistId: string }) {
+  const t = useTranslations('staffModals');
   const { data: rules = [], isLoading } = useAvailabilityRules(stylistId);
   const addRule = useAddAvailabilityRule(stylistId);
   const deleteRule = useDeleteAvailabilityRule(stylistId);
@@ -251,7 +252,7 @@ function WorkingHoursSection({ stylistId }: { stylistId: string }) {
     }
   };
 
-  if (isLoading) return <p className="text-xs text-gray-400">Loading hours…</p>;
+  if (isLoading) return <p className="text-xs text-gray-400">{t('hours.loading')}</p>;
 
   return (
     <div className="space-y-1.5">
@@ -261,7 +262,7 @@ function WorkingHoursSection({ stylistId }: { stylistId: string }) {
         const busy = savingDay === day;
         return (
           <div key={day} className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-gray-50">
-            <span className="w-8 text-xs font-medium text-gray-700">{DAY_LABELS[day]}</span>
+            <span className="w-8 text-xs font-medium text-gray-700">{t(`days.${DAY_KEYS[day]}`)}</span>
             <input
               type="checkbox"
               checked={enabled}
@@ -288,7 +289,7 @@ function WorkingHoursSection({ stylistId }: { stylistId: string }) {
                 />
               </div>
             ) : (
-              <span className="ml-auto text-xs text-gray-400">Day off</span>
+              <span className="ml-auto text-xs text-gray-400">{t('hours.dayOff')}</span>
             )}
           </div>
         );
@@ -303,6 +304,7 @@ function WorkingHoursSection({ stylistId }: { stylistId: string }) {
  * canSetOwnPrice/canCancelBooking stay backend-enforced but UI-hidden until
  * there's a stylist-facing app for them to matter (mobile's own precedent). */
 export function ManageStaffModal({ member, onClose }: { member: Staff; onClose: () => void }) {
+  const t = useTranslations('staffModals');
   const salonId = useSelectedSalonId();
   const updateStaff = useUpdateStaff(salonId ?? '');
   const updateProfile = useUpdateStylistProfile(salonId ?? '');
@@ -318,19 +320,19 @@ export function ManageStaffModal({ member, onClose }: { member: Staff; onClose: 
   const showSalary = payType === 'SALARY' || payType === 'BOTH';
 
   const save = () => {
-    if (!salonId) return setError('No salon selected');
+    if (!salonId) return setError(t('add.errNoSalon'));
     if (!name.trim() || name.trim().length < 2 || !phone.trim() || phone.trim().length < 6) {
-      return setError('Enter a valid name and phone number');
+      return setError(t('manage.errValidNamePhone'));
     }
     const rate = parseInt(commissionRate, 10) || 0;
-    if (rate < 0 || rate > 100) return setError('Commission must be between 0 and 100');
+    if (rate < 0 || rate > 100) return setError(t('manage.errCommissionRange'));
     const salary = parseFloat(salaryAmount) || 0;
 
     setError('');
     updateProfile.mutate(
       { stylistId: member.stylistId, payload: { name: name.trim(), phone: phone.trim() } },
       {
-        onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not update staff details.'),
+        onError: (e) => setError(e instanceof AuthError ? e.message : t('manage.errUpdateDetails')),
       }
     );
     updateStaff.mutate(
@@ -340,7 +342,7 @@ export function ManageStaffModal({ member, onClose }: { member: Staff; onClose: 
       },
       {
         onSuccess: () => onClose(),
-        onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not save changes.'),
+        onError: (e) => setError(e instanceof AuthError ? e.message : t('manage.errSaveChanges')),
       }
     );
   };
@@ -348,25 +350,25 @@ export function ManageStaffModal({ member, onClose }: { member: Staff; onClose: 
   const saving = updateStaff.isPending || updateProfile.isPending;
 
   return (
-    <Modal title="Manage staff" subtitle={member.name} onClose={onClose} wide>
+    <Modal title={t('manage.title')} subtitle={member.name} onClose={onClose} wide>
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Name">
+          <Field label={t('add.name')}>
             <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Phone">
+          <Field label={t('add.phone')}>
             <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} />
           </Field>
         </div>
         <label className="flex items-center justify-between px-3 py-2 rounded-md bg-gray-50 cursor-pointer">
           <div>
-            <p className="text-xs font-medium text-gray-900">Active</p>
-            <p className="text-xs text-gray-400">Inactive staff can't take bookings</p>
+            <p className="text-xs font-medium text-gray-900">{t('manage.active')}</p>
+            <p className="text-xs text-gray-400">{t('manage.activeHelper')}</p>
           </div>
           <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="w-4 h-4" />
         </label>
 
-        <Field label="Pay type">
+        <Field label={t('manage.payType')}>
           <div className="flex gap-1 bg-gray-100 p-0.5 rounded-md w-fit">
             {(['COMMISSION', 'SALARY', 'BOTH'] as const).map((pt) => (
               <button
@@ -377,14 +379,14 @@ export function ManageStaffModal({ member, onClose }: { member: Staff; onClose: 
                   payType === pt ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
                 }`}
               >
-                {pt === 'COMMISSION' ? 'Commission' : pt === 'SALARY' ? 'Salary' : 'Both'}
+                {pt === 'COMMISSION' ? t('manage.commission') : pt === 'SALARY' ? t('manage.salary') : t('manage.both')}
               </button>
             ))}
           </div>
         </Field>
         <div className="grid grid-cols-2 gap-2">
           {showCommission && (
-            <Field label="Commission rate (%)">
+            <Field label={t('manage.commissionRate')}>
               <input
                 type="number"
                 className={inputClass}
@@ -394,7 +396,7 @@ export function ManageStaffModal({ member, onClose }: { member: Staff; onClose: 
             </Field>
           )}
           {showSalary && (
-            <Field label="Monthly salary (₹)">
+            <Field label={t('manage.monthlySalary')}>
               <input
                 type="number"
                 className={inputClass}
@@ -407,14 +409,14 @@ export function ManageStaffModal({ member, onClose }: { member: Staff; onClose: 
         </div>
 
         <div className="pt-2 border-t border-gray-200">
-          <p className="text-xs font-semibold text-gray-900 mb-2">Working hours</p>
+          <p className="text-xs font-semibold text-gray-900 mb-2">{t('manage.workingHours')}</p>
           <WorkingHoursSection stylistId={member.stylistId} />
         </div>
 
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex justify-end pt-2 border-t border-gray-200">
           <button onClick={save} disabled={saving} className="btn-primary disabled:opacity-60">
-            {saving ? 'Saving…' : 'Save changes'}
+            {saving ? t('manage.saving') : t('manage.saveChanges')}
           </button>
         </div>
       </div>
@@ -427,6 +429,8 @@ export function ManageStaffModal({ member, onClose }: { member: Staff; onClose: 
  * a salary "pay salary" action, and settlement history. Backed by the same
  * per-stylist earnings + payouts endpoints the mobile app uses. */
 export function PayoutModal({ member, onClose }: { member: Staff; onClose: () => void }) {
+  const t = useTranslations('staffModals');
+  const locale = useLocale();
   const salonId = useSelectedSalonId();
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
   const { data, isLoading } = useStylistEarnings(salonId ?? '', member.stylistId, period);
@@ -438,7 +442,7 @@ export function PayoutModal({ member, onClose }: { member: Staff; onClose: () =>
   const showSalary = data && (data.payType === 'SALARY' || data.payType === 'BOTH');
 
   return (
-    <Modal title="Payouts" subtitle={member.name} onClose={onClose} wide>
+    <Modal title={t('payout.title')} subtitle={member.name} onClose={onClose} wide>
       <div className="space-y-3">
         <div className="flex gap-1 bg-gray-100 p-0.5 rounded-md w-fit">
           {(['day', 'week', 'month'] as const).map((p) => (
@@ -449,40 +453,40 @@ export function PayoutModal({ member, onClose }: { member: Staff; onClose: () =>
                 period === p ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
               }`}
             >
-              {p === 'day' ? 'Today' : p === 'week' ? 'Week' : 'Month'}
+              {p === 'day' ? t('payout.today') : p === 'week' ? t('payout.week') : t('payout.month')}
             </button>
           ))}
         </div>
 
         {isLoading || !data ? (
-          <p className="text-xs text-gray-400">Loading…</p>
+          <p className="text-xs text-gray-400">{t('payout.loading')}</p>
         ) : (
           <>
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-gray-50 rounded-md px-3 py-2">
-                <p className="text-xs text-gray-500">Services</p>
+                <p className="text-xs text-gray-500">{t('payout.services')}</p>
                 <p className="text-base font-semibold text-gray-900 tabular-nums">{data.count}</p>
               </div>
               <div className="bg-gray-50 rounded-md px-3 py-2">
-                <p className="text-xs text-gray-500">Gross</p>
+                <p className="text-xs text-gray-500">{t('payout.gross')}</p>
                 <p className="text-base font-semibold text-gray-900 tabular-nums">{formatINR(data.grossRevenue)}</p>
               </div>
               <div className="bg-primary-light rounded-md px-3 py-2">
-                <p className="text-xs text-primary-dark/70">Their payout</p>
+                <p className="text-xs text-primary-dark/70">{t('payout.theirPayout')}</p>
                 <p className="text-base font-semibold text-primary-dark tabular-nums">{formatINR(data.totalPayout)}</p>
               </div>
             </div>
 
             {showCommission && (
               <div className="rounded-md bg-amber-50 px-3 py-2.5 space-y-2">
-                <p className="text-xs font-medium text-amber-800">Unpaid commission ({data.unpaidCount})</p>
+                <p className="text-xs font-medium text-amber-800">{t('payout.unpaidCommission', { count: data.unpaidCount })}</p>
                 <p className="text-lg font-bold text-amber-900 tabular-nums">{formatINR(data.unpaidTotal)}</p>
                 <button
                   onClick={() => settleCommission.mutate()}
                   disabled={data.unpaidCount === 0 || settleCommission.isPending}
                   className="btn-primary disabled:opacity-60 text-xs py-1.5"
                 >
-                  {settleCommission.isPending ? 'Marking as paid…' : 'Mark as paid'}
+                  {settleCommission.isPending ? t('payout.markingPaid') : t('payout.markAsPaid')}
                 </button>
               </div>
             )}
@@ -490,18 +494,18 @@ export function PayoutModal({ member, onClose }: { member: Staff; onClose: () =>
             {showSalary && (
               <div className={`rounded-md px-3 py-2.5 space-y-2 ${data.salaryPaidThisMonth ? 'bg-green-50' : 'bg-amber-50'}`}>
                 <p className={`text-xs font-medium ${data.salaryPaidThisMonth ? 'text-green-800' : 'text-amber-800'}`}>
-                  Salary this month
+                  {t('payout.salaryThisMonth')}
                 </p>
                 <p className="text-lg font-bold text-gray-900 tabular-nums">{formatINR(data.salaryAmount)}</p>
                 {data.salaryPaidThisMonth ? (
-                  <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-white text-green-700">Paid</span>
+                  <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-white text-green-700">{t('payout.paid')}</span>
                 ) : (
                   <button
                     onClick={() => paySalary.mutate()}
                     disabled={data.salaryAmount === 0 || paySalary.isPending}
                     className="btn-primary disabled:opacity-60 text-xs py-1.5"
                   >
-                    {paySalary.isPending ? 'Paying salary…' : 'Pay salary'}
+                    {paySalary.isPending ? t('payout.payingSalary') : t('payout.paySalary')}
                   </button>
                 )}
               </div>
@@ -510,18 +514,18 @@ export function PayoutModal({ member, onClose }: { member: Staff; onClose: () =>
         )}
 
         <div className="pt-2 border-t border-gray-200">
-          <p className="text-xs font-semibold text-gray-900 mb-1.5">Payout history ({payouts.length})</p>
+          <p className="text-xs font-semibold text-gray-900 mb-1.5">{t('payout.payoutHistory', { count: payouts.length })}</p>
           {payouts.length === 0 ? (
-            <p className="text-xs text-gray-400">No payouts yet.</p>
+            <p className="text-xs text-gray-400">{t('payout.noPayoutsYet')}</p>
           ) : (
             <div className="space-y-1.5 max-h-40 overflow-y-auto">
               {payouts.map((p) => (
                 <div key={p.id} className="flex items-center justify-between px-2.5 py-1.5 rounded-md bg-gray-50">
                   <div>
                     <p className="text-xs font-medium text-gray-900">
-                      {new Date(p.paidAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(p.paidAt).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
-                    <p className="text-xs text-gray-400">{p.isSalaryPayout ? 'Salary' : `${p.bookingCount} bookings`}</p>
+                    <p className="text-xs text-gray-400">{p.isSalaryPayout ? t('payout.salaryLabel') : t('payout.bookingsCount', { count: p.bookingCount })}</p>
                   </div>
                   <span className="text-xs font-semibold text-gray-900 tabular-nums">{formatINR(p.totalPayout)}</span>
                 </div>

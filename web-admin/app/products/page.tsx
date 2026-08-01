@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { PageLayout } from '@/components/PageLayout';
 import { ProductModal } from '@/components/ProductModal';
 import { formatINR, type Product } from '@/lib/salon-api';
@@ -17,6 +18,7 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
 }
 
 function ProductsContent() {
+  const t = useTranslations('products');
   const searchParams = useSearchParams();
   const salonId = useSelectedSalonId();
   const salon = useCurrentSalon();
@@ -44,9 +46,9 @@ function ProductsContent() {
 
   if (!salonId) {
     return (
-      <PageLayout title="Inventory" subtitle="Retail products and stock">
+      <PageLayout title={t('title')} subtitle={t('subtitle')}>
         <div className="card px-4 py-6 text-center">
-          <p className="text-xs text-gray-400">No salon selected yet.</p>
+          <p className="text-xs text-gray-400">{t('noSalonYet')}</p>
         </div>
       </PageLayout>
     );
@@ -54,12 +56,12 @@ function ProductsContent() {
 
   return (
     <PageLayout
-      title="Inventory"
-      subtitle="Retail products and stock"
+      title={t('title')}
+      subtitle={t('subtitle')}
       action={
         <button onClick={() => setShowAdd(true)} className="btn-primary">
           <Plus size={13} />
-          Add product
+          {t('addProduct')}
         </button>
       }
     >
@@ -69,21 +71,21 @@ function ProductsContent() {
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               className="w-full pl-8 pr-3 py-1.5 rounded-md text-xs bg-white border border-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary/40"
-              placeholder="Search products"
+              placeholder={t('searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
           <div className="flex gap-1 overflow-x-auto">
             <Chip
-              label="All"
+              label={t('all')}
               selected={!lowOnly && category === null}
               onClick={() => {
                 setLowOnly(false);
                 setCategory(null);
               }}
             />
-            <Chip label="Low stock" selected={lowOnly} onClick={() => setLowOnly(!lowOnly)} />
+            <Chip label={t('lowStock')} selected={lowOnly} onClick={() => setLowOnly(!lowOnly)} />
             {categories.map((c) => (
               <Chip
                 key={c}
@@ -101,7 +103,7 @@ function ProductsContent() {
         {filtered.length === 0 ? (
           <div className="card px-4 py-6 text-center">
             <p className="text-xs text-gray-400">
-              {lowOnly ? 'No products are low on stock. Nice.' : 'No products in the catalog yet.'}
+              {lowOnly ? t('noneLow') : t('noCatalogYet')}
             </p>
           </div>
         ) : (
@@ -125,10 +127,10 @@ function ProductsContent() {
                       <span className="flex-1 min-w-0">
                         <span className="block text-xs font-medium text-gray-900">{p.name}</span>
                         <span className="text-xs text-gray-400">
-                          {p.stockQty} in stock
+                          {t('inStock', { count: p.stockQty })}
                           {low && (
                             <span className="ml-1.5 px-1.5 py-px rounded bg-red-50 text-red-600 font-medium">
-                              low stock
+                              {t('lowStockTag')}
                             </span>
                           )}
                         </span>

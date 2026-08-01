@@ -2,6 +2,7 @@
 
 import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 
 declare global {
   interface Window {
@@ -29,6 +30,8 @@ export function GoogleButton({
   onError?: (message: string) => void;
   text?: 'signin_with' | 'signup_with';
 }) {
+  const t = useTranslations('googleButton');
+  const locale = useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
 
@@ -36,7 +39,7 @@ export function GoogleButton({
     if (!scriptReady || !ref.current || !window.google) return;
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
-      onError?.('Google sign-in is not configured');
+      onError?.(t('notConfigured'));
       return;
     }
     window.google.accounts.id.initialize({
@@ -54,11 +57,12 @@ export function GoogleButton({
 
   return (
     <>
+      {/* hl=<locale> localizes Google's own rendered button/consent text. */}
       <Script
-        src="https://accounts.google.com/gsi/client"
+        src={`https://accounts.google.com/gsi/client?hl=${locale}`}
         strategy="afterInteractive"
         onLoad={() => setScriptReady(true)}
-        onError={() => onError?.('Could not load Google sign-in')}
+        onError={() => onError?.(t('loadError'))}
       />
       <div ref={ref} className="flex justify-center min-h-[34px]" />
     </>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Modal, Field, inputClass } from './Modal';
 import { StatusBadge } from './StatusBadge';
 import { formatINR, type Booking, type Customer } from '@/lib/salon-api';
@@ -13,17 +14,17 @@ import {
 } from '@/lib/salon-queries';
 import { X } from 'lucide-react';
 
-function formatDay(iso: string) {
+function formatDay(iso: string, locale: string): { key: 'today' | 'yesterday' } | { text: string } {
   const d = new Date(iso);
   const today = new Date();
   const diff = Math.round((today.setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 86400000);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
-  return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  if (diff === 0) return { key: 'today' };
+  if (diff === 1) return { key: 'yesterday' };
+  return { text: d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' }) };
 }
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+function formatTime(iso: string, locale: string) {
+  return new Date(iso).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
 }
 
 export function CustomerProfileModal({
@@ -33,6 +34,8 @@ export function CustomerProfileModal({
   customer: Customer;
   onClose: () => void;
 }) {
+  const t = useTranslations('customerProfile');
+  const locale = useLocale();
   const salonId = useSelectedSalonId();
   const salon = useCurrentSalon();
   const { data: bookings = [] } = useBookings(salonId);
@@ -58,9 +61,11 @@ export function CustomerProfileModal({
   const totalSpend = done.reduce((s: number, b: Booking) => s + b.price, 0);
   const last = done[0];
 
+  const dayLabel = (raw: ReturnType<typeof formatDay>) => ('key' in raw ? t(raw.key) : raw.text);
+
   const addTag = () => {
-    const t = tagInput.trim().toLowerCase();
-    if (t && !tags.includes(t)) setTags([...tags, t]);
+    const tag = tagInput.trim().toLowerCase();
+    if (tag && !tags.includes(tag)) setTags([...tags, tag]);
     setTagInput('');
   };
 
@@ -83,39 +88,39 @@ export function CustomerProfileModal({
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-gray-50 rounded-md px-3 py-2">
-            <p className="text-xs text-gray-500">Visits</p>
+            <p className="text-xs text-gray-500">{t('visits')}</p>
             <p className="text-base font-semibold text-gray-900 tabular-nums">{done.length}</p>
           </div>
           <div className="bg-gray-50 rounded-md px-3 py-2">
-            <p className="text-xs text-gray-500">Total spend</p>
+            <p className="text-xs text-gray-500">{t('totalSpend')}</p>
             <p className="text-base font-semibold text-gray-900 tabular-nums">{formatINR(totalSpend)}</p>
           </div>
           <div className="bg-gray-50 rounded-md px-3 py-2">
-            <p className="text-xs text-gray-500">Last visit</p>
+            <p className="text-xs text-gray-500">{t('lastVisit')}</p>
             <p className="text-base font-semibold text-gray-900">
-              {last ? formatDay(last.time) : '—'}
+              {last ? dayLabel(formatDay(last.time, locale)) : '—'}
             </p>
           </div>
         </div>
 
         {/* Notes + tags */}
-        <Field label="Notes">
+        <Field label={t('notes')}>
           <textarea
             className={`${inputClass} min-h-[56px] resize-y`}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Preferences, allergies, reminders"
+            placeholder={t('notesPlaceholder')}
           />
         </Field>
-        <Field label="Tags">
+        <Field label={t('tags')}>
           <div className="flex flex-wrap items-center gap-1.5">
-            {tags.map((t) => (
+            {tags.map((tag) => (
               <span
-                key={t}
+                key={tag}
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-primary-light text-primary-dark"
               >
-                {t}
-                <button onClick={() => setTags(tags.filter((x) => x !== t))}>
+                {tag}
+                <button onClick={() => setTags(tags.filter((x) => x !== tag))}>
                   <X size={11} />
                 </button>
               </span>
@@ -125,30 +130,30 @@ export function CustomerProfileModal({
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addTag()}
-              placeholder="Add tag"
+              placeholder={t('addTagPlaceholder')}
             />
           </div>
         </Field>
         <button onClick={save} disabled={saveProfile.isPending} className="btn-secondary disabled:opacity-60">
-          {saveProfile.isPending ? 'Saving…' : saved ? 'Saved' : 'Save notes'}
+          {saveProfile.isPending ? t('saving') : saved ? t('saved') : t('saveNotes')}
         </button>
 
         {/* History */}
         <div>
-          <p className="text-xs font-semibold text-gray-900 mb-1.5">History</p>
+          <p className="text-xs font-semibold text-gray-900 mb-1.5">{t('history')}</p>
           <div className="border border-gray-200 rounded-md divide-y divide-gray-100">
             {history.length === 0 && (
-              <p className="px-3 py-3 text-xs text-gray-400">No bookings yet.</p>
+              <p className="px-3 py-3 text-xs text-gray-400">{t('noBookingsYet')}</p>
             )}
             {history.map((b: Booking) => (
               <div key={b.id} className="flex items-center justify-between px-3 py-2">
                 <div>
                   <p className="text-xs text-gray-900">
-                    {b.serviceNames.join(' + ') || 'Service'}
+                    {b.serviceNames.join(' + ') || t('serviceFallback')}
                     <span className="text-gray-400"> · {b.stylistName}</span>
                   </p>
                   <p className="text-xs text-gray-400">
-                    {formatDay(b.time)} · {formatTime(b.time)}
+                    {dayLabel(formatDay(b.time, locale))} · {formatTime(b.time, locale)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2.5">

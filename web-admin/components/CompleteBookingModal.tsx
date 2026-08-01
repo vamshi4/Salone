@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Modal, Field } from './Modal';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PaymentQr } from './PaymentQr';
@@ -17,6 +18,7 @@ export function CompleteBookingModal({
   salon: SalonSummary;
   onClose: () => void;
 }) {
+  const t = useTranslations('completeBooking');
   const [payment, setPayment] = useState<PaymentMethod>('CASH');
   const [productQty, setProductQty] = useState<Map<string, number>>(new Map());
   const setStatus = useSetBookingStatus(salon.id);
@@ -37,14 +39,14 @@ export function CompleteBookingModal({
   };
 
   return (
-    <Modal title="Complete booking" subtitle={`${booking.customerName} · ${formatINR(booking.price)}`} onClose={onClose}>
+    <Modal title={t('title')} subtitle={`${booking.customerName} · ${formatINR(booking.price)}`} onClose={onClose}>
       <div className="space-y-3">
         {salon.products.some((p) => p.stockQty > 0) && (
-          <Field label="Add products sold (optional)">
+          <Field label={t('addProducts')}>
             <ProductPicker products={salon.products} selected={productQty} onChange={setProductQty} />
           </Field>
         )}
-        <Field label="Payment method">
+        <Field label={t('paymentMethod')}>
           <PaymentMethodPicker value={payment} onChange={setPayment} />
         </Field>
         {payment === 'UPI' && (
@@ -52,7 +54,7 @@ export function CompleteBookingModal({
         )}
         {retailAddOn > 0 && (
           <p className="text-xs text-gray-500">
-            {formatINR(booking.price)} service + {formatINR(retailAddOn)} products ={' '}
+            {t('breakdown', { service: formatINR(booking.price), products: formatINR(retailAddOn) })}{' '}
             <span className="font-medium text-gray-900">{formatINR(total)}</span>
           </p>
         )}
@@ -61,7 +63,7 @@ export function CompleteBookingModal({
           disabled={setStatus.isPending}
           className="btn-primary w-full disabled:opacity-60"
         >
-          {setStatus.isPending ? 'Saving…' : 'Mark as done'}
+          {setStatus.isPending ? t('saving') : t('markAsDone')}
         </button>
       </div>
     </Modal>

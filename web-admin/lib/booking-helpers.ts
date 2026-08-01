@@ -8,17 +8,21 @@ export function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export function formatDay(d: Date) {
+// Returns a translation key for "today"/"yesterday", or a pre-formatted
+// string for anything older — callers translate the key via their own
+// useTranslations() since this file has no access to the current locale's
+// messages.
+export function formatDay(d: Date, locale: string): { key: 'today' | 'yesterday' } | { text: string } {
   const today = startOfDay(new Date());
   const day = startOfDay(d);
   const diff = Math.round((today.getTime() - day.getTime()) / 86400000);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
-  return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  if (diff === 0) return { key: 'today' };
+  if (diff === 1) return { key: 'yesterday' };
+  return { text: d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' }) };
 }
 
-export function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+export function formatTime(iso: string, locale: string) {
+  return new Date(iso).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
 }
 
 export function bookingsToday(bookings: Booking[]) {

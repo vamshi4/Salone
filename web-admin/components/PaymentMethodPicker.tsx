@@ -1,6 +1,7 @@
-import type { PaymentMethod } from '@/lib/salon-api';
+'use client';
 
-const LABELS: Record<PaymentMethod, string> = { CASH: 'Cash', UPI: 'UPI', CARD: 'Card' };
+import { useTranslations } from 'next-intl';
+import type { PaymentMethod } from '@/lib/salon-api';
 
 export function PaymentMethodPicker({
   value,
@@ -9,6 +10,9 @@ export function PaymentMethodPicker({
   value: PaymentMethod;
   onChange: (method: PaymentMethod) => void;
 }) {
+  const t = useTranslations('paymentMethod');
+  const LABELS: Record<PaymentMethod, string> = { CASH: t('cash'), UPI: t('upi'), CARD: t('card') };
+
   return (
     <div className="flex gap-1.5">
       {(['CASH', 'UPI', 'CARD'] as const).map((p) => (

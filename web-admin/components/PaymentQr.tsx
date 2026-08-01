@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatINR, type SalonSummary } from '@/lib/salon-api';
 import { buildUpiLink, totalWithGst } from '@/lib/upi';
@@ -5,12 +8,13 @@ import { buildUpiLink, totalWithGst } from '@/lib/upi';
 /** Shown when payment method is UPI: computes the GST-adjusted total and
  * renders a scannable `upi://pay` QR for the salon's own UPI ID. */
 export function PaymentQr({ salon, price, note }: { salon: SalonSummary; price: number; note?: string }) {
+  const t = useTranslations('paymentQr');
   const amount = totalWithGst(price, salon);
 
   if (!salon.upiId) {
     return (
       <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-        Add a UPI ID in Account &gt; Salon settings to show a payment QR here.
+        {t('noUpiId')}
       </p>
     );
   }
@@ -22,7 +26,8 @@ export function PaymentQr({ salon, price, note }: { salon: SalonSummary; price: 
       <QRCodeSVG value={link} size={140} />
       <p className="text-base font-semibold text-gray-900 tabular-nums">{formatINR(amount)}</p>
       <p className="text-[11px] text-gray-400">
-        {salon.gstEnabled ? `Includes ${salon.gstRate}% GST · ` : ''}Scan with any UPI app to pay
+        {salon.gstEnabled ? t('includesGst', { rate: salon.gstRate }) : ''}
+        {t('scanToPay')}
       </p>
     </div>
   );

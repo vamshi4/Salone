@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Modal, Field, inputClass } from './Modal';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PaymentQr } from './PaymentQr';
@@ -18,6 +19,7 @@ export function NewBookingModal({
   onClose: () => void;
   prefill?: Booking;
 }) {
+  const t = useTranslations('newBooking');
   const salonId = useSelectedSalonId();
   const salon = useCurrentSalon();
   const { data: customers = [] } = useCustomers(salonId);
@@ -67,12 +69,12 @@ export function NewBookingModal({
   };
 
   const save = () => {
-    if (!salonId) return setError('No salon selected');
-    if (!name.trim()) return setError('Enter the customer name');
-    if (!phone.trim()) return setError('Enter the customer phone number');
-    if (!stylistId) return setError('Pick a staff member');
-    if (selected.size === 0) return setError('Pick at least one service');
-    if (!completed && (!date || !time)) return setError('Pick a date and time');
+    if (!salonId) return setError(t('errNoSalon'));
+    if (!name.trim()) return setError(t('errName'));
+    if (!phone.trim()) return setError(t('errPhone'));
+    if (!stylistId) return setError(t('errStaff'));
+    if (selected.size === 0) return setError(t('errService'));
+    if (!completed && (!date || !time)) return setError(t('errDateTime'));
 
     setError('');
     logBooking.mutate(
@@ -89,23 +91,23 @@ export function NewBookingModal({
       },
       {
         onSuccess: () => onClose(),
-        onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not save this booking.'),
+        onError: (e) => setError(e instanceof AuthError ? e.message : t('errSave')),
       }
     );
   };
 
   return (
     <Modal
-      title={prefill ? 'Rebook customer' : 'New booking'}
-      subtitle={completed ? 'Log a finished service' : 'Schedule a future visit'}
+      title={prefill ? t('rebookTitle') : t('newTitle')}
+      subtitle={completed ? t('doneSubtitle') : t('scheduleSubtitle')}
       onClose={onClose}
     >
       <div className="space-y-3">
         {/* Mode toggle */}
         <div className="flex gap-1 bg-gray-100 p-0.5 rounded-md">
           {[
-            { label: 'Done service', value: true },
-            { label: 'Schedule later', value: false },
+            { label: t('doneService'), value: true },
+            { label: t('scheduleLater'), value: false },
           ].map((m) => (
             <button
               key={m.label}
@@ -120,7 +122,7 @@ export function NewBookingModal({
         </div>
 
         <div className="grid grid-cols-2 gap-2 relative">
-          <Field label="Customer name">
+          <Field label={t('customerName')}>
             <input
               className={inputClass}
               value={name}
@@ -131,7 +133,7 @@ export function NewBookingModal({
               placeholder="Asha Rao"
             />
           </Field>
-          <Field label="Phone">
+          <Field label={t('phone')}>
             <input
               className={inputClass}
               value={phone}
@@ -162,7 +164,7 @@ export function NewBookingModal({
           )}
         </div>
 
-        <Field label="Staff">
+        <Field label={t('staff')}>
           <div className="flex flex-wrap gap-1.5">
             {activeStaff.map((s) => (
               <button
@@ -178,12 +180,12 @@ export function NewBookingModal({
               </button>
             ))}
             {activeStaff.length === 0 && (
-              <p className="text-xs text-gray-400">Add a staff member before booking.</p>
+              <p className="text-xs text-gray-400">{t('addStaffFirst')}</p>
             )}
           </div>
         </Field>
 
-        <Field label="Services">
+        <Field label={t('services')}>
           <div className="space-y-1">
             {availableServices.map((s) => (
               <label
@@ -198,13 +200,13 @@ export function NewBookingModal({
                     className="rounded"
                   />
                   {s.name}
-                  <span className="text-gray-400">{s.duration} min</span>
+                  <span className="text-gray-400">{t('minutes', { count: s.duration })}</span>
                 </span>
                 <span className="text-xs text-gray-900 tabular-nums">{formatINR(s.price)}</span>
               </label>
             ))}
             {availableServices.length === 0 && (
-              <p className="text-xs text-gray-400">No services available for this staff member.</p>
+              <p className="text-xs text-gray-400">{t('noServicesForStaff')}</p>
             )}
           </div>
         </Field>
@@ -212,23 +214,23 @@ export function NewBookingModal({
         {completed ? (
           <>
             {salon && salon.products.some((p) => p.stockQty > 0) && (
-              <Field label="Add products sold (optional)">
+              <Field label={t('addProducts')}>
                 <ProductPicker products={salon.products} selected={productQty} onChange={setProductQty} />
               </Field>
             )}
-            <Field label="Payment method">
+            <Field label={t('paymentMethod')}>
               <PaymentMethodPicker value={payment} onChange={setPayment} />
             </Field>
             {payment === 'UPI' && salon && (
-              <PaymentQr salon={salon} price={total} note={`${name.trim() || 'Booking'} · ${salon.name}`} />
+              <PaymentQr salon={salon} price={total} note={`${name.trim() || t('bookingFallback')} · ${salon.name}`} />
             )}
           </>
         ) : (
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Date">
+            <Field label={t('date')}>
               <input type="date" className={inputClass} value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
-            <Field label="Time">
+            <Field label={t('time')}>
               <input type="time" className={inputClass} value={time} onChange={(e) => setTime(e.target.value)} />
             </Field>
           </div>
@@ -239,11 +241,11 @@ export function NewBookingModal({
         {/* Sticky running total footer */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-200">
           <div>
-            <p className="text-xs text-gray-400">Total</p>
+            <p className="text-xs text-gray-400">{t('total')}</p>
             <p className="text-base font-semibold text-gray-900 tabular-nums">{formatINR(total)}</p>
           </div>
           <button onClick={save} disabled={logBooking.isPending} className="btn-primary disabled:opacity-60">
-            {logBooking.isPending ? 'Saving…' : completed ? 'Log service' : 'Schedule booking'}
+            {logBooking.isPending ? t('saving') : completed ? t('logService') : t('scheduleBooking')}
           </button>
         </div>
       </div>

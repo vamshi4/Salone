@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Modal, Field, inputClass } from './Modal';
 import type { Product } from '@/lib/salon-api';
 import { useCurrentSalon, useDeleteProduct, useSaveProduct, useSelectedSalonId } from '@/lib/salon-queries';
 import { AuthError } from '@/lib/auth';
 
 export function ProductModal({ product, onClose }: { product?: Product; onClose: () => void }) {
+  const t = useTranslations('productModal');
   const salonId = useSelectedSalonId();
   const salon = useCurrentSalon();
   const saveProduct = useSaveProduct(salonId ?? '');
@@ -24,10 +26,10 @@ export function ProductModal({ product, onClose }: { product?: Product; onClose:
   const [error, setError] = useState('');
 
   const save = () => {
-    if (!salonId) return setError('No salon selected');
-    if (!name.trim()) return setError('Enter a product name');
+    if (!salonId) return setError(t('errNoSalon'));
+    if (!name.trim()) return setError(t('errName'));
     const p = parseFloat(price);
-    if (!p || p <= 0) return setError('Enter a valid price');
+    if (!p || p <= 0) return setError(t('errPrice'));
 
     saveProduct.mutate(
       {
@@ -40,7 +42,7 @@ export function ProductModal({ product, onClose }: { product?: Product; onClose:
       },
       {
         onSuccess: () => onClose(),
-        onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not save this product.'),
+        onError: (e) => setError(e instanceof AuthError ? e.message : t('errSave')),
       }
     );
   };
@@ -49,36 +51,36 @@ export function ProductModal({ product, onClose }: { product?: Product; onClose:
     if (!product) return;
     deleteProduct.mutate(product.id, {
       onSuccess: () => onClose(),
-      onError: (e) => setError(e instanceof AuthError ? e.message : 'Could not delete this product.'),
+      onError: (e) => setError(e instanceof AuthError ? e.message : t('errDelete')),
     });
   };
 
   return (
-    <Modal title={product ? 'Edit product' : 'Add product'} onClose={onClose}>
+    <Modal title={product ? t('editTitle') : t('addTitle')} onClose={onClose}>
       <div className="space-y-3">
-        <Field label="Name">
-          <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} placeholder="Argan oil shampoo" />
+        <Field label={t('name')}>
+          <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('namePlaceholder')} />
         </Field>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Category">
+          <Field label={t('category')}>
             <select className={inputClass} value={category} onChange={(e) => setCategory(e.target.value)}>
               {categories.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>
           </Field>
-          <Field label="Or new category">
-            <input className={inputClass} value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Tools" />
+          <Field label={t('orNewCategory')}>
+            <input className={inputClass} value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder={t('newCategoryPlaceholder')} />
           </Field>
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <Field label="Price (₹)">
+          <Field label={t('price')}>
             <input type="number" className={inputClass} value={price} onChange={(e) => setPrice(e.target.value)} />
           </Field>
-          <Field label="Stock qty">
+          <Field label={t('stockQty')}>
             <input type="number" className={inputClass} value={stock} onChange={(e) => setStock(e.target.value)} />
           </Field>
-          <Field label="Low-stock alert at">
+          <Field label={t('lowStockAlertAt')}>
             <input type="number" className={inputClass} value={threshold} onChange={(e) => setThreshold(e.target.value)} />
           </Field>
         </div>
@@ -86,13 +88,13 @@ export function ProductModal({ product, onClose }: { product?: Product; onClose:
         <div className="flex justify-between pt-2 border-t border-gray-200">
           {product ? (
             <button onClick={remove} disabled={deleteProduct.isPending} className="text-xs text-red-600 hover:underline disabled:opacity-60">
-              {deleteProduct.isPending ? 'Deleting…' : 'Delete product'}
+              {deleteProduct.isPending ? t('deleting') : t('deleteProduct')}
             </button>
           ) : (
             <span />
           )}
           <button onClick={save} disabled={saveProduct.isPending} className="btn-primary disabled:opacity-60">
-            {saveProduct.isPending ? 'Saving…' : 'Save product'}
+            {saveProduct.isPending ? t('saving') : t('saveProduct')}
           </button>
         </div>
       </div>
