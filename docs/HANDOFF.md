@@ -838,6 +838,11 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
 - Confirmed `ghcr.io/vamshi4/salone-web:1ae72ab` exists, then pinned `salone-web`
   to that tag for production rollout.
 
+### 2026-08-01 Codex handoff: web-admin i18n/currency auto-detect rollout
+- Confirmed `ghcr.io/vamshi4/salone-web:d0695a3` exists in GHCR.
+- Pinned `salone-web` to `d0695a3` for the 25-language, multi-currency, and browser
+  locale/currency auto-detection release. Backend remains on `9d966e9`.
+
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
 Continuation of the `web-admin` work referenced in the two Codex handoff notes just above (those
