@@ -347,14 +347,14 @@ export default function AccountPage() {
                   {currencySaving && <span className="text-xs text-gray-400">{t('saving')}</span>}
                   {!currencySaving && currencySaved && <span className="text-xs text-green-600">{t('saved')}</span>}
                   <select
-                    className={`${inputClass} w-36`}
+                    className={`${inputClass} w-44`}
                     value={salon.countryCode}
                     disabled={currencySaving}
                     onChange={(e) => changeCountryCurrency(e.target.value)}
                   >
                     {COUNTRIES.map((c) => (
                       <option key={c.code} value={c.code}>
-                        {tSignup(`countries.${c.code}`)} ({CURRENCY_SYMBOLS[c.currency]})
+                        {c.flag} {tSignup(`countries.${c.code}`)} ({CURRENCY_SYMBOLS[c.currency]})
                       </option>
                     ))}
                   </select>

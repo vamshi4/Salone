@@ -80,7 +80,12 @@ export default function SignupPage() {
         currency: country.currency,
       });
       // Fires only after the backend has created the salon owner account.
-      trackCompleteRegistration();
+      const [firstName, ...restName] = ownerName.trim().split(/\s+/);
+      trackCompleteRegistration({
+        phone: `${DIAL_CODES[country.code]}${phone.trim().replace(/\D/g, '')}`,
+        firstName,
+        lastName: restName.join(' ') || undefined,
+      });
       setUser(user);
       const me = await fetchMe();
       setSalons(me?.salons ?? [salon]);
@@ -96,6 +101,9 @@ export default function SignupPage() {
     <div className="min-h-screen bg-[#F4F6F8] flex items-center justify-center p-4 py-6">
       <div className="w-full max-w-[300px] space-y-3">
         <div className="card p-4 space-y-3">
+          <div className="flex justify-end -mb-1">
+            <LocaleSwitcher />
+          </div>
           <div className="text-center">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center mx-auto shadow-sm">
               <Scissors size={16} className="text-white" />
@@ -121,7 +129,7 @@ export default function SignupPage() {
                 <label htmlFor="signup_country" className="block text-xs font-medium text-gray-700 mb-1">{t('country')}</label>
                 <select id="signup_country" value={countryCode} onChange={(e) => setCountryCode(e.target.value)} className={inputClass}>
                   {COUNTRIES.map((c) => (
-                    <option key={c.code} value={c.code}>{t(`countries.${c.code}`)}</option>
+                    <option key={c.code} value={c.code}>{c.flag} {t(`countries.${c.code}`)}</option>
                   ))}
                 </select>
               </div>
@@ -223,7 +231,6 @@ export default function SignupPage() {
             </Link>
           </p>
         </div>
-        <LocaleSwitcher />
       </div>
     </div>
   );

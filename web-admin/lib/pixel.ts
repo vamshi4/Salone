@@ -10,23 +10,34 @@ declare global {
 
 declare const fbq: undefined | ((...args: unknown[]) => void);
 
-export function trackPixelEvent(eventName: string, params?: Record<string, unknown>) {
-  if (typeof window === 'undefined') return;
-  if (typeof fbq === 'function') {
-    fbq('track', eventName, params);
-    return;
-  }
-  if (typeof window.fbq === 'function') window.fbq('track', eventName, params);
+const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+
+function getFbq(): ((...args: unknown[]) => void) | null {
+  if (typeof window === 'undefined') return null;
+  if (typeof fbq === 'function') return fbq;
+  if (typeof window.fbq === 'function') return window.fbq;
+  return null;
 }
 
-export function trackCompleteRegistration() {
-  if (typeof window === 'undefined') return;
-  if (typeof fbq === 'function') {
-    fbq('track', 'CompleteRegistration');
-    fbq('track', 'Lead');
-    return;
+export function trackPixelEvent(eventName: string, params?: Record<string, unknown>) {
+  getFbq()?.('track', eventName, params);
+}
+
+// Re-initializing the Pixel with Advanced Matching data right before the
+// conversion event (name/phone aren't known at page-load init time, only
+// after the signup form is filled) lets Meta match this event to a real ad
+// click without us hashing anything ourselves — the Pixel SDK hashes
+// whatever we pass here client-side before it ever leaves the browser.
+export function trackCompleteRegistration(userData?: { phone?: string; firstName?: string; lastName?: string }) {
+  const fn = getFbq();
+  if (!fn) return;
+  if (userData && PIXEL_ID) {
+    fn('init', PIXEL_ID, {
+      ph: userData.phone,
+      fn: userData.firstName,
+      ln: userData.lastName,
+    });
   }
-  if (typeof window.fbq !== 'function') return;
-  window.fbq('track', 'CompleteRegistration');
-  window.fbq('track', 'Lead');
+  fn('track', 'CompleteRegistration');
+  fn('track', 'Lead');
 }

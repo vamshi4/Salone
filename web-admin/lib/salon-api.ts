@@ -7,21 +7,57 @@ import apiClient from './api';
 const toRupees = (paise: number) => Math.round(paise) / 100;
 const toPaise = (rupees: number) => Math.round(rupees * 100);
 
-// Mirrors mobile's CurrencyController symbol table (lib/core/prefs.dart) —
-// the salon's own `currency` field is the source of truth, so both apps
-// agree on how to display the same salon's numbers.
+// Mirrors mobile's kCountries symbol table (lib/core/prefs.dart) — the
+// salon's own `currency` field is the source of truth, so both apps agree
+// on how to display the same salon's numbers.
 export const CURRENCY_SYMBOLS: Record<string, string> = {
   INR: '₹',
-  AED: 'د.إ',
   USD: '$',
   GBP: '£',
+  AED: 'AED',
+  NPR: 'रु',
+  BDT: '৳',
+  MXN: '$',
+  BRL: 'R$',
+  IDR: 'Rp',
+  EGP: 'E£',
+  TRY: '₺',
+  EUR: '€',
+  PKR: 'Rs',
+  RUB: '₽',
+  VND: '₫',
+  KES: 'KSh',
+  PHP: '₱',
+  MYR: 'RM',
+  PLN: 'zł',
+  IRR: '﷼',
+  UAH: '₴',
+  RON: 'lei',
 };
 
 const CURRENCY_LOCALES: Record<string, string> = {
   INR: 'en-IN',
-  AED: 'en-AE',
   USD: 'en-US',
   GBP: 'en-GB',
+  AED: 'en-AE',
+  NPR: 'ne-NP',
+  BDT: 'bn-BD',
+  MXN: 'es-MX',
+  BRL: 'pt-BR',
+  IDR: 'id-ID',
+  EGP: 'ar-EG',
+  TRY: 'tr-TR',
+  EUR: 'de-DE',
+  PKR: 'ur-PK',
+  RUB: 'ru-RU',
+  VND: 'vi-VN',
+  KES: 'en-KE',
+  PHP: 'en-PH',
+  MYR: 'ms-MY',
+  PLN: 'pl-PL',
+  IRR: 'fa-IR',
+  UAH: 'uk-UA',
+  RON: 'ro-RO',
 };
 
 export function formatCurrency(amount: number, currency?: string | null): string {

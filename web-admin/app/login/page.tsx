@@ -65,6 +65,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#F4F6F8] flex items-center justify-center p-4">
       <div className="w-full max-w-[300px] space-y-3">
         <div className="card p-4 space-y-3">
+          <div className="flex justify-end -mb-1">
+            <LocaleSwitcher />
+          </div>
           <div className="text-center">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center mx-auto shadow-sm">
               <Scissors size={16} className="text-white" />
@@ -144,7 +147,6 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
-        <LocaleSwitcher />
       </div>
     </div>
   );
