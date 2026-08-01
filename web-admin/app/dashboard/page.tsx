@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 import { useAppStore } from '@/lib/store';
 import { formatINR, type Booking, type Customer } from '@/lib/salon-api';
 import { loggedToday, needsAction, repeatCustomerIds } from '@/lib/booking-helpers';
@@ -29,11 +30,11 @@ import {
   CalendarCheck,
 } from 'lucide-react';
 
-function greeting() {
+function greetingKey() {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return 'greetingMorning';
+  if (h < 17) return 'greetingAfternoon';
+  return 'greetingEvening';
 }
 
 function StatTile({
@@ -68,6 +69,8 @@ function StatTile({
 }
 
 export default function DashboardPage() {
+  const t = useTranslations('dashboard');
+  const locale = useLocale();
   const user = useAppStore((s) => s.user);
   const salonId = useSelectedSalonId();
   const salon = useCurrentSalon();
@@ -89,7 +92,7 @@ export default function DashboardPage() {
   const goal = salon?.dailyRevenueGoal ?? 0;
   const pace = goal > 0 ? Math.min(1, todayRevenue / goal) : 0;
 
-  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+  const today = new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
 
   const openCustomer = (b: Booking) => {
     setProfileCustomer({ id: b.customerId, name: b.customerName, phone: b.customerPhone });
@@ -99,7 +102,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="card px-4 py-6 text-center">
-          <p className="text-xs text-gray-400">No salon on your account yet.</p>
+          <p className="text-xs text-gray-400">{t('noSalonYet')}</p>
         </div>
       </div>
     );
@@ -115,14 +118,14 @@ export default function DashboardPage() {
           <div className="relative p-5">
             <p className="text-xs text-teal-100/80">{today}</p>
             <h1 className="text-xl font-bold mt-0.5">
-              {greeting()}{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
+              {t(greetingKey())}{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
             </h1>
             <p className="text-sm text-teal-50/90 mt-2">
-              <span className="font-semibold text-white">
-                {logged.length} {logged.length === 1 ? 'service' : 'services'}
-              </span>{' '}
-              logged today ·{' '}
-              <span className="font-semibold text-white">{formatINR(todayRevenue)}</span> earned so far
+              {t.rich('todaySummary', {
+                count: logged.length,
+                amount: formatINR(todayRevenue),
+                bold: (chunks) => <span className="font-semibold text-white">{chunks}</span>,
+              })}
             </p>
             {goal > 0 && (
               <div className="mt-3 max-w-sm">
@@ -133,7 +136,7 @@ export default function DashboardPage() {
                   />
                 </div>
                 <p className="text-[11px] text-teal-100/80 mt-1.5">
-                  {Math.round(pace * 100)}% of your {formatINR(goal)} daily goal
+                  {t('goalProgress', { percent: Math.round(pace * 100), goal: formatINR(goal) })}
                 </p>
               </div>
             )}
@@ -148,35 +151,35 @@ export default function DashboardPage() {
                 className="inline-flex items-center gap-1.5 rounded-lg bg-white text-primary-dark px-3.5 py-2 text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-px transition-all flex-shrink-0"
               >
                 <Plus size={14} />
-                New booking
+                {t('newBooking')}
               </button>
               <button
                 onClick={() => setModal('staff')}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 text-white px-3.5 py-2 text-xs font-semibold hover:bg-white/25 transition-colors flex-shrink-0"
               >
                 <UserPlus size={13} />
-                Add staff
+                {t('addStaff')}
               </button>
               <button
                 onClick={() => setModal('service')}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 text-white px-3.5 py-2 text-xs font-semibold hover:bg-white/25 transition-colors flex-shrink-0"
               >
                 <Scissors size={13} />
-                Add service
+                {t('addService')}
               </button>
               <Link
                 href="/products"
                 className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 text-white px-3.5 py-2 text-xs font-semibold hover:bg-white/25 transition-colors flex-shrink-0"
               >
                 <Package size={13} />
-                Inventory
+                {t('inventory')}
               </Link>
             </div>
           </div>
         </div>
 
-        {isLoading && <p className="text-xs text-gray-400">Loading your day…</p>}
-        {isError && <p className="text-xs text-red-600">Could not load bookings. Try refreshing.</p>}
+        {isLoading && <p className="text-xs text-gray-400">{t('loadingDay')}</p>}
+        {isError && <p className="text-xs text-red-600">{t('loadError')}</p>}
 
         {/* Alerts row */}
         {alertCount > 0 && (
@@ -190,9 +193,9 @@ export default function DashboardPage() {
                   <CalendarCheck size={16} className="text-primary-dark" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-bold text-gray-900">Needs your response</p>
+                  <p className="text-xs font-bold text-gray-900">{t('needsResponse')}</p>
                   <p className="text-[11px] text-gray-500">
-                    {pending.length} {pending.length === 1 ? 'booking needs' : 'bookings need'} confirmation
+                    {t('bookingsNeedConfirmation', { count: pending.length })}
                   </p>
                 </div>
                 <ChevronRight size={16} className="text-gray-300" />
@@ -202,20 +205,20 @@ export default function DashboardPage() {
               <div className="card p-4 border-l-4 border-l-amber-400">
                 <div className="flex items-center gap-2">
                   <Sparkles size={14} className="text-amber-500" />
-                  <p className="text-xs font-bold text-gray-900">Worth reaching out today</p>
+                  <p className="text-xs font-bold text-gray-900">{t('worthReachingOut')}</p>
                 </div>
                 <div className="mt-2 space-y-1.5">
                   {atRisk.map((c) => (
                     <button
                       key={c.customerId}
-                      onClick={() => setProfileCustomer({ id: c.customerId, name: c.name ?? 'Customer', phone: c.phone })}
+                      onClick={() => setProfileCustomer({ id: c.customerId, name: c.name ?? t('customer'), phone: c.phone })}
                       className="flex items-center justify-between w-full text-left group py-1 -mx-1 px-1 rounded hover:bg-amber-50/60 transition-colors"
                     >
                       <span className="text-xs font-medium text-gray-800 group-hover:text-primary-dark">
-                        {c.name ?? 'Customer'}
+                        {c.name ?? t('customer')}
                       </span>
                       <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold">
-                        {c.overdueDays}d overdue
+                        {t('daysOverdue', { days: c.overdueDays })}
                       </span>
                     </button>
                   ))}
@@ -228,9 +231,9 @@ export default function DashboardPage() {
                   <AlertTriangle size={16} className="text-red-500" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-bold text-gray-900">Low stock</p>
+                  <p className="text-xs font-bold text-gray-900">{t('lowStock')}</p>
                   <p className="text-[11px] text-gray-500">
-                    {lowStock.length} {lowStock.length === 1 ? 'product needs' : 'products need'} a restock
+                    {t('productsNeedRestock', { count: lowStock.length })}
                   </p>
                 </div>
                 <ChevronRight size={16} className="text-gray-300" />
@@ -242,23 +245,23 @@ export default function DashboardPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <StatTile
-            label="Services today"
+            label={t('servicesToday')}
             value={logged.length}
-            helper="logged so far"
+            helper={t('loggedSoFar')}
             icon={CalendarCheck}
             iconClass="bg-primary-light text-primary-dark"
           />
           <StatTile
-            label="Revenue today"
+            label={t('revenueToday')}
             value={formatINR(todayRevenue)}
-            helper="all staff"
+            helper={t('allStaff')}
             icon={IndianRupee}
             iconClass="bg-emerald-50 text-emerald-600"
           />
           <StatTile
-            label="Repeat customers"
+            label={t('repeatCustomers')}
             value={repeatCount}
-            helper="came back today"
+            helper={t('cameBackToday')}
             icon={Repeat}
             iconClass="bg-violet-50 text-violet-600"
           />
@@ -267,15 +270,15 @@ export default function DashboardPage() {
         {/* Logged today */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-gray-900">Logged today</h2>
+            <h2 className="text-sm font-bold text-gray-900">{t('loggedToday')}</h2>
             <Link href="/bookings" className="text-xs font-medium text-primary hover:text-primary-dark flex items-center gap-0.5">
-              View all
+              {t('viewAll')}
               <ChevronRight size={13} />
             </Link>
           </div>
           {logged.length === 0 ? (
             <div className="card px-4 py-8 text-center">
-              <p className="text-xs text-gray-400">Nothing logged today yet — tap "New booking" to log a walk-in.</p>
+              <p className="text-xs text-gray-400">{t('nothingLoggedYet')}</p>
             </div>
           ) : (
             <div className="card divide-y divide-gray-100 overflow-hidden">
