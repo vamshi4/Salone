@@ -843,6 +843,13 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
 - Pinned `salone-web` to `d0695a3` for the 25-language, multi-currency, and browser
   locale/currency auto-detection release. Backend remains on `9d966e9`.
 
+### 2026-08-01 Codex handoff: web-admin signup phone dial-code prefix
+- Confirmed `ghcr.io/vamshi4/salone-web:1dca8d6` exists in GHCR.
+- Pinned `salone-web` to `1dca8d6` — signup's phone field now shows a
+  country-matched dial-code badge (+91/+971/+1/+44) and locale-appropriate
+  placeholder instead of always looking Indian-formatted. Backend remains on
+  `9d966e9`.
+
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
 Continuation of the `web-admin` work referenced in the two Codex handoff notes just above (those
