@@ -2,9 +2,24 @@ import { Router } from 'express';
 import { prisma } from '../index';
 import { requireRole } from '../auth';
 import { commissionSplit } from '../commission';
+import { createRazorpayOrder, isRazorpayConfigured, razorpayPublicKeyId, verifyRazorpaySignature } from '../razorpay';
 
 const router = Router();
 const disabledPassword = 'disabled';
+
+// Shared by /salon-manual and /:id/status: RAZORPAY is the one payment
+// method that's actually verified rather than self-reported by staff — the
+// signature proves a real payment happened for this exact order.
+function verifyRazorpayFields(body: any): { paymentId: string; orderId: string } {
+  const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = body;
+  if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+    throw new Error('razorpayOrderId, razorpayPaymentId, and razorpaySignature are required for RAZORPAY payments');
+  }
+  if (!verifyRazorpaySignature(razorpayOrderId, razorpayPaymentId, razorpaySignature)) {
+    throw new Error('Razorpay payment signature could not be verified');
+  }
+  return { paymentId: razorpayPaymentId, orderId: razorpayOrderId };
+}
 
 const bookingInclude = {
   customer: true,
@@ -440,6 +455,29 @@ router.post('/', requireRole('CUSTOMER'), async (req, res) => {
   }
 });
 
+// POST /api/v2/bookings/razorpay-order - Creates a Razorpay order for the
+// amount the staff is about to collect (via Checkout), before the booking
+// itself is logged/completed. amount is trusted from the caller (an
+// authenticated staff member operating a POS-style flow, not an untrusted
+// public customer) — the booking's own `price` is always computed
+// server-side from real service/product prices regardless of what this
+// order charges, so there's no way to short the salon by tampering here.
+router.post('/razorpay-order', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    if (!isRazorpayConfigured()) {
+      return res.status(503).json({ error: 'Razorpay is not configured' });
+    }
+    const { amount } = req.body;
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ error: 'A valid amount (in paise) is required' });
+    }
+    const order = await createRazorpayOrder(Math.round(amount), `booking_${req.user!.id}_${Date.now()}`);
+    res.json({ orderId: order.id, amount: order.amount, currency: order.currency, keyId: razorpayPublicKeyId() });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // POST /api/v2/bookings/salon-manual - Salon/admin creates a walk-in or phone booking.
 router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
@@ -473,8 +511,16 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
       });
     }
 
-    if (paymentMethod != null && !['CASH', 'CARD', 'UPI'].includes(paymentMethod)) {
-      return res.status(400).json({ error: 'paymentMethod must be one of CASH, CARD, UPI' });
+    if (paymentMethod != null && !['CASH', 'CARD', 'UPI', 'RAZORPAY'].includes(paymentMethod)) {
+      return res.status(400).json({ error: 'paymentMethod must be one of CASH, CARD, UPI, RAZORPAY' });
+    }
+    let razorpayVerified: { paymentId: string; orderId: string } | null = null;
+    if (completed && paymentMethod === 'RAZORPAY') {
+      try {
+        razorpayVerified = verifyRazorpayFields(req.body);
+      } catch (e: any) {
+        return res.status(400).json({ error: e.message });
+      }
     }
 
     const salon = await prisma.salon.findFirst({
@@ -581,6 +627,9 @@ router.post('/salon-manual', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (r
           // Only meaningful when payment was actually collected at logging time;
           // a "Schedule later" booking hasn't been paid for yet.
           paymentMethod: completed ? (paymentMethod ?? null) : null,
+          ...(razorpayVerified
+            ? { paymentId: razorpayVerified.paymentId, razorpayOrderId: razorpayVerified.orderId }
+            : {}),
           services: {
             create: services.map((item, index) => ({
               serviceId: item.id,
@@ -613,8 +662,16 @@ router.patch('/:id/status', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN')
     if (!['PENDING', 'PENDING_RESCHEDULE', 'CONFIRMED', 'IN_PROGRESS', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(status)) {
       return res.status(400).json({ error: 'Invalid booking status' });
     }
-    if (paymentMethod != null && !['CASH', 'CARD', 'UPI'].includes(paymentMethod)) {
-      return res.status(400).json({ error: 'paymentMethod must be one of CASH, CARD, UPI' });
+    if (paymentMethod != null && !['CASH', 'CARD', 'UPI', 'RAZORPAY'].includes(paymentMethod)) {
+      return res.status(400).json({ error: 'paymentMethod must be one of CASH, CARD, UPI, RAZORPAY' });
+    }
+    let razorpayVerified: { paymentId: string; orderId: string } | null = null;
+    if (status === 'COMPLETED' && paymentMethod === 'RAZORPAY') {
+      try {
+        razorpayVerified = verifyRazorpayFields(req.body);
+      } catch (e: any) {
+        return res.status(400).json({ error: e.message });
+      }
     }
     const requestedProducts: { productId: string; quantity: number }[] = Array.isArray(products)
       ? products.filter((p: any) => p?.productId)
@@ -659,6 +716,9 @@ router.patch('/:id/status', requireRole('STYLIST', 'SALON_OWNER', 'SUPER_ADMIN')
           // /salon-manual) would be mis-dated to createdAt in the earnings report.
           ...(status === 'COMPLETED' && !existing.completedAt ? { completedAt: new Date() } : {}),
           ...(status === 'COMPLETED' && paymentMethod != null ? { paymentMethod } : {}),
+          ...(razorpayVerified
+            ? { paymentId: razorpayVerified.paymentId, razorpayOrderId: razorpayVerified.orderId }
+            : {}),
         },
       });
 
