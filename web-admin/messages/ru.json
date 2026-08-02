@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Наличные",
     "upi": "UPI",
-    "card": "Карта"
+    "card": "Карта",
+    "razorpay": "Оплатить онлайн"
   },
   "paymentQr": {
     "noUpiId": "Добавьте UPI ID в разделе Аккаунт > Настройки салона, чтобы показать здесь QR-код для оплаты.",
@@ -480,6 +481,7 @@
     "time": "Время",
     "total": "Итого",
     "saving": "Сохранение…",
+    "collectingPayment": "Ожидание оплаты…",
     "logService": "Зафиксировать услугу",
     "scheduleBooking": "Запланировать запись"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Способ оплаты",
     "breakdown": "{service} услуга + {products} товары =",
     "saving": "Сохранение…",
+    "collectingPayment": "Ожидание оплаты…",
     "markAsDone": "Отметить как завершенное"
   }
 }

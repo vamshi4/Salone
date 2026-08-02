@@ -77,7 +77,15 @@ export type BookingStatus =
   | 'CANCELLED'
   | 'NO_SHOW';
 
-export type PaymentMethod = 'CASH' | 'CARD' | 'UPI';
+export type PaymentMethod = 'CASH' | 'CARD' | 'UPI' | 'RAZORPAY';
+
+// Only present when paymentMethod is RAZORPAY — the backend verifies the
+// signature server-side before accepting the payment as real.
+export interface RazorpayPaymentFields {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}
 
 export interface Customer {
   id: string;
@@ -297,6 +305,7 @@ export interface LogBookingPayload {
   dateTime?: string; // ISO, required unless completed
   paymentMethod?: PaymentMethod;
   products?: ProductSaleItem[];
+  razorpay?: RazorpayPaymentFields;
 }
 
 export async function logBooking(payload: LogBookingPayload): Promise<Booking> {
@@ -310,6 +319,7 @@ export async function logBooking(payload: LogBookingPayload): Promise<Booking> {
     dateTime: payload.dateTime,
     paymentMethod: payload.paymentMethod,
     products: payload.products,
+    ...payload.razorpay,
   });
   return mapBooking(res.data);
 }
@@ -318,10 +328,35 @@ export async function setBookingStatus(
   bookingId: string,
   status: BookingStatus,
   paymentMethod?: PaymentMethod,
-  products?: ProductSaleItem[]
+  products?: ProductSaleItem[],
+  razorpay?: RazorpayPaymentFields
 ): Promise<Booking> {
-  const res = await apiClient.patch(`/bookings/${bookingId}/status`, { status, paymentMethod, products });
+  const res = await apiClient.patch(`/bookings/${bookingId}/status`, {
+    status,
+    paymentMethod,
+    products,
+    ...razorpay,
+  });
   return mapBooking(res.data);
+}
+
+// ---------- Razorpay ----------
+
+export interface RazorpayOrder {
+  orderId: string;
+  amount: number; // paise
+  currency: string;
+  keyId: string;
+}
+
+export async function createRazorpayOrder(amountPaise: number): Promise<RazorpayOrder> {
+  const res = await apiClient.post('/bookings/razorpay-order', { amount: Math.round(amountPaise) });
+  return {
+    orderId: res.data.orderId,
+    amount: res.data.amount,
+    currency: res.data.currency,
+    keyId: res.data.keyId,
+  };
 }
 
 // ---------- Services ----------

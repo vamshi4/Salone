@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Cash",
     "upi": "UPI",
-    "card": "Card"
+    "card": "Card",
+    "razorpay": "Pay online"
   },
   "paymentQr": {
     "noUpiId": "Add a UPI ID in Account > Salon settings to show a payment QR here.",
@@ -480,6 +481,7 @@
     "time": "Time",
     "total": "Total",
     "saving": "Saving…",
+    "collectingPayment": "Waiting for payment…",
     "logService": "Log service",
     "scheduleBooking": "Schedule booking"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Payment method",
     "breakdown": "{service} service + {products} products =",
     "saving": "Saving…",
+    "collectingPayment": "Waiting for payment…",
     "markAsDone": "Mark as done"
   }
 }

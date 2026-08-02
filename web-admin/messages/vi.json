@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Tiền mặt",
     "upi": "UPI",
-    "card": "Thẻ"
+    "card": "Thẻ",
+    "razorpay": "Thanh toán trực tuyến"
   },
   "paymentQr": {
     "noUpiId": "Thêm ID UPI trong Tài khoản > Cài đặt salon để hiển thị mã QR thanh toán tại đây.",
@@ -480,6 +481,7 @@
     "time": "Giờ",
     "total": "Tổng cộng",
     "saving": "Đang lưu…",
+    "collectingPayment": "Đang chờ thanh toán…",
     "logService": "Ghi nhận dịch vụ",
     "scheduleBooking": "Lên lịch đặt"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Phương thức thanh toán",
     "breakdown": "{service} dịch vụ + {products} sản phẩm =",
     "saving": "Đang lưu…",
+    "collectingPayment": "Đang chờ thanh toán…",
     "markAsDone": "Đánh dấu là hoàn tất"
   }
 }

@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Bar",
     "upi": "UPI",
-    "card": "Karte"
+    "card": "Karte",
+    "razorpay": "Online bezahlen"
   },
   "paymentQr": {
     "noUpiId": "Fügen Sie unter Konto > Salon-Einstellungen eine UPI-ID hinzu, um hier den Zahlungs-QR-Code anzuzeigen.",
@@ -480,6 +481,7 @@
     "time": "Uhrzeit",
     "total": "Gesamt",
     "saving": "Wird gespeichert…",
+    "collectingPayment": "Warten auf Zahlung…",
     "logService": "Service erfassen",
     "scheduleBooking": "Buchung planen"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Zahlungsmethode",
     "breakdown": "{service} Service + {products} Produkte =",
     "saving": "Wird gespeichert…",
+    "collectingPayment": "Warten auf Zahlung…",
     "markAsDone": "Als erledigt markieren"
   }
 }

@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Numerar",
     "upi": "UPI",
-    "card": "Card"
+    "card": "Card",
+    "razorpay": "Plătește online"
   },
   "paymentQr": {
     "noUpiId": "Adaugă un ID UPI în Cont > Setări salon pentru a afișa aici codul QR de plată.",
@@ -480,6 +481,7 @@
     "time": "Oră",
     "total": "Total",
     "saving": "Se salvează…",
+    "collectingPayment": "Se așteaptă plata…",
     "logService": "Înregistrează serviciul",
     "scheduleBooking": "Programează"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Metodă de plată",
     "breakdown": "{service} serviciu + {products} produse =",
     "saving": "Se salvează…",
+    "collectingPayment": "Se așteaptă plata…",
     "markAsDone": "Marchează ca finalizat"
   }
 }

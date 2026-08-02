@@ -6,9 +6,10 @@ import { Modal, Field, inputClass } from './Modal';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PaymentQr } from './PaymentQr';
 import { ProductPicker, productsTotal, toProductSaleItems } from './ProductPicker';
-import { formatCurrency, type Booking, type PaymentMethod } from '@/lib/salon-api';
+import { formatCurrency, type Booking, type PaymentMethod, type RazorpayPaymentFields } from '@/lib/salon-api';
 import { useCurrentSalon, useCustomers, useLogBooking, useSelectedSalonId } from '@/lib/salon-queries';
 import { AuthError } from '@/lib/auth';
+import { collectRazorpayPayment } from '@/lib/razorpay';
 
 /** Two modes matching the mobile app: "Done service" (log a finished
  * walk-in now — the default) and "Schedule later" (a future appointment). */
@@ -39,6 +40,7 @@ export function NewBookingModal({
   const [time, setTime] = useState('17:00');
   const [error, setError] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [collectingPayment, setCollectingPayment] = useState(false);
 
   const availableServices = useMemo(() => {
     return services.filter((s) => !s.stylistId || s.stylistId === stylistId);
@@ -68,7 +70,7 @@ export function NewBookingModal({
     });
   };
 
-  const save = () => {
+  const save = async () => {
     if (!salonId) return setError(t('errNoSalon'));
     if (!name.trim()) return setError(t('errName'));
     if (!phone.trim()) return setError(t('errPhone'));
@@ -77,6 +79,24 @@ export function NewBookingModal({
     if (!completed && (!date || !time)) return setError(t('errDateTime'));
 
     setError('');
+
+    let razorpay: RazorpayPaymentFields | undefined;
+    if (completed && payment === 'RAZORPAY') {
+      setCollectingPayment(true);
+      try {
+        razorpay = await collectRazorpayPayment({
+          amountPaise: Math.round(total * 100),
+          salonName: salon?.name ?? '',
+          customerName: name.trim(),
+          customerPhone: phone.trim(),
+        });
+      } catch (e) {
+        setCollectingPayment(false);
+        return setError(e instanceof Error ? e.message : t('errSave'));
+      }
+      setCollectingPayment(false);
+    }
+
     logBooking.mutate(
       {
         salonId,
@@ -88,6 +108,7 @@ export function NewBookingModal({
         dateTime: completed ? undefined : new Date(`${date}T${time}`).toISOString(),
         paymentMethod: completed ? payment : undefined,
         products: completed ? toProductSaleItems(productQty) : undefined,
+        razorpay,
       },
       {
         onSuccess: () => onClose(),
@@ -244,8 +265,14 @@ export function NewBookingModal({
             <p className="text-xs text-gray-400">{t('total')}</p>
             <p className="text-base font-semibold text-gray-900 tabular-nums">{formatCurrency(total, salon?.currency)}</p>
           </div>
-          <button onClick={save} disabled={logBooking.isPending} className="btn-primary disabled:opacity-60">
-            {logBooking.isPending ? t('saving') : completed ? t('logService') : t('scheduleBooking')}
+          <button onClick={save} disabled={logBooking.isPending || collectingPayment} className="btn-primary disabled:opacity-60">
+            {collectingPayment
+              ? t('collectingPayment')
+              : logBooking.isPending
+                ? t('saving')
+                : completed
+                  ? t('logService')
+                  : t('scheduleBooking')}
           </button>
         </div>
       </div>

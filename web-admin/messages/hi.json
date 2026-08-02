@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "नकद",
     "upi": "UPI",
-    "card": "कार्ड"
+    "card": "कार्ड",
+    "razorpay": "ऑनलाइन भुगतान करें"
   },
   "paymentQr": {
     "noUpiId": "यहां पेमेंट QR दिखाने के लिए खाता > सैलून सेटिंग्स में एक UPI ID जोड़ें।",
@@ -480,6 +481,7 @@
     "time": "समय",
     "total": "कुल",
     "saving": "सहेजा जा रहा है…",
+    "collectingPayment": "भुगतान की प्रतीक्षा…",
     "logService": "सेवा लॉग करें",
     "scheduleBooking": "बुकिंग शेड्यूल करें"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "भुगतान का तरीका",
     "breakdown": "{service} सेवा + {products} उत्पाद =",
     "saving": "सहेजा जा रहा है…",
+    "collectingPayment": "भुगतान की प्रतीक्षा…",
     "markAsDone": "पूर्ण के रूप में चिह्नित करें"
   }
 }

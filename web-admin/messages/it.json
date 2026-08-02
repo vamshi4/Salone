@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Contanti",
     "upi": "UPI",
-    "card": "Carta"
+    "card": "Carta",
+    "razorpay": "Paga online"
   },
   "paymentQr": {
     "noUpiId": "Aggiungi un ID UPI in Account > Impostazioni salone per mostrare qui il codice QR di pagamento.",
@@ -480,6 +481,7 @@
     "time": "Ora",
     "total": "Totale",
     "saving": "Salvataggio…",
+    "collectingPayment": "In attesa del pagamento…",
     "logService": "Registra servizio",
     "scheduleBooking": "Pianifica prenotazione"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Metodo di pagamento",
     "breakdown": "{service} servizio + {products} prodotti =",
     "saving": "Salvataggio…",
+    "collectingPayment": "In attesa del pagamento…",
     "markAsDone": "Contrassegna come completato"
   }
 }

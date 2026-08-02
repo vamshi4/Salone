@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Cash",
     "upi": "UPI",
-    "card": "Card"
+    "card": "Card",
+    "razorpay": "Magbayad online"
   },
   "paymentQr": {
     "noUpiId": "Magdagdag ng UPI ID sa Account > Mga Setting ng Salon para maipakita rito ang QR code para sa bayad.",
@@ -480,6 +481,7 @@
     "time": "Oras",
     "total": "Kabuuan",
     "saving": "Sine-save…",
+    "collectingPayment": "Naghihintay ng bayad…",
     "logService": "I-log ang serbisyo",
     "scheduleBooking": "I-iskedyul ang booking"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Paraan ng pagbabayad",
     "breakdown": "{service} serbisyo + {products} produkto =",
     "saving": "Sine-save…",
+    "collectingPayment": "Naghihintay ng bayad…",
     "markAsDone": "Markahan bilang tapos na"
   }
 }

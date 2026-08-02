@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "نقد",
     "upi": "UPI",
-    "card": "کارڈ"
+    "card": "کارڈ",
+    "razorpay": "آن لائن ادائیگی کریں"
   },
   "paymentQr": {
     "noUpiId": "یہاں پیمنٹ QR دکھانے کے لیے اکاؤنٹ > سیلون سیٹنگز میں UPI ID شامل کریں۔",
@@ -480,6 +481,7 @@
     "time": "وقت",
     "total": "کل",
     "saving": "محفوظ ہو رہا ہے…",
+    "collectingPayment": "ادائیگی کا انتظار…",
     "logService": "سروس لاگ کریں",
     "scheduleBooking": "بکنگ شیڈول کریں"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "ادائیگی کا طریقہ",
     "breakdown": "{service} سروس + {products} مصنوعات =",
     "saving": "محفوظ ہو رہا ہے…",
+    "collectingPayment": "ادائیگی کا انتظار…",
     "markAsDone": "مکمل کے طور پر نشان زد کریں"
   }
 }

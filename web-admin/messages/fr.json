@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Espèces",
     "upi": "UPI",
-    "card": "Carte"
+    "card": "Carte",
+    "razorpay": "Payer en ligne"
   },
   "paymentQr": {
     "noUpiId": "Ajoutez un identifiant UPI dans Compte > Paramètres du salon pour afficher ici le code QR de paiement.",
@@ -480,6 +481,7 @@
     "time": "Heure",
     "total": "Total",
     "saving": "Enregistrement…",
+    "collectingPayment": "En attente du paiement…",
     "logService": "Enregistrer le service",
     "scheduleBooking": "Planifier la réservation"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Méthode de paiement",
     "breakdown": "{service} service + {products} produits =",
     "saving": "Enregistrement…",
+    "collectingPayment": "En attente du paiement…",
     "markAsDone": "Marquer comme terminé"
   }
 }

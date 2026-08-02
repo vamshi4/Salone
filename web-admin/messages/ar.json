@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "نقدًا",
     "upi": "UPI",
-    "card": "بطاقة"
+    "card": "بطاقة",
+    "razorpay": "الدفع عبر الإنترنت"
   },
   "paymentQr": {
     "noUpiId": "أضف معرّف UPI في الحساب > إعدادات الصالون لعرض رمز QR للدفع هنا.",
@@ -480,6 +481,7 @@
     "time": "الوقت",
     "total": "الإجمالي",
     "saving": "جارٍ الحفظ…",
+    "collectingPayment": "في انتظار الدفع…",
     "logService": "تسجيل الخدمة",
     "scheduleBooking": "جدولة الحجز"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "طريقة الدفع",
     "breakdown": "{service} خدمة + {products} منتجات =",
     "saving": "جارٍ الحفظ…",
+    "collectingPayment": "في انتظار الدفع…",
     "markAsDone": "تعليم كمكتمل"
   }
 }

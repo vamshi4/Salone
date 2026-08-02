@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Tunai",
     "upi": "UPI",
-    "card": "Kartu"
+    "card": "Kartu",
+    "razorpay": "Bayar online"
   },
   "paymentQr": {
     "noUpiId": "Tambahkan ID UPI di Akun > Pengaturan salon untuk menampilkan kode QR pembayaran di sini.",
@@ -480,6 +481,7 @@
     "time": "Waktu",
     "total": "Total",
     "saving": "Menyimpan…",
+    "collectingPayment": "Menunggu pembayaran…",
     "logService": "Catat layanan",
     "scheduleBooking": "Jadwalkan pemesanan"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Metode pembayaran",
     "breakdown": "{service} layanan + {products} produk =",
     "saving": "Menyimpan…",
+    "collectingPayment": "Menunggu pembayaran…",
     "markAsDone": "Tandai sebagai selesai"
   }
 }

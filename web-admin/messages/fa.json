@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "نقدی",
     "upi": "UPI",
-    "card": "کارت"
+    "card": "کارت",
+    "razorpay": "پرداخت آنلاین"
   },
   "paymentQr": {
     "noUpiId": "برای نمایش QR پرداخت اینجا، یک شناسه UPI در حساب > تنظیمات سالن اضافه کنید.",
@@ -480,6 +481,7 @@
     "time": "زمان",
     "total": "جمع کل",
     "saving": "در حال ذخیره…",
+    "collectingPayment": "در انتظار پرداخت…",
     "logService": "ثبت خدمت",
     "scheduleBooking": "زمان‌بندی رزرو"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "روش پرداخت",
     "breakdown": "{service} خدمت + {products} محصولات =",
     "saving": "در حال ذخیره…",
+    "collectingPayment": "در انتظار پرداخت…",
     "markAsDone": "علامت‌گذاری به‌عنوان انجام‌شده"
   }
 }

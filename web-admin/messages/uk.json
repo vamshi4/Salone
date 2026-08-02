@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Готівка",
     "upi": "UPI",
-    "card": "Картка"
+    "card": "Картка",
+    "razorpay": "Оплатити онлайн"
   },
   "paymentQr": {
     "noUpiId": "Додайте UPI ID в розділі Акаунт > Налаштування салону, щоб показати тут QR-код для оплати.",
@@ -480,6 +481,7 @@
     "time": "Час",
     "total": "Всього",
     "saving": "Збереження…",
+    "collectingPayment": "Очікування оплати…",
     "logService": "Зафіксувати послугу",
     "scheduleBooking": "Запланувати запис"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Спосіб оплати",
     "breakdown": "{service} послуга + {products} товари =",
     "saving": "Збереження…",
+    "collectingPayment": "Очікування оплати…",
     "markAsDone": "Позначити як завершене"
   }
 }

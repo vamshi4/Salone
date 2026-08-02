@@ -72,12 +72,13 @@ export function useLogBooking() {
 export function useSetBookingStatus(salonId: string) {
   const inv = useInvalidate();
   return useMutation({
-    mutationFn: ({ bookingId, status, paymentMethod, products }: {
+    mutationFn: ({ bookingId, status, paymentMethod, products, razorpay }: {
       bookingId: string;
       status: api.BookingStatus;
       paymentMethod?: api.PaymentMethod;
       products?: api.ProductSaleItem[];
-    }) => api.setBookingStatus(bookingId, status, paymentMethod, products),
+      razorpay?: api.RazorpayPaymentFields;
+    }) => api.setBookingStatus(bookingId, status, paymentMethod, products, razorpay),
     onSuccess: () => {
       inv.bookings(salonId);
       inv.salons();

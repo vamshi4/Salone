@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Nakit",
     "upi": "UPI",
-    "card": "Kart"
+    "card": "Kart",
+    "razorpay": "Çevrimiçi öde"
   },
   "paymentQr": {
     "noUpiId": "Burada ödeme QR kodunu göstermek için Hesap > Salon Ayarları bölümüne bir UPI kimliği ekleyin.",
@@ -480,6 +481,7 @@
     "time": "Saat",
     "total": "Toplam",
     "saving": "Kaydediliyor…",
+    "collectingPayment": "Ödeme bekleniyor…",
     "logService": "Hizmeti kaydet",
     "scheduleBooking": "Randevuyu planla"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Ödeme yöntemi",
     "breakdown": "{service} hizmet + {products} ürün =",
     "saving": "Kaydediliyor…",
+    "collectingPayment": "Ödeme bekleniyor…",
     "markAsDone": "Tamamlandı olarak işaretle"
   }
 }

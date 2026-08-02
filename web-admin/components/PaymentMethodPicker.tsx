@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import type { PaymentMethod } from '@/lib/salon-api';
+import { RAZORPAY_ENABLED } from '@/lib/razorpay';
 
 export function PaymentMethodPicker({
   value,
@@ -13,11 +14,15 @@ export function PaymentMethodPicker({
   currency?: string | null;
 }) {
   const t = useTranslations('paymentMethod');
-  const LABELS: Record<PaymentMethod, string> = { CASH: t('cash'), UPI: t('upi'), CARD: t('card') };
-  // UPI is India's real-time bank-transfer network — the deep link and GST
-  // math it drives (lib/upi.ts) are meaningless outside INR, so it's simply
-  // not offered as an option for salons priced in another currency.
-  const methods = (currency ?? 'INR') === 'INR' ? (['CASH', 'UPI', 'CARD'] as const) : (['CASH', 'CARD'] as const);
+  const LABELS: Record<PaymentMethod, string> = { CASH: t('cash'), UPI: t('upi'), CARD: t('card'), RAZORPAY: t('razorpay') };
+  // UPI and Razorpay are both India-only (UPI's deep link/GST math in
+  // lib/upi.ts is meaningless outside INR; Razorpay only onboards
+  // India-registered merchants) — neither is offered for salons priced in
+  // another currency.
+  const isIndia = (currency ?? 'INR') === 'INR';
+  const methods = isIndia
+    ? ([...(['CASH', 'UPI', 'CARD'] as const), ...(RAZORPAY_ENABLED ? (['RAZORPAY'] as const) : [])])
+    : (['CASH', 'CARD'] as const);
 
   return (
     <div className="flex gap-1.5">

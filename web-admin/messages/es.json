@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Efectivo",
     "upi": "UPI",
-    "card": "Tarjeta"
+    "card": "Tarjeta",
+    "razorpay": "Pagar en línea"
   },
   "paymentQr": {
     "noUpiId": "Agrega un ID de UPI en Cuenta > Configuración del salón para mostrar aquí el código QR de pago.",
@@ -480,6 +481,7 @@
     "time": "Hora",
     "total": "Total",
     "saving": "Guardando…",
+    "collectingPayment": "Esperando el pago…",
     "logService": "Registrar servicio",
     "scheduleBooking": "Programar reserva"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Método de pago",
     "breakdown": "{service} servicio + {products} productos =",
     "saving": "Guardando…",
+    "collectingPayment": "Esperando el pago…",
     "markAsDone": "Marcar como completado"
   }
 }

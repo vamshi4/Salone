@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Tunai",
     "upi": "UPI",
-    "card": "Kad"
+    "card": "Kad",
+    "razorpay": "Bayar dalam talian"
   },
   "paymentQr": {
     "noUpiId": "Tambah ID UPI dalam Akaun > Tetapan salon untuk memaparkan kod QR pembayaran di sini.",
@@ -480,6 +481,7 @@
     "time": "Masa",
     "total": "Jumlah",
     "saving": "Menyimpan…",
+    "collectingPayment": "Menunggu pembayaran…",
     "logService": "Rekod perkhidmatan",
     "scheduleBooking": "Jadualkan tempahan"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Kaedah pembayaran",
     "breakdown": "{service} perkhidmatan + {products} produk =",
     "saving": "Menyimpan…",
+    "collectingPayment": "Menunggu pembayaran…",
     "markAsDone": "Tandakan sebagai selesai"
   }
 }

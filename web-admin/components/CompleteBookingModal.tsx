@@ -6,8 +6,9 @@ import { Modal, Field } from './Modal';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PaymentQr } from './PaymentQr';
 import { ProductPicker, productsTotal, toProductSaleItems } from './ProductPicker';
-import { formatCurrency, type Booking, type PaymentMethod, type SalonSummary } from '@/lib/salon-api';
+import { formatCurrency, type Booking, type PaymentMethod, type RazorpayPaymentFields, type SalonSummary } from '@/lib/salon-api';
 import { useSetBookingStatus } from '@/lib/salon-queries';
+import { collectRazorpayPayment } from '@/lib/razorpay';
 
 export function CompleteBookingModal({
   booking,
@@ -21,20 +22,44 @@ export function CompleteBookingModal({
   const t = useTranslations('completeBooking');
   const [payment, setPayment] = useState<PaymentMethod>('CASH');
   const [productQty, setProductQty] = useState<Map<string, number>>(new Map());
+  const [error, setError] = useState('');
+  const [collectingPayment, setCollectingPayment] = useState(false);
   const setStatus = useSetBookingStatus(salon.id);
 
   const retailAddOn = productsTotal(salon.products, productQty);
   const total = booking.price + retailAddOn;
 
-  const confirm = () => {
+  const confirm = async () => {
+    setError('');
+    let razorpay: RazorpayPaymentFields | undefined;
+    if (payment === 'RAZORPAY') {
+      setCollectingPayment(true);
+      try {
+        razorpay = await collectRazorpayPayment({
+          amountPaise: Math.round(total * 100),
+          salonName: salon.name,
+          customerName: booking.customerName,
+          customerPhone: booking.customerPhone,
+        });
+      } catch (e) {
+        setCollectingPayment(false);
+        return setError(e instanceof Error ? e.message : t('saving'));
+      }
+      setCollectingPayment(false);
+    }
+
     setStatus.mutate(
       {
         bookingId: booking.id,
         status: 'COMPLETED',
         paymentMethod: payment,
         products: toProductSaleItems(productQty),
+        razorpay,
       },
-      { onSuccess: onClose }
+      {
+        onSuccess: onClose,
+        onError: (e) => setError(e instanceof Error ? e.message : t('saving')),
+      }
     );
   };
 
@@ -58,12 +83,13 @@ export function CompleteBookingModal({
             <span className="font-medium text-gray-900">{formatCurrency(total, salon.currency)}</span>
           </p>
         )}
+        {error && <p className="text-xs text-red-600">{error}</p>}
         <button
           onClick={confirm}
-          disabled={setStatus.isPending}
+          disabled={setStatus.isPending || collectingPayment}
           className="btn-primary w-full disabled:opacity-60"
         >
-          {setStatus.isPending ? t('saving') : t('markAsDone')}
+          {collectingPayment ? t('collectingPayment') : setStatus.isPending ? t('saving') : t('markAsDone')}
         </button>
       </div>
     </Modal>

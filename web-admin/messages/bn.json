@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "নগদ",
     "upi": "UPI",
-    "card": "কার্ড"
+    "card": "কার্ড",
+    "razorpay": "অনলাইনে পরিশোধ করুন"
   },
   "paymentQr": {
     "noUpiId": "এখানে পেমেন্ট QR দেখাতে অ্যাকাউন্ট > সেলুন সেটিংসে একটি UPI ID যোগ করুন।",
@@ -480,6 +481,7 @@
     "time": "সময়",
     "total": "মোট",
     "saving": "সংরক্ষণ হচ্ছে…",
+    "collectingPayment": "পেমেন্টের জন্য অপেক্ষা করা হচ্ছে…",
     "logService": "সেবা লগ করুন",
     "scheduleBooking": "বুকিং নির্ধারণ করুন"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "পেমেন্ট পদ্ধতি",
     "breakdown": "{service} সেবা + {products} পণ্য =",
     "saving": "সংরক্ষণ হচ্ছে…",
+    "collectingPayment": "পেমেন্টের জন্য অপেক্ষা করা হচ্ছে…",
     "markAsDone": "সম্পন্ন হিসেবে চিহ্নিত করুন"
   }
 }

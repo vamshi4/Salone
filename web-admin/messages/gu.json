@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "રોકડ",
     "upi": "UPI",
-    "card": "કાર્ડ"
+    "card": "કાર્ડ",
+    "razorpay": "ઓનલાઇન ચૂકવો"
   },
   "paymentQr": {
     "noUpiId": "અહીં પેમેન્ટ QR બતાવવા માટે ખાતું > સલૂન સેટિંગ્સમાં UPI ID ઉમેરો.",
@@ -480,6 +481,7 @@
     "time": "સમય",
     "total": "કુલ",
     "saving": "સાચવી રહ્યા છીએ…",
+    "collectingPayment": "ચુકવણીની રાહ જોવાઈ રહી છે…",
     "logService": "સેવા લોગ કરો",
     "scheduleBooking": "બુકિંગ શેડ્યૂલ કરો"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "ચુકવણી પદ્ધતિ",
     "breakdown": "{service} સેવા + {products} ઉત્પાદનો =",
     "saving": "સાચવી રહ્યા છીએ…",
+    "collectingPayment": "ચુકવણીની રાહ જોવાઈ રહી છે…",
     "markAsDone": "પૂર્ણ તરીકે ચિહ્નિત કરો"
   }
 }

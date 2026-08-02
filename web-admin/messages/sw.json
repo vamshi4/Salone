@@ -445,7 +445,8 @@
   "paymentMethod": {
     "cash": "Fedha taslimu",
     "upi": "UPI",
-    "card": "Kadi"
+    "card": "Kadi",
+    "razorpay": "Lipa mtandaoni"
   },
   "paymentQr": {
     "noUpiId": "Ongeza kitambulisho cha UPI katika Akaunti > Mipangilio ya Saluni ili kuonyesha msimbo wa QR wa malipo hapa.",
@@ -480,6 +481,7 @@
     "time": "Saa",
     "total": "Jumla",
     "saving": "Inahifadhi…",
+    "collectingPayment": "Inasubiri malipo…",
     "logService": "Rekodi huduma",
     "scheduleBooking": "Panga miadi"
   },
@@ -489,6 +491,7 @@
     "paymentMethod": "Njia ya malipo",
     "breakdown": "huduma {service} + bidhaa {products} =",
     "saving": "Inahifadhi…",
+    "collectingPayment": "Inasubiri malipo…",
     "markAsDone": "Weka alama kama imekamilika"
   }
 }
