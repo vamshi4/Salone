@@ -850,6 +850,22 @@ current file structure including `commission.ts`, `public-booking.ts`, and all `
   placeholder instead of always looking Indian-formatted. Backend remains on
   `9d966e9`.
 
+### 2026-08-01 Codex handoff: web-admin 24-country expansion, language picker redesign, Pixel Advanced Matching
+- Confirmed `ghcr.io/vamshi4/salone-web:a3d49e7` exists in GHCR (build succeeded in 1m13s).
+- Pinned `salone-web` to `a3d49e7`:
+  - Signup's country/currency picker expanded from 4 to the full 24 markets
+    mobile already supports (flags, dial codes, currencies), each translated
+    into all 25 UI languages.
+  - Pre-login language picker redesigned to match mobile's compact
+    icon+label corner control instead of floating below the form.
+  - Meta Pixel Event Match Quality improved via Advanced Matching — phone
+    and name are now passed (and hashed client-side by the Pixel SDK) right
+    before the CompleteRegistration/Lead conversion fires.
+  - Verified live on production (web.slotvibe.buzz) via real instrumented
+    test signups: CompleteRegistration + Lead confirmed firing correctly,
+    and confirmed reaching Meta via Events Manager (EMQ 6.98/7.84).
+  - Backend remains on `9d966e9`.
+
 ## 2026-07-29 — web admin: real-backend wiring + Flutter v4.1 field-parity audit (commit `af8e160`)
 
 Continuation of the `web-admin` work referenced in the two Codex handoff notes just above (those
