@@ -1,0 +1,30 @@
+# Normalize line endings. Without this, files touched from Windows came back
+# as CRLF and git reported every line of them as changed — 112 files of pure
+# noise against ~37 real ones, which is how real work ends up hidden in
+# `git status`. `text=auto` stores LF in the repo and checks out the platform
+# default, so the same thing can't happen again.
+* text=auto
+
+# Explicitly binary. `text=auto` already sniffs for binary content, but being
+# explicit means a heuristic miss can never corrupt one of these by rewriting
+# bytes that happen to look like line endings.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.svg   text
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.mp4   binary
+*.pdf   binary
+*.zip   binary
+*.tar   binary
+*.apk   binary
+*.aab   binary
+*.jar   binary
+*.jks   binary
+*.keystore binary
