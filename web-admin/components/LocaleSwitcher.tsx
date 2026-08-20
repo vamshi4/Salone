@@ -7,10 +7,10 @@ import { locales, localeNames, type Locale } from '@/i18n/locales';
 import { setLocaleCookie } from '@/lib/locale';
 
 /** Compact language picker for pages that render before login (no
- * Preferences tab to switch from there) — a small icon+label control meant
- * to sit top-right inside the card, matching the mobile app's
- * auth_pick_language button (login_screen.dart) instead of floating below
- * the form as a disconnected element. */
+ * Preferences tab to switch from there). Sits top-right of the *page*, not
+ * inside the auth card: at 25 locales the widest option name runs ~163px,
+ * over half the 300px card, so in-card it pushed the logo down and the first
+ * thing you saw was a dropdown rather than the brand. */
 export function LocaleSwitcher({ className = '' }: { className?: string }) {
   const locale = useLocale();
   const router = useRouter();
