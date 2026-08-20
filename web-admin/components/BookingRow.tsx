@@ -2,8 +2,9 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import { StatusBadge } from './StatusBadge';
-import { formatCurrency, type Booking } from '@/lib/salon-api';
-import { RotateCcw } from 'lucide-react';
+import { formatCurrency, reviewLink, type Booking } from '@/lib/salon-api';
+import { whatsappUrl } from '@/lib/booking-helpers';
+import { RotateCcw, Star } from 'lucide-react';
 import { Avatar } from './Avatar';
 
 function formatTime(iso: string, locale: string) {
@@ -16,17 +17,28 @@ export function BookingRow({
   booking,
   isRepeat,
   currency,
+  salonName,
   onOpenCustomer,
   onRebook,
 }: {
   booking: Booking;
   isRepeat?: boolean;
   currency?: string | null;
+  salonName?: string;
   onOpenCustomer: (b: Booking) => void;
   onRebook: (b: Booking) => void;
 }) {
   const t = useTranslations('bookingRow');
   const locale = useLocale();
+
+  const requestReview = () => {
+    const message = t('reviewMessage', {
+      name: booking.customerName || t('serviceFallback'),
+      salonName: salonName ?? '',
+      link: reviewLink(booking.id),
+    });
+    window.open(whatsappUrl(booking.customerPhone, message), '_blank');
+  };
 
   return (
     <div
@@ -56,6 +68,16 @@ export function BookingRow({
       <div className="flex items-center gap-3 flex-shrink-0 ml-3">
         <span className="text-xs text-gray-900 tabular-nums">{formatCurrency(booking.price + booking.retailTotal, currency)}</span>
         <StatusBadge status={booking.status} />
+        <button
+          title={t('requestReview')}
+          onClick={(e) => {
+            e.stopPropagation();
+            requestReview();
+          }}
+          className="p-1.5 hover:bg-gray-200 rounded-md transition-colors"
+        >
+          <Star size={13} className="text-gray-400" />
+        </button>
         <button
           title={t('rebook')}
           onClick={(e) => {

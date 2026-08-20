@@ -256,6 +256,7 @@ export default function BookingsPage() {
                       booking={b}
                       isRepeat={repeats.has(b.customerId)}
                       currency={salon?.currency}
+                      salonName={salon?.name}
                       onOpenCustomer={openCustomer}
                       onRebook={setRebook}
                     />

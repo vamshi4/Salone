@@ -89,7 +89,10 @@
     "loggedToday": "Enregistré aujourd'hui",
     "viewAll": "Tout voir",
     "nothingLoggedYet": "Rien n'a encore été enregistré aujourd'hui — appuyez sur « Nouvelle réservation » pour enregistrer une visite sans rendez-vous.",
-    "noSalonYet": "Aucun salon trouvé pour votre compte pour le moment."
+    "noSalonYet": "Aucun salon trouvé pour votre compte pour le moment.",
+    "quickLog": "Enregistrer un passage",
+    "quickLogHint": "Appuyez pour enregistrer sa prestation habituelle",
+    "daysAgo": "{days, plural, =0 {aujourd'hui} one {il y a # jour} other {il y a # jours}}"
   },
   "bookings": {
     "title": "Réservations",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Service",
     "repeat": "récurrent",
-    "rebook": "Réserver à nouveau"
+    "rebook": "Réserver à nouveau",
+    "requestReview": "Demander un avis",
+    "reviewMessage": "Bonjour {name} ! Merci d'avoir visité {salonName}. Nous aimerions connaître votre avis — {link}"
   },
   "staff": {
     "title": "Personnel",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "Relancer par WhatsApp",
     "customerFallback": "Client",
     "daysOverdue": "{days} jours de retard",
-    "whatsappGreeting": "Bonjour {name} ! Cela fait un moment que vous n'êtes pas venu(e) chez {salonName}. Nous serions ravis de vous revoir — répondez ici pour réserver votre prochain rendez-vous."
+    "whatsappGreeting": "Bonjour {name} ! Cela fait un moment que vous n'êtes pas venu(e) chez {salonName}. Nous serions ravis de vous revoir — répondez ici pour réserver votre prochain rendez-vous.",
+    "tabReviews": "Avis",
+    "loadingReviews": "Chargement des avis…",
+    "loadErrorReviews": "Impossible de charger les avis. Réessayez.",
+    "overallRating": "Note globale",
+    "reviewCount": "{count, plural, one {# avis} other {# avis}}",
+    "recentReviews": "Avis récents",
+    "noReviewsYet": "Aucun avis pour le moment. Demandez à un client satisfait d'en laisser un !",
+    "needsAttention": "Nécessite une attention",
+    "stylistLabel": "{name} :",
+    "salonLabel": "Salon :",
+    "bookingSources": "D'où viennent les réservations",
+    "bookingSourcesHint": "Votre lien de réservation face aux clients que vous saisissez",
+    "source_PUBLIC_PAGE": "Lien de réservation / QR",
+    "source_SALONS_TAB": "Saisi par le personnel",
+    "source_STYLISTS_TAB": "Appli client",
+    "sourceCount": "{count, plural, one {# réservation} other {# réservations}}",
+    "serviceCount": "{count, plural, one {# service} other {# services}}"
   },
   "login": {
     "errPhone": "Saisissez un numéro de téléphone valide",
@@ -483,7 +505,8 @@
     "saving": "Enregistrement…",
     "collectingPayment": "En attente du paiement…",
     "logService": "Enregistrer le service",
-    "scheduleBooking": "Planifier la réservation"
+    "scheduleBooking": "Planifier la réservation",
+    "logTitle": "Enregistrer un passage"
   },
   "completeBooking": {
     "title": "Finaliser la réservation",

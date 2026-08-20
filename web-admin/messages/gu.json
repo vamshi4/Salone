@@ -89,7 +89,10 @@
     "loggedToday": "આજે લોગ થયું",
     "viewAll": "બધું જુઓ",
     "nothingLoggedYet": "આજે હજુ સુધી કંઈ લોગ થયું નથી — વોક-ઇન નોંધવા માટે \"નવી બુકિંગ\" પર ટેપ કરો.",
-    "noSalonYet": "તમારા ખાતામાં હજુ સુધી કોઈ સલૂન મળ્યું નથી."
+    "noSalonYet": "તમારા ખાતામાં હજુ સુધી કોઈ સલૂન મળ્યું નથી.",
+    "quickLog": "વોક-ઇન નોંધો",
+    "quickLogHint": "તેમની સામાન્ય સેવા નોંધવા ટૅપ કરો",
+    "daysAgo": "{days, plural, =0 {આજે} one {# દિવસ પહેલાં} other {# દિવસ પહેલાં}}"
   },
   "bookings": {
     "title": "બુકિંગ્સ",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "સેવા",
     "repeat": "પુનરાવર્તન",
-    "rebook": "ફરીથી બુક કરો"
+    "rebook": "ફરીથી બુક કરો",
+    "requestReview": "સમીક્ષાની વિનંતી કરો",
+    "reviewMessage": "નમસ્તે {name}! {salonName}ની મુલાકાત લેવા બદલ આભાર. અમને તમારો પ્રતિસાદ ગમશે — {link}"
   },
   "staff": {
     "title": "સ્ટાફ",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "WhatsApp પર યાદ અપાવો",
     "customerFallback": "ગ્રાહક",
     "daysOverdue": "{days} દિવસ વીતી ગયા",
-    "whatsappGreeting": "નમસ્તે {name}! તમે {salonName} પર છેલ્લે આવ્યા તેને ઘણો સમય થઈ ગયો છે. અમે તમને ફરી મળવા આતુર છીએ — તમારી આગલી બુકિંગ માટે અહીં જવાબ આપો."
+    "whatsappGreeting": "નમસ્તે {name}! તમે {salonName} પર છેલ્લે આવ્યા તેને ઘણો સમય થઈ ગયો છે. અમે તમને ફરી મળવા આતુર છીએ — તમારી આગલી બુકિંગ માટે અહીં જવાબ આપો.",
+    "tabReviews": "સમીક્ષાઓ",
+    "loadingReviews": "સમીક્ષાઓ લોડ થઈ રહી છે…",
+    "loadErrorReviews": "સમીક્ષાઓ લોડ થઈ શકી નહીં. ફરી પ્રયાસ કરો.",
+    "overallRating": "એકંદર રેટિંગ",
+    "reviewCount": "{count, plural, one {# સમીક્ષા} other {# સમીક્ષાઓ}}",
+    "recentReviews": "તાજેતરની સમીક્ષાઓ",
+    "noReviewsYet": "હજુ સુધી કોઈ સમીક્ષા નથી. કોઈ ખુશ ગ્રાહકને એક છોડવા કહો!",
+    "needsAttention": "ધ્યાન આપવાની જરૂર",
+    "stylistLabel": "{name}:",
+    "salonLabel": "સલૂન:",
+    "bookingSources": "બુકિંગ ક્યાંથી આવે છે",
+    "bookingSourcesHint": "તમારી બુકિંગ લિંક vs તમે નોંધેલા વોક-ઇન",
+    "source_PUBLIC_PAGE": "બુકિંગ લિંક / QR",
+    "source_SALONS_TAB": "સ્ટાફ દ્વારા નોંધાયેલ",
+    "source_STYLISTS_TAB": "ગ્રાહક એપ",
+    "sourceCount": "{count, plural, one {# બુકિંગ} other {# બુકિંગ}}",
+    "serviceCount": "{count, plural, one {# સેવા} other {# સેવાઓ}}"
   },
   "login": {
     "errPhone": "એક માન્ય ફોન નંબર દાખલ કરો",
@@ -483,7 +505,8 @@
     "saving": "સાચવી રહ્યા છીએ…",
     "collectingPayment": "ચુકવણીની રાહ જોવાઈ રહી છે…",
     "logService": "સેવા લોગ કરો",
-    "scheduleBooking": "બુકિંગ શેડ્યૂલ કરો"
+    "scheduleBooking": "બુકિંગ શેડ્યૂલ કરો",
+    "logTitle": "વોક-ઇન નોંધો"
   },
   "completeBooking": {
     "title": "બુકિંગ પૂર્ણ કરો",

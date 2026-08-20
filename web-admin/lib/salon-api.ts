@@ -1,4 +1,4 @@
-import apiClient from './api';
+import apiClient, { API_URL } from './api';
 
 // All money fields on the backend are stored in paise (minor units) — see
 // mobile's formatMoney(). Every function here accepts/returns plain rupees;
@@ -756,7 +756,12 @@ export interface AtRiskCustomer {
   lastVisit: string;
 }
 
-export async function fetchAtRisk(salonId: string): Promise<{ customers: AtRiskCustomer[]; atRiskRevenue: number }> {
+// `count` is the full at-risk total, which can exceed customers.length — the
+// endpoint caps the list at 40. Keep it so callers can say "12 overdue" while
+// only rendering the few that fit.
+export async function fetchAtRisk(
+  salonId: string
+): Promise<{ customers: AtRiskCustomer[]; atRiskRevenue: number; count: number }> {
   const res = await apiClient.get(`/salons/${salonId}/at-risk`);
   const customers = (res.data.customers ?? []).map((c: any) => ({
     customerId: c.customerId,
@@ -769,5 +774,114 @@ export async function fetchAtRisk(salonId: string): Promise<{ customers: AtRiskC
     totalSpend: toRupees(c.totalSpend ?? 0),
     lastVisit: c.lastVisit,
   }));
-  return { customers, atRiskRevenue: toRupees(res.data.atRiskRevenue ?? 0) };
+  return {
+    customers,
+    atRiskRevenue: toRupees(res.data.atRiskRevenue ?? 0),
+    count: res.data.count ?? customers.length,
+  };
+}
+
+// ---------- Regulars (one-tap walk-in logging) ----------
+
+export interface Regular {
+  customerId: string;
+  name: string | null;
+  phone: string;
+  visits: number;
+  daysSince: number;
+  stylistId: string | null;
+  stylistName: string | null;
+  serviceIds: string[];
+  serviceNames: string[];
+  price: number; // rupees, their usual total
+}
+
+export async function fetchRegulars(salonId: string, limit = 10): Promise<Regular[]> {
+  const res = await apiClient.get(`/salons/${salonId}/regulars`, { params: { limit } });
+  return (res.data.customers ?? []).map((c: any) => ({
+    customerId: c.customerId,
+    name: c.name,
+    phone: c.phone,
+    visits: c.visits ?? 0,
+    daysSince: c.daysSince ?? 0,
+    stylistId: c.stylistId ?? null,
+    stylistName: c.stylistName ?? null,
+    serviceIds: c.serviceIds ?? [],
+    serviceNames: c.serviceNames ?? [],
+    price: toRupees(c.price ?? 0),
+  }));
+}
+
+// ---------- Booking sources ----------
+
+// The enum values are named after old UI tabs and mislead about who actually
+// creates them, so the UI labels them by what they mean, not what they're
+// called: SALONS_TAB is a walk-in the owner typed in, not a self-serve booking.
+export type BookingSource = 'PUBLIC_PAGE' | 'SALONS_TAB' | 'STYLISTS_TAB';
+
+export interface BookingSourceRow {
+  source: BookingSource;
+  bookings: number;
+  revenue: number;
+  share: number; // whole percent, already rounded server-side
+}
+
+export async function fetchBookingSources(
+  salonId: string,
+  period: 'day' | 'week' | 'month'
+): Promise<{ totalBookings: number; sources: BookingSourceRow[] }> {
+  const res = await apiClient.get(`/salons/${salonId}/booking-sources`, { params: { period } });
+  return {
+    totalBookings: res.data.totalBookings ?? 0,
+    sources: (res.data.sources ?? []).map((s: any) => ({
+      source: s.source,
+      bookings: s.bookings ?? 0,
+      revenue: toRupees(s.revenue ?? 0),
+      share: s.share ?? 0,
+    })),
+  };
+}
+
+// ---------- Reviews ----------
+
+export interface StylistRating {
+  stylistId: string;
+  name: string;
+  rating: number;
+  totalReviews: number;
+}
+
+export interface Review {
+  id: string;
+  customerName: string;
+  stylistName: string;
+  serviceNames: string[];
+  stylistRating: number | null;
+  salonRating: number | null;
+  stylistComment: string | null;
+  salonComment: string | null;
+  flagged: boolean;
+  createdAt: string;
+}
+
+export interface Reviews {
+  salon: { rating: number; totalReviews: number };
+  byStylist: StylistRating[];
+  reviews: Review[];
+}
+
+export async function fetchReviews(salonId: string): Promise<Reviews> {
+  const res = await apiClient.get(`/salons/${salonId}/reviews`);
+  return {
+    salon: { rating: res.data.salon?.rating ?? 0, totalReviews: res.data.salon?.totalReviews ?? 0 },
+    byStylist: res.data.byStylist ?? [],
+    reviews: res.data.reviews ?? [],
+  };
+}
+
+// The link shared with a customer after a completed booking — the bookingId
+// itself is the access token (see backend/src/public-review.ts). The review
+// page is served by the backend (same as /book/:salonId), not web-admin.
+export function reviewLink(bookingId: string): string {
+  return `${API_URL}/review/${bookingId}`;
 }

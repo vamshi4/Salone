@@ -89,7 +89,10 @@
     "loggedToday": "Registrato oggi",
     "viewAll": "Vedi tutto",
     "nothingLoggedYet": "Non è stato ancora registrato nulla oggi — tocca \"Nuova prenotazione\" per registrare una visita senza appuntamento.",
-    "noSalonYet": "Nessun salone trovato ancora per il tuo account."
+    "noSalonYet": "Nessun salone trovato ancora per il tuo account.",
+    "quickLog": "Registra un passaggio",
+    "quickLogHint": "Tocca per registrare il servizio abituale",
+    "daysAgo": "{days, plural, =0 {oggi} one {# giorno fa} other {# giorni fa}}"
   },
   "bookings": {
     "title": "Prenotazioni",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Servizio",
     "repeat": "ricorrente",
-    "rebook": "Prenota di nuovo"
+    "rebook": "Prenota di nuovo",
+    "requestReview": "Richiedi recensione",
+    "reviewMessage": "Ciao {name}! Grazie per aver visitato {salonName}. Ci piacerebbe conoscere la tua opinione — {link}"
   },
   "staff": {
     "title": "Personale",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "Ricorda su WhatsApp",
     "customerFallback": "Cliente",
     "daysOverdue": "{days} giorni di ritardo",
-    "whatsappGreeting": "Ciao {name}! È da un po' che non vieni da {salonName}. Ci farebbe piacere rivederti — rispondi qui per prenotare il tuo prossimo appuntamento."
+    "whatsappGreeting": "Ciao {name}! È da un po' che non vieni da {salonName}. Ci farebbe piacere rivederti — rispondi qui per prenotare il tuo prossimo appuntamento.",
+    "tabReviews": "Recensioni",
+    "loadingReviews": "Caricamento recensioni…",
+    "loadErrorReviews": "Impossibile caricare le recensioni. Riprova.",
+    "overallRating": "Valutazione complessiva",
+    "reviewCount": "{count, plural, one {# recensione} other {# recensioni}}",
+    "recentReviews": "Recensioni recenti",
+    "noReviewsYet": "Ancora nessuna recensione. Chiedi a un cliente soddisfatto di lasciarne una!",
+    "needsAttention": "Richiede attenzione",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Salone:",
+    "bookingSources": "Da dove arrivano le prenotazioni",
+    "bookingSourcesHint": "Il tuo link rispetto ai clienti che registri tu",
+    "source_PUBLIC_PAGE": "Link di prenotazione / QR",
+    "source_SALONS_TAB": "Registrato dallo staff",
+    "source_STYLISTS_TAB": "App clienti",
+    "sourceCount": "{count, plural, one {# prenotazione} other {# prenotazioni}}",
+    "serviceCount": "{count, plural, one {# servizio} other {# servizi}}"
   },
   "login": {
     "errPhone": "Inserisci un numero di telefono valido",
@@ -483,7 +505,8 @@
     "saving": "Salvataggio…",
     "collectingPayment": "In attesa del pagamento…",
     "logService": "Registra servizio",
-    "scheduleBooking": "Pianifica prenotazione"
+    "scheduleBooking": "Pianifica prenotazione",
+    "logTitle": "Registra un passaggio"
   },
   "completeBooking": {
     "title": "Completa prenotazione",

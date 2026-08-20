@@ -89,7 +89,10 @@
     "loggedToday": "Înregistrat azi",
     "viewAll": "Vezi tot",
     "nothingLoggedYet": "Nimic înregistrat azi încă — atinge „Programare nouă” pentru a înregistra o vizită fără programare.",
-    "noSalonYet": "Niciun salon nu a fost găsit încă în contul tău."
+    "noSalonYet": "Niciun salon nu a fost găsit încă în contul tău.",
+    "quickLog": "Înregistrează o vizită",
+    "quickLogHint": "Atinge pentru a înregistra serviciul obișnuit",
+    "daysAgo": "{days, plural, =0 {azi} one {acum # zi} few {acum # zile} other {acum # de zile}}"
   },
   "bookings": {
     "title": "Programări",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Serviciu",
     "repeat": "recurent",
-    "rebook": "Reprogramează"
+    "rebook": "Reprogramează",
+    "requestReview": "Solicită recenzie",
+    "reviewMessage": "Bună {name}! Mulțumim că ai vizitat {salonName}. Ne-ar plăcea să auzim părerea ta — {link}"
   },
   "staff": {
     "title": "Personal",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "Reamintește prin WhatsApp",
     "customerFallback": "Client",
     "daysOverdue": "{days} zile întârziere",
-    "whatsappGreeting": "Bună {name}! A trecut ceva timp de când nu ai mai vizitat {salonName}. Ne-ar plăcea să te revedem — răspunde aici pentru a-ți programa următoarea vizită."
+    "whatsappGreeting": "Bună {name}! A trecut ceva timp de când nu ai mai vizitat {salonName}. Ne-ar plăcea să te revedem — răspunde aici pentru a-ți programa următoarea vizită.",
+    "tabReviews": "Recenzii",
+    "loadingReviews": "Se încarcă recenziile…",
+    "loadErrorReviews": "Recenziile nu au putut fi încărcate. Încearcă din nou.",
+    "overallRating": "Evaluare generală",
+    "reviewCount": "{count, plural, one {# recenzie} few {# recenzii} other {# de recenzii}}",
+    "recentReviews": "Recenzii recente",
+    "noReviewsYet": "Încă nicio recenzie. Roagă un client mulțumit să lase una!",
+    "needsAttention": "Necesită atenție",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Salon:",
+    "bookingSources": "De unde vin rezervările",
+    "bookingSourcesHint": "Linkul tău de rezervare față de clienții pe care îi înregistrezi",
+    "source_PUBLIC_PAGE": "Link rezervare / QR",
+    "source_SALONS_TAB": "Înregistrat de personal",
+    "source_STYLISTS_TAB": "Aplicația clientului",
+    "sourceCount": "{count, plural, one {# rezervare} few {# rezervări} other {# de rezervări}}",
+    "serviceCount": "{count, plural, one {# serviciu} few {# servicii} other {# de servicii}}"
   },
   "login": {
     "errPhone": "Introdu un număr de telefon valid",
@@ -483,7 +505,8 @@
     "saving": "Se salvează…",
     "collectingPayment": "Se așteaptă plata…",
     "logService": "Înregistrează serviciul",
-    "scheduleBooking": "Programează"
+    "scheduleBooking": "Programează",
+    "logTitle": "Înregistrează o vizită"
   },
   "completeBooking": {
     "title": "Finalizează programarea",

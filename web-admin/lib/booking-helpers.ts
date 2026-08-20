@@ -1,5 +1,11 @@
 import type { Booking } from './salon-api';
 
+export function whatsappUrl(phone: string, message: string) {
+  const digits = phone.replace(/\D/g, '');
+  const intl = digits.startsWith('91') ? digits : `91${digits}`;
+  return `https://wa.me/${intl}?text=${encodeURIComponent(message)}`;
+}
+
 export function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }

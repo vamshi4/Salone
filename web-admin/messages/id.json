@@ -89,7 +89,10 @@
     "loggedToday": "Dicatat hari ini",
     "viewAll": "Lihat semua",
     "nothingLoggedYet": "Belum ada yang dicatat hari ini — ketuk \"Pemesanan baru\" untuk mencatat kunjungan langsung.",
-    "noSalonYet": "Belum ada salon yang ditemukan di akun Anda."
+    "noSalonYet": "Belum ada salon yang ditemukan di akun Anda.",
+    "quickLog": "Catat kunjungan",
+    "quickLogHint": "Ketuk untuk mencatat layanan biasanya",
+    "daysAgo": "{days, plural, =0 {hari ini} other {# hari lalu}}"
   },
   "bookings": {
     "title": "Pemesanan",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Layanan",
     "repeat": "berulang",
-    "rebook": "Pesan lagi"
+    "rebook": "Pesan lagi",
+    "requestReview": "Minta ulasan",
+    "reviewMessage": "Hai {name}! Terima kasih telah mengunjungi {salonName}. Kami ingin mendengar pendapat Anda — {link}"
   },
   "staff": {
     "title": "Staf",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "Ingatkan lewat WhatsApp",
     "customerFallback": "Pelanggan",
     "daysOverdue": "terlambat {days} hari",
-    "whatsappGreeting": "Hai {name}! Sudah lama Anda tidak mengunjungi {salonName}. Kami akan senang bertemu Anda lagi — balas di sini untuk memesan kunjungan berikutnya."
+    "whatsappGreeting": "Hai {name}! Sudah lama Anda tidak mengunjungi {salonName}. Kami akan senang bertemu Anda lagi — balas di sini untuk memesan kunjungan berikutnya.",
+    "tabReviews": "Ulasan",
+    "loadingReviews": "Memuat ulasan…",
+    "loadErrorReviews": "Ulasan tidak dapat dimuat. Coba lagi.",
+    "overallRating": "Peringkat keseluruhan",
+    "reviewCount": "{count, plural, other {# ulasan}}",
+    "recentReviews": "Ulasan terbaru",
+    "noReviewsYet": "Belum ada ulasan. Minta pelanggan yang puas untuk memberikan satu!",
+    "needsAttention": "Perlu perhatian",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Salon:",
+    "bookingSources": "Dari mana pemesanan berasal",
+    "bookingSourcesHint": "Tautan pemesanan Anda vs. pelanggan yang Anda catat sendiri",
+    "source_PUBLIC_PAGE": "Tautan pemesanan / QR",
+    "source_SALONS_TAB": "Dicatat oleh staf",
+    "source_STYLISTS_TAB": "Aplikasi pelanggan",
+    "sourceCount": "{count, plural, other {# pemesanan}}",
+    "serviceCount": "{count, plural, other {# layanan}}"
   },
   "login": {
     "errPhone": "Masukkan nomor telepon yang valid",
@@ -483,7 +505,8 @@
     "saving": "Menyimpan…",
     "collectingPayment": "Menunggu pembayaran…",
     "logService": "Catat layanan",
-    "scheduleBooking": "Jadwalkan pemesanan"
+    "scheduleBooking": "Jadwalkan pemesanan",
+    "logTitle": "Catat kunjungan"
   },
   "completeBooking": {
     "title": "Selesaikan pemesanan",

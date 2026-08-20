@@ -16,9 +16,18 @@ import { collectRazorpayPayment } from '@/lib/razorpay';
 export function NewBookingModal({
   onClose,
   prefill,
+  mode = 'rebook',
 }: {
   onClose: () => void;
-  prefill?: Booking;
+  // Only the fields actually read below, so callers that have a customer's
+  // usual booking shape (see /salons/:id/regulars) can prefill without
+  // inventing a whole Booking.
+  prefill?: Pick<Booking, 'customerName' | 'customerPhone' | 'stylistId' | 'serviceIds'>;
+  // 'rebook' schedules a future appointment from a past one. 'logNow' records
+  // a walk-in that already happened — same prefill, but it must default to
+  // "Done service", otherwise the visit lands in the future and the retention
+  // maths counts the customer as still missing.
+  mode?: 'rebook' | 'logNow';
 }) {
   const t = useTranslations('newBooking');
   const salonId = useSelectedSalonId();
@@ -29,7 +38,7 @@ export function NewBookingModal({
   const activeStaff = (salon?.staff ?? []).filter((s) => s.status === 'ACTIVE');
   const services = salon?.services ?? [];
 
-  const [completed, setCompleted] = useState(!prefill);
+  const [completed, setCompleted] = useState(mode === 'logNow' || !prefill);
   const [name, setName] = useState(prefill?.customerName ?? '');
   const [phone, setPhone] = useState(prefill?.customerPhone ?? '');
   const [stylistId, setStylistId] = useState(prefill?.stylistId ?? activeStaff[0]?.stylistId ?? '');
@@ -119,7 +128,10 @@ export function NewBookingModal({
 
   return (
     <Modal
-      title={prefill ? t('rebookTitle') : t('newTitle')}
+      // logNow also arrives with a prefill, but calling it "Rebook customer"
+      // misdescribes it — nothing is being re-booked, a visit that already
+      // happened is being recorded.
+      title={mode === 'logNow' ? t('logTitle') : prefill ? t('rebookTitle') : t('newTitle')}
       subtitle={completed ? t('doneSubtitle') : t('scheduleSubtitle')}
       onClose={onClose}
     >

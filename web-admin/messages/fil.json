@@ -89,7 +89,10 @@
     "loggedToday": "Na-log ngayon",
     "viewAll": "Tingnan lahat",
     "nothingLoggedYet": "Wala pang na-log ngayon — i-tap ang \"Bagong booking\" para mag-log ng walk-in.",
-    "noSalonYet": "Wala pang nahanap na salon sa iyong account."
+    "noSalonYet": "Wala pang nahanap na salon sa iyong account.",
+    "quickLog": "Itala ang walk-in",
+    "quickLogHint": "I-tap para itala ang dati nilang serbisyo",
+    "daysAgo": "{days, plural, =0 {ngayon} one {# araw ang nakalipas} other {# na araw ang nakalipas}}"
   },
   "bookings": {
     "title": "Mga Booking",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Serbisyo",
     "repeat": "paulit-ulit",
-    "rebook": "Mag-book ulit"
+    "rebook": "Mag-book ulit",
+    "requestReview": "Humiling ng review",
+    "reviewMessage": "Hi {name}! Salamat sa pagbisita sa {salonName}. Gusto naming malaman ang iyong opinyon — {link}"
   },
   "staff": {
     "title": "Staff",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "Paalalahanan sa WhatsApp",
     "customerFallback": "Customer",
     "daysOverdue": "{days} araw na overdue",
-    "whatsappGreeting": "Hi {name}! Matagal ka nang hindi bumibisita sa {salonName}. Gusto ka naming makitang muli — sumagot dito para mag-book ng susunod mong bisita."
+    "whatsappGreeting": "Hi {name}! Matagal ka nang hindi bumibisita sa {salonName}. Gusto ka naming makitang muli — sumagot dito para mag-book ng susunod mong bisita.",
+    "tabReviews": "Mga Review",
+    "loadingReviews": "Nilo-load ang mga review…",
+    "loadErrorReviews": "Hindi ma-load ang mga review. Subukan ulit.",
+    "overallRating": "Pangkalahatang rating",
+    "reviewCount": "{count, plural, other {# review}}",
+    "recentReviews": "Mga kamakailang review",
+    "noReviewsYet": "Wala pang review. Hilingin sa isang satisfied na customer na mag-iwan ng isa!",
+    "needsAttention": "Kailangan ng atensyon",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Salon:",
+    "bookingSources": "Saan nanggagaling ang mga booking",
+    "bookingSourcesHint": "Ang iyong booking link kumpara sa mga walk-in na inilalagay mo",
+    "source_PUBLIC_PAGE": "Booking link / QR",
+    "source_SALONS_TAB": "Inilagay ng staff",
+    "source_STYLISTS_TAB": "Customer app",
+    "sourceCount": "{count, plural, one {# booking} other {# na booking}}",
+    "serviceCount": "{count, plural, one {# serbisyo} other {# na serbisyo}}"
   },
   "login": {
     "errPhone": "Maglagay ng valid na numero ng telepono",
@@ -483,7 +505,8 @@
     "saving": "Sine-save…",
     "collectingPayment": "Naghihintay ng bayad…",
     "logService": "I-log ang serbisyo",
-    "scheduleBooking": "I-iskedyul ang booking"
+    "scheduleBooking": "I-iskedyul ang booking",
+    "logTitle": "Itala ang walk-in"
   },
   "completeBooking": {
     "title": "Kumpletuhin ang booking",

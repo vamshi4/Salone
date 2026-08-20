@@ -6,14 +6,17 @@ import { PageLayout } from '@/components/PageLayout';
 import { CustomerProfileModal } from '@/components/CustomerProfileModal';
 import { useAppStore } from '@/lib/store';
 import { formatCurrency, type Customer } from '@/lib/salon-api';
+import { whatsappUrl } from '@/lib/booking-helpers';
 import {
   useAtRisk,
+  useBookingSources,
   useDownloadEarningsCsv,
   useEarnings,
   useRetention,
+  useReviews,
   useSelectedSalonId,
 } from '@/lib/salon-queries';
-import { ArrowUp, ArrowDown, Download, MessageCircle, PartyPopper, BellRing } from 'lucide-react';
+import { ArrowUp, ArrowDown, Download, MessageCircle, PartyPopper, BellRing, Star } from 'lucide-react';
 
 type CohortKey = 'retained' | 'new' | 'reactivated' | 'churned';
 
@@ -24,17 +27,11 @@ const COHORT_META: { key: CohortKey; labelKey: string; color: string }[] = [
   { key: 'churned', labelKey: 'cohortChurned', color: '#E24B4A' },
 ];
 
-function whatsappUrl(phone: string, message: string) {
-  const digits = phone.replace(/\D/g, '');
-  const intl = digits.startsWith('91') ? digits : `91${digits}`;
-  return `https://wa.me/${intl}?text=${encodeURIComponent(message)}`;
-}
-
 function SegTabs({ tab, onChange }: { tab: number; onChange: (i: number) => void }) {
   const t = useTranslations('insights');
   return (
     <div className="flex gap-1 bg-gray-100 p-0.5 rounded-md w-fit">
-      {[t('tabEarnings'), t('tabRetention')].map((label, i) => (
+      {[t('tabEarnings'), t('tabRetention'), t('tabReviews')].map((label, i) => (
         <button
           key={label}
           onClick={() => onChange(i)}
@@ -55,6 +52,8 @@ function EarningsTab({ salonId }: { salonId: string }) {
   const salon = useAppStore((s) => s.salons.find((x) => x.id === salonId));
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('day');
   const { data, isLoading, isError } = useEarnings(salonId, period);
+  // Shares the period toggle above, so the split re-reads with the range.
+  const { data: sources } = useBookingSources(salonId, period);
   const downloadCsv = useDownloadEarningsCsv();
 
   const change =
@@ -147,6 +146,41 @@ function EarningsTab({ salonId }: { salonId: string }) {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Where bookings come from. Answers whether the public link/QR is
+              actually pulling its weight — the data was always recorded on
+              every booking, just never shown. */}
+          {sources && sources.totalBookings > 0 && (
+            <div className="card p-4">
+              <p className="text-xs font-semibold text-gray-900">{t('bookingSources')}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5 mb-3">{t('bookingSourcesHint')}</p>
+              <div className="space-y-2.5">
+                {sources.sources.map((s) => (
+                  <div key={s.source}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-gray-800">{t(`source_${s.source}`)}</span>
+                      <span className="text-[11px] text-gray-500 tabular-nums whitespace-nowrap">
+                        {t('sourceCount', { count: s.bookings })} · {formatCurrency(s.revenue, salon?.currency)}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <div className="h-1.5 flex-1 rounded-full bg-gray-100 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${
+                            s.source === 'PUBLIC_PAGE' ? 'bg-primary' : 'bg-gray-300'
+                          }`}
+                          style={{ width: `${s.share}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] font-semibold text-gray-600 tabular-nums w-9 text-end">
+                        {s.share}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -445,6 +479,102 @@ function RetentionTab({ salonId, onOpenCustomer }: { salonId: string; onOpenCust
   );
 }
 
+function Stars({ value, size = 13 }: { value: number; size?: number }) {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          size={size}
+          className={n <= Math.round(value) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}
+        />
+      ))}
+    </span>
+  );
+}
+
+function ReviewsTab({ salonId }: { salonId: string }) {
+  const t = useTranslations('insights');
+  const { data, isLoading, isError } = useReviews(salonId);
+
+  if (isLoading) return <p className="text-xs text-gray-400">{t('loadingReviews')}</p>;
+  if (isError || !data) return <p className="text-xs text-red-600">{t('loadErrorReviews')}</p>;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="card p-4">
+          <p className="text-xs font-semibold text-gray-900 mb-2">{t('overallRating')}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-gray-900 tabular-nums">{data.salon.rating.toFixed(1)}</span>
+            <div>
+              <Stars value={data.salon.rating} size={15} />
+              <p className="text-xs text-gray-400 mt-0.5">{t('reviewCount', { count: data.salon.totalReviews })}</p>
+            </div>
+          </div>
+        </div>
+        {data.byStylist.length > 0 && (
+          <div className="card p-4">
+            <p className="text-xs font-semibold text-gray-900 mb-2">{t('byStaff')}</p>
+            <div className="space-y-1.5">
+              {data.byStylist.map((s) => (
+                <div key={s.stylistId} className="flex items-center justify-between text-xs">
+                  <span className="text-gray-700">{s.name}</span>
+                  <div className="flex items-center gap-1.5">
+                    <Stars value={s.rating} size={12} />
+                    <span className="text-gray-400 tabular-nums">({s.totalReviews})</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold text-gray-900 mb-1.5">{t('recentReviews')}</p>
+        {data.reviews.length === 0 ? (
+          <div className="card px-4 py-6 text-center">
+            <p className="text-xs text-gray-400">{t('noReviewsYet')}</p>
+          </div>
+        ) : (
+          <div className="card divide-y divide-gray-100">
+            {data.reviews.map((r) => (
+              <div key={r.id} className={`px-3.5 py-3 ${r.flagged ? 'bg-red-50/50' : ''}`}>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-gray-900">
+                    {r.customerName}
+                    <span className="text-gray-400 font-normal"> · {r.serviceNames.join(', ')}</span>
+                  </p>
+                  {r.flagged && (
+                    <span className="px-1.5 py-px rounded bg-red-100 text-red-600 text-[10px] font-semibold">
+                      {t('needsAttention')}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-4 mt-1.5">
+                  {r.stylistRating != null && (
+                    <div className="text-xs text-gray-500">
+                      {t('stylistLabel', { name: r.stylistName })} <Stars value={r.stylistRating} />
+                    </div>
+                  )}
+                  {r.salonRating != null && (
+                    <div className="text-xs text-gray-500">
+                      {t('salonLabel')} <Stars value={r.salonRating} />
+                    </div>
+                  )}
+                </div>
+                {r.stylistComment && <p className="text-xs text-gray-600 mt-1.5">“{r.stylistComment}”</p>}
+                {r.salonComment && <p className="text-xs text-gray-600 mt-1">“{r.salonComment}”</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function InsightsPage() {
   const t = useTranslations('insights');
   const salonId = useSelectedSalonId();
@@ -467,8 +597,10 @@ export default function InsightsPage() {
         <SegTabs tab={tab} onChange={setTab} />
         {tab === 0 ? (
           <EarningsTab salonId={salonId} />
-        ) : (
+        ) : tab === 1 ? (
           <RetentionTab salonId={salonId} onOpenCustomer={setProfileCustomer} />
+        ) : (
+          <ReviewsTab salonId={salonId} />
         )}
       </div>
       {profileCustomer && (

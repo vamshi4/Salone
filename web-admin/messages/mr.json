@@ -89,7 +89,10 @@
     "loggedToday": "आज नोंदवले",
     "viewAll": "सर्व पहा",
     "nothingLoggedYet": "आज अजून काहीही नोंदवले नाही — वॉक-इन नोंदवण्यासाठी \"नवीन बुकिंग\" वर टॅप करा.",
-    "noSalonYet": "तुमच्या खात्यात अद्याप कोणतेही सलून सापडले नाही."
+    "noSalonYet": "तुमच्या खात्यात अद्याप कोणतेही सलून सापडले नाही.",
+    "quickLog": "वॉक-इन नोंदवा",
+    "quickLogHint": "त्यांची नेहमीची सेवा नोंदवण्यासाठी टॅप करा",
+    "daysAgo": "{days, plural, =0 {आज} one {# दिवसापूर्वी} other {# दिवसांपूर्वी}}"
   },
   "bookings": {
     "title": "बुकिंग्ज",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "सेवा",
     "repeat": "पुनरावृत्ती",
-    "rebook": "पुन्हा बुक करा"
+    "rebook": "पुन्हा बुक करा",
+    "requestReview": "पुनरावलोकनाची विनंती करा",
+    "reviewMessage": "नमस्कार {name}! {salonName} ला भेट दिल्याबद्दल धन्यवाद. आम्हाला तुमचा अभिप्राय आवडेल — {link}"
   },
   "staff": {
     "title": "स्टाफ",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "WhatsApp वर आठवण करून द्या",
     "customerFallback": "ग्राहक",
     "daysOverdue": "{days} दिवस उलटले",
-    "whatsappGreeting": "नमस्कार {name}! तुम्ही {salonName} ला येऊन बराच काळ झाला आहे. तुम्हाला पुन्हा भेटायला आम्हाला आवडेल — तुमच्या पुढील बुकिंगसाठी इथे उत्तर द्या."
+    "whatsappGreeting": "नमस्कार {name}! तुम्ही {salonName} ला येऊन बराच काळ झाला आहे. तुम्हाला पुन्हा भेटायला आम्हाला आवडेल — तुमच्या पुढील बुकिंगसाठी इथे उत्तर द्या.",
+    "tabReviews": "पुनरावलोकने",
+    "loadingReviews": "पुनरावलोकने लोड होत आहेत…",
+    "loadErrorReviews": "पुनरावलोकने लोड होऊ शकली नाहीत. पुन्हा प्रयत्न करा.",
+    "overallRating": "एकूण रेटिंग",
+    "reviewCount": "{count, plural, one {# पुनरावलोकन} other {# पुनरावलोकने}}",
+    "recentReviews": "अलीकडील पुनरावलोकने",
+    "noReviewsYet": "अद्याप कोणतीही पुनरावलोकने नाहीत. एखाद्या आनंदी ग्राहकाला एक देण्यास सांगा!",
+    "needsAttention": "लक्ष देण्याची गरज",
+    "stylistLabel": "{name}:",
+    "salonLabel": "सलून:",
+    "bookingSources": "बुकिंग कुठून येतात",
+    "bookingSourcesHint": "तुमची बुकिंग लिंक vs तुम्ही नोंदवलेले वॉक-इन",
+    "source_PUBLIC_PAGE": "बुकिंग लिंक / QR",
+    "source_SALONS_TAB": "कर्मचाऱ्यांनी नोंदवले",
+    "source_STYLISTS_TAB": "ग्राहक अ‍ॅप",
+    "sourceCount": "{count, plural, one {# बुकिंग} other {# बुकिंग}}",
+    "serviceCount": "{count, plural, one {# सेवा} other {# सेवा}}"
   },
   "login": {
     "errPhone": "वैध फोन नंबर टाका",
@@ -483,7 +505,8 @@
     "saving": "जतन करत आहे…",
     "collectingPayment": "पेमेंटची प्रतीक्षा…",
     "logService": "सेवा नोंदवा",
-    "scheduleBooking": "बुकिंग शेड्यूल करा"
+    "scheduleBooking": "बुकिंग शेड्यूल करा",
+    "logTitle": "वॉक-इन नोंदवा"
   },
   "completeBooking": {
     "title": "बुकिंग पूर्ण करा",

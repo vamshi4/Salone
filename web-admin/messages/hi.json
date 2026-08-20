@@ -89,7 +89,10 @@
     "loggedToday": "आज लॉग हुआ",
     "viewAll": "सभी देखें",
     "nothingLoggedYet": "आज अभी तक कुछ लॉग नहीं हुआ — वॉक-इन दर्ज करने के लिए \"नई बुकिंग\" पर टैप करें।",
-    "noSalonYet": "आपके खाते में अभी तक कोई सैलून नहीं मिला।"
+    "noSalonYet": "आपके खाते में अभी तक कोई सैलून नहीं मिला।",
+    "quickLog": "वॉक-इन दर्ज करें",
+    "quickLogHint": "सामान्य सेवा दर्ज करने के लिए टैप करें",
+    "daysAgo": "{days, plural, =0 {आज} one {# दिन पहले} other {# दिन पहले}}"
   },
   "bookings": {
     "title": "बुकिंग",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "सेवा",
     "repeat": "पुनरावृत्ति",
-    "rebook": "फिर से बुक करें"
+    "rebook": "फिर से बुक करें",
+    "requestReview": "समीक्षा का अनुरोध करें",
+    "reviewMessage": "नमस्ते {name}! {salonName} आने के लिए धन्यवाद। हमें आपकी प्रतिक्रिया पसंद आएगी — {link}"
   },
   "staff": {
     "title": "स्टाफ़",
@@ -171,6 +176,7 @@
     "noSalonYet": "अभी तक कोई सैलून चुना नहीं गया।",
     "tabEarnings": "कमाई",
     "tabRetention": "प्रतिधारण",
+    "tabReviews": "समीक्षाएं",
     "periodToday": "आज",
     "periodWeek": "सप्ताह",
     "periodMonth": "महीना",
@@ -215,7 +221,23 @@
     "remindWhatsApp": "WhatsApp पर याद दिलाएं",
     "customerFallback": "ग्राहक",
     "daysOverdue": "{days} दिन बीत गए",
-    "whatsappGreeting": "नमस्ते {name}! आपको {salonName} आए काफ़ी समय हो गया है। हमें आपको फिर से देखकर खुशी होगी — अपनी अगली बुकिंग के लिए यहां जवाब दें।"
+    "whatsappGreeting": "नमस्ते {name}! आपको {salonName} आए काफ़ी समय हो गया है। हमें आपको फिर से देखकर खुशी होगी — अपनी अगली बुकिंग के लिए यहां जवाब दें।",
+    "loadingReviews": "समीक्षाएं लोड हो रही हैं…",
+    "loadErrorReviews": "समीक्षाएं लोड नहीं हो सकीं। पुनः प्रयास करें।",
+    "overallRating": "समग्र रेटिंग",
+    "reviewCount": "{count, plural, one {# समीक्षा} other {# समीक्षाएं}}",
+    "recentReviews": "हाल की समीक्षाएं",
+    "noReviewsYet": "अभी तक कोई समीक्षा नहीं। किसी खुश ग्राहक से एक छोड़ने के लिए कहें!",
+    "needsAttention": "ध्यान देने की आवश्यकता",
+    "stylistLabel": "{name}:",
+    "salonLabel": "सैलून:",
+    "bookingSources": "बुकिंग कहाँ से आती हैं",
+    "bookingSourcesHint": "आपका बुकिंग लिंक बनाम आपके द्वारा दर्ज वॉक-इन",
+    "source_PUBLIC_PAGE": "बुकिंग लिंक / QR",
+    "source_SALONS_TAB": "स्टाफ द्वारा दर्ज",
+    "source_STYLISTS_TAB": "ग्राहक ऐप",
+    "sourceCount": "{count, plural, one {# बुकिंग} other {# बुकिंग}}",
+    "serviceCount": "{count, plural, one {# सेवा} other {# सेवाएँ}}"
   },
   "login": {
     "errPhone": "एक मान्य फ़ोन नंबर दर्ज करें",
@@ -483,7 +505,8 @@
     "saving": "सहेजा जा रहा है…",
     "collectingPayment": "भुगतान की प्रतीक्षा…",
     "logService": "सेवा लॉग करें",
-    "scheduleBooking": "बुकिंग शेड्यूल करें"
+    "scheduleBooking": "बुकिंग शेड्यूल करें",
+    "logTitle": "वॉक-इन दर्ज करें"
   },
   "completeBooking": {
     "title": "बुकिंग पूर्ण करें",

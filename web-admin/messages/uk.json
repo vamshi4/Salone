@@ -89,7 +89,10 @@
     "loggedToday": "Записано сьогодні",
     "viewAll": "Переглянути все",
     "nothingLoggedYet": "Сьогодні ще нічого не записано — торкніться «Новий запис», щоб зафіксувати візит без запису.",
-    "noSalonYet": "У вашому обліковому записі поки що не знайдено салону."
+    "noSalonYet": "У вашому обліковому записі поки що не знайдено салону.",
+    "quickLog": "Записати візит",
+    "quickLogHint": "Натисніть, щоб записати звичайну послугу",
+    "daysAgo": "{days, plural, =0 {сьогодні} one {# день тому} few {# дні тому} many {# днів тому} other {# днів тому}}"
   },
   "bookings": {
     "title": "Записи",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Послуга",
     "repeat": "повторюваний",
-    "rebook": "Записати знову"
+    "rebook": "Записати знову",
+    "requestReview": "Запросити відгук",
+    "reviewMessage": "Привіт, {name}! Дякуємо за відвідування {salonName}. Нам було б цікаво дізнатися вашу думку — {link}"
   },
   "staff": {
     "title": "Персонал",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "Нагадати через WhatsApp",
     "customerFallback": "Клієнт",
     "daysOverdue": "прострочення {days} днів",
-    "whatsappGreeting": "Привіт, {name}! Ви давно не відвідували {salonName}. Будемо раді бачити вас знову — відповідайте тут, щоб записатися на наступний візит."
+    "whatsappGreeting": "Привіт, {name}! Ви давно не відвідували {salonName}. Будемо раді бачити вас знову — відповідайте тут, щоб записатися на наступний візит.",
+    "tabReviews": "Відгуки",
+    "loadingReviews": "Завантаження відгуків…",
+    "loadErrorReviews": "Не вдалося завантажити відгуки. Спробуйте ще раз.",
+    "overallRating": "Загальний рейтинг",
+    "reviewCount": "{count, plural, one {# відгук} few {# відгуки} many {# відгуків} other {# відгуку}}",
+    "recentReviews": "Останні відгуки",
+    "noReviewsYet": "Поки що немає відгуків. Попросіть задоволеного клієнта залишити один!",
+    "needsAttention": "Потребує уваги",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Салон:",
+    "bookingSources": "Звідки надходять записи",
+    "bookingSourcesHint": "Ваше посилання на запис проти записів, внесених вручну",
+    "source_PUBLIC_PAGE": "Посилання на запис / QR",
+    "source_SALONS_TAB": "Внесено персоналом",
+    "source_STYLISTS_TAB": "Застосунок клієнта",
+    "sourceCount": "{count, plural, one {# запис} few {# записи} many {# записів} other {# записів}}",
+    "serviceCount": "{count, plural, one {# послуга} few {# послуги} many {# послуг} other {# послуг}}"
   },
   "login": {
     "errPhone": "Введіть дійсний номер телефону",
@@ -483,7 +505,8 @@
     "saving": "Збереження…",
     "collectingPayment": "Очікування оплати…",
     "logService": "Зафіксувати послугу",
-    "scheduleBooking": "Запланувати запис"
+    "scheduleBooking": "Запланувати запис",
+    "logTitle": "Записати візит"
   },
   "completeBooking": {
     "title": "Завершити запис",

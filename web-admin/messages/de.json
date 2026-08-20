@@ -89,7 +89,10 @@
     "loggedToday": "Heute erfasst",
     "viewAll": "Alle anzeigen",
     "nothingLoggedYet": "Heute wurde noch nichts erfasst — tippen Sie auf „Neue Buchung“, um einen Laufkunden zu erfassen.",
-    "noSalonYet": "Für Ihr Konto wurde noch kein Salon gefunden."
+    "noSalonYet": "Für Ihr Konto wurde noch kein Salon gefunden.",
+    "quickLog": "Laufkunde erfassen",
+    "quickLogHint": "Tippen, um die übliche Leistung zu erfassen",
+    "daysAgo": "{days, plural, =0 {heute} one {vor # Tag} other {vor # Tagen}}"
   },
   "bookings": {
     "title": "Buchungen",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Service",
     "repeat": "wiederkehrend",
-    "rebook": "Erneut buchen"
+    "rebook": "Erneut buchen",
+    "requestReview": "Bewertung anfordern",
+    "reviewMessage": "Hallo {name}! Danke für Ihren Besuch bei {salonName}. Wir würden uns über Ihr Feedback freuen — {link}"
   },
   "staff": {
     "title": "Mitarbeiter",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "Per WhatsApp erinnern",
     "customerFallback": "Kunde",
     "daysOverdue": "{days} Tage überfällig",
-    "whatsappGreeting": "Hallo {name}! Sie waren schon eine Weile nicht mehr bei {salonName}. Wir würden uns freuen, Sie wiederzusehen — antworten Sie hier, um Ihren nächsten Termin zu buchen."
+    "whatsappGreeting": "Hallo {name}! Sie waren schon eine Weile nicht mehr bei {salonName}. Wir würden uns freuen, Sie wiederzusehen — antworten Sie hier, um Ihren nächsten Termin zu buchen.",
+    "tabReviews": "Bewertungen",
+    "loadingReviews": "Bewertungen werden geladen…",
+    "loadErrorReviews": "Bewertungen konnten nicht geladen werden. Bitte erneut versuchen.",
+    "overallRating": "Gesamtbewertung",
+    "reviewCount": "{count, plural, one {# Bewertung} other {# Bewertungen}}",
+    "recentReviews": "Neueste Bewertungen",
+    "noReviewsYet": "Noch keine Bewertungen. Bitten Sie einen zufriedenen Kunden um eine!",
+    "needsAttention": "Erfordert Aufmerksamkeit",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Salon:",
+    "bookingSources": "Woher die Buchungen kommen",
+    "bookingSourcesHint": "Ihr Buchungslink im Vergleich zu selbst erfassten Laufkunden",
+    "source_PUBLIC_PAGE": "Buchungslink / QR",
+    "source_SALONS_TAB": "Vom Personal erfasst",
+    "source_STYLISTS_TAB": "Kunden-App",
+    "sourceCount": "{count, plural, one {# Buchung} other {# Buchungen}}",
+    "serviceCount": "{count, plural, one {# Leistung} other {# Leistungen}}"
   },
   "login": {
     "errPhone": "Geben Sie eine gültige Telefonnummer ein",
@@ -483,7 +505,8 @@
     "saving": "Wird gespeichert…",
     "collectingPayment": "Warten auf Zahlung…",
     "logService": "Service erfassen",
-    "scheduleBooking": "Buchung planen"
+    "scheduleBooking": "Buchung planen",
+    "logTitle": "Laufkunde erfassen"
   },
   "completeBooking": {
     "title": "Buchung abschließen",

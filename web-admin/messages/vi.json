@@ -89,7 +89,10 @@
     "loggedToday": "Đã ghi nhận hôm nay",
     "viewAll": "Xem tất cả",
     "nothingLoggedYet": "Hôm nay chưa có gì được ghi nhận — nhấn \"Đặt lịch mới\" để ghi nhận khách vãng lai.",
-    "noSalonYet": "Chưa tìm thấy salon nào trong tài khoản của bạn."
+    "noSalonYet": "Chưa tìm thấy salon nào trong tài khoản của bạn.",
+    "quickLog": "Ghi nhận khách đến",
+    "quickLogHint": "Chạm để ghi dịch vụ thường dùng",
+    "daysAgo": "{days, plural, =0 {hôm nay} other {# ngày trước}}"
   },
   "bookings": {
     "title": "Đặt lịch",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Dịch vụ",
     "repeat": "định kỳ",
-    "rebook": "Đặt lại"
+    "rebook": "Đặt lại",
+    "requestReview": "Yêu cầu đánh giá",
+    "reviewMessage": "Chào {name}! Cảm ơn bạn đã ghé thăm {salonName}. Chúng tôi rất muốn biết ý kiến của bạn — {link}"
   },
   "staff": {
     "title": "Nhân viên",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "Nhắc nhở qua WhatsApp",
     "customerFallback": "Khách hàng",
     "daysOverdue": "quá hạn {days} ngày",
-    "whatsappGreeting": "Chào {name}! Đã lâu bạn chưa ghé thăm {salonName}. Chúng tôi rất mong được gặp lại bạn — hãy trả lời tại đây để đặt lịch hẹn tiếp theo."
+    "whatsappGreeting": "Chào {name}! Đã lâu bạn chưa ghé thăm {salonName}. Chúng tôi rất mong được gặp lại bạn — hãy trả lời tại đây để đặt lịch hẹn tiếp theo.",
+    "tabReviews": "Đánh giá",
+    "loadingReviews": "Đang tải đánh giá…",
+    "loadErrorReviews": "Không thể tải đánh giá. Vui lòng thử lại.",
+    "overallRating": "Đánh giá chung",
+    "reviewCount": "{count, plural, other {# đánh giá}}",
+    "recentReviews": "Đánh giá gần đây",
+    "noReviewsYet": "Chưa có đánh giá nào. Hãy nhờ một khách hàng hài lòng để lại đánh giá!",
+    "needsAttention": "Cần chú ý",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Salon:",
+    "bookingSources": "Đặt lịch đến từ đâu",
+    "bookingSourcesHint": "Liên kết đặt lịch của bạn so với khách bạn tự nhập",
+    "source_PUBLIC_PAGE": "Liên kết đặt lịch / QR",
+    "source_SALONS_TAB": "Nhân viên nhập",
+    "source_STYLISTS_TAB": "Ứng dụng khách hàng",
+    "sourceCount": "{count, plural, other {# lượt đặt}}",
+    "serviceCount": "{count, plural, other {# dịch vụ}}"
   },
   "login": {
     "errPhone": "Nhập số điện thoại hợp lệ",
@@ -483,7 +505,8 @@
     "saving": "Đang lưu…",
     "collectingPayment": "Đang chờ thanh toán…",
     "logService": "Ghi nhận dịch vụ",
-    "scheduleBooking": "Lên lịch đặt"
+    "scheduleBooking": "Lên lịch đặt",
+    "logTitle": "Ghi nhận khách đến"
   },
   "completeBooking": {
     "title": "Hoàn tất lịch đặt",

@@ -89,7 +89,10 @@
     "loggedToday": "Logged today",
     "viewAll": "View all",
     "nothingLoggedYet": "Nothing logged today yet — tap \"New booking\" to log a walk-in.",
-    "noSalonYet": "No salon on your account yet."
+    "noSalonYet": "No salon on your account yet.",
+    "quickLog": "Log a walk-in",
+    "quickLogHint": "Tap to log their usual",
+    "daysAgo": "{days, plural, =0 {today} one {# day ago} other {# days ago}}"
   },
   "bookings": {
     "title": "Bookings",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Service",
     "repeat": "repeat",
-    "rebook": "Rebook"
+    "rebook": "Rebook",
+    "requestReview": "Request review",
+    "reviewMessage": "Hi {name}! Thanks for visiting {salonName}. We'd love your feedback — {link}"
   },
   "staff": {
     "title": "Staff",
@@ -171,6 +176,7 @@
     "noSalonYet": "No salon selected yet.",
     "tabEarnings": "Earnings",
     "tabRetention": "Retention",
+    "tabReviews": "Reviews",
     "periodToday": "Today",
     "periodWeek": "Week",
     "periodMonth": "Month",
@@ -215,7 +221,23 @@
     "remindWhatsApp": "Remind on WhatsApp",
     "customerFallback": "Customer",
     "daysOverdue": "{days}d overdue",
-    "whatsappGreeting": "Hi {name}! It's been a while since your last visit to {salonName}. We'd love to see you again — reply here to book your next appointment."
+    "whatsappGreeting": "Hi {name}! It's been a while since your last visit to {salonName}. We'd love to see you again — reply here to book your next appointment.",
+    "loadingReviews": "Loading reviews…",
+    "loadErrorReviews": "Reviews couldn't be loaded. Try again.",
+    "overallRating": "Overall rating",
+    "reviewCount": "{count, plural, one {# review} other {# reviews}}",
+    "recentReviews": "Recent reviews",
+    "noReviewsYet": "No reviews yet. Ask a happy customer to leave one!",
+    "needsAttention": "Needs attention",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Salon:",
+    "bookingSources": "Where bookings come from",
+    "bookingSourcesHint": "Your booking link vs walk-ins you log yourself",
+    "source_PUBLIC_PAGE": "Booking link / QR",
+    "source_SALONS_TAB": "Logged by staff",
+    "source_STYLISTS_TAB": "Customer app",
+    "sourceCount": "{count, plural, one {# booking} other {# bookings}}",
+    "serviceCount": "{count, plural, one {# service} other {# services}}"
   },
   "login": {
     "errPhone": "Enter a valid phone number",
@@ -483,7 +505,8 @@
     "saving": "Saving…",
     "collectingPayment": "Waiting for payment…",
     "logService": "Log service",
-    "scheduleBooking": "Schedule booking"
+    "scheduleBooking": "Schedule booking",
+    "logTitle": "Log a walk-in"
   },
   "completeBooking": {
     "title": "Complete booking",

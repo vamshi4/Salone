@@ -4,10 +4,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAppStore } from '@/lib/store';
-import { formatCurrency, type Booking, type Customer } from '@/lib/salon-api';
-import { loggedToday, needsAction, repeatCustomerIds } from '@/lib/booking-helpers';
+import { formatCurrency, type Booking, type Customer, type Regular } from '@/lib/salon-api';
+import { loggedToday, needsAction, repeatCustomerIds, whatsappUrl } from '@/lib/booking-helpers';
 import {
   useAtRisk,
+  useRegulars,
   useBookings,
   useCurrentSalon,
   useSelectedSalonId,
@@ -70,15 +71,21 @@ function StatTile({
 
 export default function DashboardPage() {
   const t = useTranslations('dashboard');
+  // The at-risk card reuses the Insights wording ("N customers overdue · about
+  // X at stake", the WhatsApp greeting) rather than duplicating those strings
+  // into the dashboard namespace across all 25 locale files.
+  const tInsights = useTranslations('insights');
   const locale = useLocale();
   const user = useAppStore((s) => s.user);
   const salonId = useSelectedSalonId();
   const salon = useCurrentSalon();
   const { data: bookings = [], isLoading, isError } = useBookings(salonId);
   const { data: atRiskData } = useAtRisk(salonId);
+  const { data: regularsData } = useRegulars(salonId, 10);
 
   const [modal, setModal] = useState<'booking' | 'staff' | 'service' | null>(null);
   const [rebook, setRebook] = useState<Booking | undefined>();
+  const [quickLog, setQuickLog] = useState<Regular | undefined>();
   const [profileCustomer, setProfileCustomer] = useState<Customer | undefined>();
 
   const logged = loggedToday(bookings);
@@ -86,7 +93,9 @@ export default function DashboardPage() {
   const repeats = repeatCustomerIds(bookings);
   const repeatCount = logged.filter((b) => repeats.has(b.customerId)).length;
   const pending = needsAction(bookings);
-  const atRisk = (atRiskData?.customers ?? []).slice(0, 2);
+  const atRisk = (atRiskData?.customers ?? []).slice(0, 3);
+  const atRiskCount = atRiskData?.count ?? atRisk.length;
+  const regulars = regularsData ?? [];
   const lowStock = (salon?.products ?? []).filter((p) => p.stockQty <= p.lowStockThreshold);
   const alertCount = [pending.length > 0, atRisk.length > 0, lowStock.length > 0].filter(Boolean).length;
   const goal = salon?.dailyRevenueGoal ?? 0;
@@ -207,22 +216,58 @@ export default function DashboardPage() {
                   <Sparkles size={14} className="text-amber-500" />
                   <p className="text-xs font-bold text-gray-900">{t('worthReachingOut')}</p>
                 </div>
+                {/* The scale line, not just names: the endpoint already knows
+                    how many are overdue and what they're worth, and the owner
+                    can't judge whether to act on "2 names" without it. */}
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {tInsights('overdueAtStake', {
+                    count: atRiskCount,
+                    amount: formatCurrency(atRiskData?.atRiskRevenue ?? 0, salon?.currency),
+                  })}
+                </p>
                 <div className="mt-2 space-y-1.5">
                   {atRisk.map((c) => (
-                    <button
+                    <div
                       key={c.customerId}
-                      onClick={() => setProfileCustomer({ id: c.customerId, name: c.name ?? t('customer'), phone: c.phone })}
-                      className="flex items-center justify-between w-full text-left group py-1 -mx-1 px-1 rounded hover:bg-amber-50/60 transition-colors"
+                      className="flex items-center gap-2 py-1 -mx-1 px-1 rounded hover:bg-amber-50/60 transition-colors"
                     >
-                      <span className="text-xs font-medium text-gray-800 group-hover:text-primary-dark">
-                        {c.name ?? t('customer')}
-                      </span>
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold">
-                        {t('daysOverdue', { days: c.overdueDays })}
-                      </span>
-                    </button>
+                      <button
+                        onClick={() => setProfileCustomer({ id: c.customerId, name: c.name ?? t('customer'), phone: c.phone })}
+                        className="flex flex-1 items-center justify-between text-left group min-w-0"
+                      >
+                        <span className="truncate text-xs font-medium text-gray-800 group-hover:text-primary-dark">
+                          {c.name ?? t('customer')}
+                        </span>
+                        <span className="ms-2 flex-none text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold">
+                          {t('daysOverdue', { days: c.overdueDays })}
+                        </span>
+                      </button>
+                      {/* Act from here instead of making the owner navigate to
+                          Insights first — same wa.me handoff that page uses. */}
+                      <a
+                        href={whatsappUrl(c.phone, tInsights('whatsappGreeting', {
+                          name: c.name ?? tInsights('customerFallback'),
+                          salonName: salon?.name ?? '',
+                        }))}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={tInsights('remindWhatsApp')}
+                        className="flex-none rounded-md bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-200 transition-colors"
+                      >
+                        {tInsights('remind')}
+                      </a>
+                    </div>
                   ))}
                 </div>
+                {atRiskCount > atRisk.length && (
+                  <Link
+                    href="/insights"
+                    className="mt-2.5 inline-flex items-center gap-0.5 text-[11px] font-semibold text-primary hover:text-primary-dark"
+                  >
+                    {tInsights('reachOutNow')}
+                    <ChevronRight size={12} />
+                  </Link>
+                )}
               </div>
             )}
             {lowStock.length > 0 && (
@@ -239,6 +284,43 @@ export default function DashboardPage() {
                 <ChevronRight size={16} className="text-gray-300" />
               </Link>
             )}
+          </div>
+        )}
+
+        {/* Quick log. The eight-field form is why walk-ins go unrecorded, and
+            an unrecorded visit makes a loyal regular read as churned in the
+            retention maths. These are the people most likely to be in the
+            chair, each one tap from a prefilled "Done service". */}
+        {regulars.length > 0 && (
+          <div>
+            <div className="flex items-baseline justify-between mb-2">
+              <h2 className="text-sm font-bold text-gray-900">{t('quickLog')}</h2>
+              <span className="text-[11px] text-gray-400">{t('quickLogHint')}</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+              {regulars.map((r) => (
+                <button
+                  key={r.customerId}
+                  onClick={() => setQuickLog(r)}
+                  className="card flex-none w-[10.5rem] p-3 text-start hover:-translate-y-0.5 hover:shadow-md hover:border-primary/40 transition-all"
+                >
+                  <p className="truncate text-xs font-semibold text-gray-900">
+                    {r.name ?? t('customer')}
+                  </p>
+                  <p className="truncate text-[11px] text-gray-500 mt-0.5">
+                    {r.serviceNames.join(', ') || t('customer')}
+                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-1">
+                    <span className="text-[11px] font-semibold text-primary-dark tabular-nums">
+                      {formatCurrency(r.price, salon?.currency)}
+                    </span>
+                    <span className="text-[10px] text-gray-400 tabular-nums">
+                      {t('daysAgo', { days: r.daysSince })}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -288,6 +370,7 @@ export default function DashboardPage() {
                   booking={b}
                   isRepeat={repeats.has(b.customerId)}
                   currency={salon?.currency}
+                  salonName={salon?.name}
                   onOpenCustomer={openCustomer}
                   onRebook={(bk) => setRebook(bk)}
                 />
@@ -301,6 +384,18 @@ export default function DashboardPage() {
       {modal === 'staff' && <AddStaffModal onClose={() => setModal(null)} />}
       {modal === 'service' && <ServiceModal onClose={() => setModal(null)} />}
       {rebook && <NewBookingModal prefill={rebook} onClose={() => setRebook(undefined)} />}
+      {quickLog && (
+        <NewBookingModal
+          mode="logNow"
+          prefill={{
+            customerName: quickLog.name ?? '',
+            customerPhone: quickLog.phone,
+            stylistId: quickLog.stylistId ?? '',
+            serviceIds: quickLog.serviceIds,
+          }}
+          onClose={() => setQuickLog(undefined)}
+        />
+      )}
       {profileCustomer && (
         <CustomerProfileModal customer={profileCustomer} onClose={() => setProfileCustomer(undefined)} />
       )}

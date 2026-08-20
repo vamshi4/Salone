@@ -89,7 +89,10 @@
     "loggedToday": "Bugün kaydedilenler",
     "viewAll": "Tümünü gör",
     "nothingLoggedYet": "Bugün henüz hiçbir şey kaydedilmedi — bir gelişi kaydetmek için \"Yeni randevu\"ya dokunun.",
-    "noSalonYet": "Hesabınızda henüz bir salon bulunamadı."
+    "noSalonYet": "Hesabınızda henüz bir salon bulunamadı.",
+    "quickLog": "Gelen müşteriyi kaydet",
+    "quickLogHint": "Her zamanki hizmetini kaydetmek için dokunun",
+    "daysAgo": "{days, plural, =0 {bugün} one {# gün önce} other {# gün önce}}"
   },
   "bookings": {
     "title": "Randevular",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Hizmet",
     "repeat": "tekrar",
-    "rebook": "Tekrar randevu al"
+    "rebook": "Tekrar randevu al",
+    "requestReview": "Değerlendirme iste",
+    "reviewMessage": "Merhaba {name}! {salonName}'i ziyaret ettiğiniz için teşekkürler. Görüşlerinizi almak isteriz — {link}"
   },
   "staff": {
     "title": "Personel",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "WhatsApp'tan hatırlat",
     "customerFallback": "Müşteri",
     "daysOverdue": "{days} gün gecikti",
-    "whatsappGreeting": "Merhaba {name}! Bir süredir {salonName}'e uğramadınız. Sizi tekrar görmek isteriz — bir sonraki randevunuzu ayarlamak için buradan yanıt verin."
+    "whatsappGreeting": "Merhaba {name}! Bir süredir {salonName}'e uğramadınız. Sizi tekrar görmek isteriz — bir sonraki randevunuzu ayarlamak için buradan yanıt verin.",
+    "tabReviews": "Değerlendirmeler",
+    "loadingReviews": "Değerlendirmeler yükleniyor…",
+    "loadErrorReviews": "Değerlendirmeler yüklenemedi. Tekrar deneyin.",
+    "overallRating": "Genel puan",
+    "reviewCount": "{count, plural, one {# değerlendirme} other {# değerlendirme}}",
+    "recentReviews": "Son değerlendirmeler",
+    "noReviewsYet": "Henüz değerlendirme yok. Memnun bir müşteriden bir tane bırakmasını isteyin!",
+    "needsAttention": "Dikkat gerekiyor",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Salon:",
+    "bookingSources": "Randevular nereden geliyor",
+    "bookingSourcesHint": "Randevu bağlantınıza karşı kendi girdiğiniz gelenler",
+    "source_PUBLIC_PAGE": "Randevu bağlantısı / QR",
+    "source_SALONS_TAB": "Personel tarafından girildi",
+    "source_STYLISTS_TAB": "Müşteri uygulaması",
+    "sourceCount": "{count, plural, one {# randevu} other {# randevu}}",
+    "serviceCount": "{count, plural, one {# hizmet} other {# hizmet}}"
   },
   "login": {
     "errPhone": "Geçerli bir telefon numarası girin",
@@ -483,7 +505,8 @@
     "saving": "Kaydediliyor…",
     "collectingPayment": "Ödeme bekleniyor…",
     "logService": "Hizmeti kaydet",
-    "scheduleBooking": "Randevuyu planla"
+    "scheduleBooking": "Randevuyu planla",
+    "logTitle": "Gelen müşteriyi kaydet"
   },
   "completeBooking": {
     "title": "Randevuyu tamamla",

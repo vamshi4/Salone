@@ -89,7 +89,10 @@
     "loggedToday": "Записано сегодня",
     "viewAll": "Смотреть все",
     "nothingLoggedYet": "Сегодня пока ничего не записано — нажмите «Новая запись», чтобы зафиксировать визит без записи.",
-    "noSalonYet": "В вашем аккаунте пока не найден салон."
+    "noSalonYet": "В вашем аккаунте пока не найден салон.",
+    "quickLog": "Записать визит",
+    "quickLogHint": "Нажмите, чтобы записать обычную услугу",
+    "daysAgo": "{days, plural, =0 {сегодня} one {# день назад} few {# дня назад} many {# дней назад} other {# дней назад}}"
   },
   "bookings": {
     "title": "Записи",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Услуга",
     "repeat": "повторяющийся",
-    "rebook": "Записать снова"
+    "rebook": "Записать снова",
+    "requestReview": "Запросить отзыв",
+    "reviewMessage": "Привет, {name}! Спасибо за визит в {salonName}. Нам будет интересно узнать ваше мнение — {link}"
   },
   "staff": {
     "title": "Персонал",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "Напомнить в WhatsApp",
     "customerFallback": "Клиент",
     "daysOverdue": "просрочка {days} дней",
-    "whatsappGreeting": "Привет, {name}! Вы давно не посещали {salonName}. Будем рады видеть вас снова — ответьте здесь, чтобы записаться на следующий визит."
+    "whatsappGreeting": "Привет, {name}! Вы давно не посещали {salonName}. Будем рады видеть вас снова — ответьте здесь, чтобы записаться на следующий визит.",
+    "tabReviews": "Отзывы",
+    "loadingReviews": "Загрузка отзывов…",
+    "loadErrorReviews": "Не удалось загрузить отзывы. Попробуйте снова.",
+    "overallRating": "Общий рейтинг",
+    "reviewCount": "{count, plural, one {# отзыв} few {# отзыва} many {# отзывов} other {# отзыва}}",
+    "recentReviews": "Недавние отзывы",
+    "noReviewsYet": "Пока нет отзывов. Попросите довольного клиента оставить один!",
+    "needsAttention": "Требует внимания",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Салон:",
+    "bookingSources": "Откуда приходят записи",
+    "bookingSourcesHint": "Ваша ссылка на запись против записей, внесённых вручную",
+    "source_PUBLIC_PAGE": "Ссылка на запись / QR",
+    "source_SALONS_TAB": "Внесено персоналом",
+    "source_STYLISTS_TAB": "Приложение клиента",
+    "sourceCount": "{count, plural, one {# запись} few {# записи} many {# записей} other {# записей}}",
+    "serviceCount": "{count, plural, one {# услуга} few {# услуги} many {# услуг} other {# услуг}}"
   },
   "login": {
     "errPhone": "Введите действительный номер телефона",
@@ -483,7 +505,8 @@
     "saving": "Сохранение…",
     "collectingPayment": "Ожидание оплаты…",
     "logService": "Зафиксировать услугу",
-    "scheduleBooking": "Запланировать запись"
+    "scheduleBooking": "Запланировать запись",
+    "logTitle": "Записать визит"
   },
   "completeBooking": {
     "title": "Завершить запись",

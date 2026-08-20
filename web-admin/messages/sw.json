@@ -89,7 +89,10 @@
     "loggedToday": "Imerekodiwa leo",
     "viewAll": "Ona yote",
     "nothingLoggedYet": "Bado hakuna kilichorekodiwa leo — gusa \"Miadi mpya\" kurekodi mteja aliyekuja moja kwa moja.",
-    "noSalonYet": "Hakuna saluni iliyopatikana bado kwenye akaunti yako."
+    "noSalonYet": "Hakuna saluni iliyopatikana bado kwenye akaunti yako.",
+    "quickLog": "Andika mteja aliyefika",
+    "quickLogHint": "Gusa kuandika huduma yake ya kawaida",
+    "daysAgo": "{days, plural, =0 {leo} one {siku # iliyopita} other {siku # zilizopita}}"
   },
   "bookings": {
     "title": "Miadi",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "Huduma",
     "repeat": "inayorudiwa",
-    "rebook": "Weka miadi tena"
+    "rebook": "Weka miadi tena",
+    "requestReview": "Omba maoni",
+    "reviewMessage": "Habari {name}! Asante kwa kutembelea {salonName}. Tungependa kusikia maoni yako — {link}"
   },
   "staff": {
     "title": "Wafanyakazi",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "Kumbusha kupitia WhatsApp",
     "customerFallback": "Mteja",
     "daysOverdue": "siku {days} zimechelewa",
-    "whatsappGreeting": "Habari {name}! Umepitisha muda bila kutembelea {salonName}. Tungependa kukuona tena — jibu hapa kuweka miadi yako ijayo."
+    "whatsappGreeting": "Habari {name}! Umepitisha muda bila kutembelea {salonName}. Tungependa kukuona tena — jibu hapa kuweka miadi yako ijayo.",
+    "tabReviews": "Maoni",
+    "loadingReviews": "Inapakia maoni…",
+    "loadErrorReviews": "Maoni hayakuweza kupakiwa. Jaribu tena.",
+    "overallRating": "Ukadiriaji wa jumla",
+    "reviewCount": "{count, plural, one {maoni #} other {maoni #}}",
+    "recentReviews": "Maoni ya hivi karibuni",
+    "noReviewsYet": "Bado hakuna maoni. Muombe mteja aliyeridhika aache moja!",
+    "needsAttention": "Inahitaji uangalizi",
+    "stylistLabel": "{name}:",
+    "salonLabel": "Saluni:",
+    "bookingSources": "Miadi inatoka wapi",
+    "bookingSourcesHint": "Kiungo chako cha kuweka miadi dhidi ya wateja unaowaandika mwenyewe",
+    "source_PUBLIC_PAGE": "Kiungo cha miadi / QR",
+    "source_SALONS_TAB": "Imeandikwa na wafanyakazi",
+    "source_STYLISTS_TAB": "Programu ya mteja",
+    "sourceCount": "{count, plural, one {miadi #} other {miadi #}}",
+    "serviceCount": "{count, plural, one {huduma #} other {huduma #}}"
   },
   "login": {
     "errPhone": "Weka nambari sahihi ya simu",
@@ -483,7 +505,8 @@
     "saving": "Inahifadhi…",
     "collectingPayment": "Inasubiri malipo…",
     "logService": "Rekodi huduma",
-    "scheduleBooking": "Panga miadi"
+    "scheduleBooking": "Panga miadi",
+    "logTitle": "Andika mteja aliyefika"
   },
   "completeBooking": {
     "title": "Kamilisha miadi",

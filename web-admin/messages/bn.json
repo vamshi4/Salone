@@ -89,7 +89,10 @@
     "loggedToday": "আজ লগ করা হয়েছে",
     "viewAll": "সব দেখুন",
     "nothingLoggedYet": "আজ এখনো কিছু লগ করা হয়নি — ওয়াক-ইন লগ করতে \"নতুন বুকিং\"-এ ট্যাপ করুন।",
-    "noSalonYet": "আপনার অ্যাকাউন্টে এখনো কোনো সেলুন পাওয়া যায়নি।"
+    "noSalonYet": "আপনার অ্যাকাউন্টে এখনো কোনো সেলুন পাওয়া যায়নি।",
+    "quickLog": "ওয়াক-ইন নথিভুক্ত করুন",
+    "quickLogHint": "তাদের নিয়মিত সেবা নথিভুক্ত করতে ট্যাপ করুন",
+    "daysAgo": "{days, plural, =0 {আজ} one {# দিন আগে} other {# দিন আগে}}"
   },
   "bookings": {
     "title": "বুকিং",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "সেবা",
     "repeat": "পুনরাবৃত্তি",
-    "rebook": "পুনরায় বুক করুন"
+    "rebook": "পুনরায় বুক করুন",
+    "requestReview": "পর্যালোচনার অনুরোধ করুন",
+    "reviewMessage": "হাই {name}! {salonName}-এ আসার জন্য ধন্যবাদ। আমরা আপনার মতামত পেতে চাই — {link}"
   },
   "staff": {
     "title": "স্টাফ",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "WhatsApp-এ মনে করিয়ে দিন",
     "customerFallback": "গ্রাহক",
     "daysOverdue": "{days} দিন অতিক্রান্ত",
-    "whatsappGreeting": "হাই {name}! আপনি {salonName}-এ শেষবার এসেছেন অনেকদিন হয়ে গেছে। আমরা আপনাকে আবার দেখতে চাই — আপনার পরবর্তী বুকিংয়ের জন্য এখানে উত্তর দিন।"
+    "whatsappGreeting": "হাই {name}! আপনি {salonName}-এ শেষবার এসেছেন অনেকদিন হয়ে গেছে। আমরা আপনাকে আবার দেখতে চাই — আপনার পরবর্তী বুকিংয়ের জন্য এখানে উত্তর দিন।",
+    "tabReviews": "পর্যালোচনা",
+    "loadingReviews": "পর্যালোচনা লোড হচ্ছে…",
+    "loadErrorReviews": "পর্যালোচনা লোড করা যায়নি। আবার চেষ্টা করুন।",
+    "overallRating": "সামগ্রিক রেটিং",
+    "reviewCount": "{count, plural, one {# পর্যালোচনা} other {# পর্যালোচনা}}",
+    "recentReviews": "সাম্প্রতিক পর্যালোচনা",
+    "noReviewsYet": "এখনো কোনো পর্যালোচনা নেই। একজন খুশি গ্রাহককে একটি রেখে যেতে বলুন!",
+    "needsAttention": "মনোযোগ প্রয়োজন",
+    "stylistLabel": "{name}:",
+    "salonLabel": "সেলুন:",
+    "bookingSources": "বুকিং কোথা থেকে আসে",
+    "bookingSourcesHint": "আপনার বুকিং লিঙ্ক বনাম আপনার নথিভুক্ত ওয়াক-ইন",
+    "source_PUBLIC_PAGE": "বুকিং লিঙ্ক / QR",
+    "source_SALONS_TAB": "কর্মী দ্বারা নথিভুক্ত",
+    "source_STYLISTS_TAB": "গ্রাহক অ্যাপ",
+    "sourceCount": "{count, plural, one {# বুকিং} other {# বুকিং}}",
+    "serviceCount": "{count, plural, one {# সেবা} other {# সেবা}}"
   },
   "login": {
     "errPhone": "একটি বৈধ ফোন নম্বর লিখুন",
@@ -483,7 +505,8 @@
     "saving": "সংরক্ষণ হচ্ছে…",
     "collectingPayment": "পেমেন্টের জন্য অপেক্ষা করা হচ্ছে…",
     "logService": "সেবা লগ করুন",
-    "scheduleBooking": "বুকিং নির্ধারণ করুন"
+    "scheduleBooking": "বুকিং নির্ধারণ করুন",
+    "logTitle": "ওয়াক-ইন নথিভুক্ত করুন"
   },
   "completeBooking": {
     "title": "বুকিং সম্পন্ন করুন",

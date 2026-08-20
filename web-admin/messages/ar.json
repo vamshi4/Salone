@@ -89,7 +89,10 @@
     "loggedToday": "تم تسجيله اليوم",
     "viewAll": "عرض الكل",
     "nothingLoggedYet": "لم يتم تسجيل أي شيء اليوم بعد — اضغط على \"حجز جديد\" لتسجيل زيارة مباشرة.",
-    "noSalonYet": "لم يتم العثور على صالون في حسابك بعد."
+    "noSalonYet": "لم يتم العثور على صالون في حسابك بعد.",
+    "quickLog": "سجّل زيارة",
+    "quickLogHint": "اضغط لتسجيل خدمتهم المعتادة",
+    "daysAgo": "{days, plural, =0 {اليوم} one {قبل يوم} other {قبل # أيام}}"
   },
   "bookings": {
     "title": "الحجوزات",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "خدمة",
     "repeat": "متكرر",
-    "rebook": "إعادة الحجز"
+    "rebook": "إعادة الحجز",
+    "requestReview": "طلب تقييم",
+    "reviewMessage": "مرحبًا {name}! شكرًا لزيارتك {salonName}. يسعدنا معرفة رأيك — {link}"
   },
   "staff": {
     "title": "الموظفون",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "تذكير عبر واتساب",
     "customerFallback": "عميل",
     "daysOverdue": "متأخر {days} يوم",
-    "whatsappGreeting": "مرحبًا {name}! لقد مر وقت طويل منذ آخر زيارة لك إلى {salonName}. يسعدنا رؤيتك مرة أخرى — رد هنا لحجز موعدك القادم."
+    "whatsappGreeting": "مرحبًا {name}! لقد مر وقت طويل منذ آخر زيارة لك إلى {salonName}. يسعدنا رؤيتك مرة أخرى — رد هنا لحجز موعدك القادم.",
+    "tabReviews": "التقييمات",
+    "loadingReviews": "جارٍ تحميل التقييمات…",
+    "loadErrorReviews": "تعذر تحميل التقييمات. حاول مرة أخرى.",
+    "overallRating": "التقييم العام",
+    "reviewCount": "{count, plural, zero {# تقييم} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}}",
+    "recentReviews": "أحدث التقييمات",
+    "noReviewsYet": "لا توجد تقييمات بعد. اطلب من عميل راضٍ ترك واحد!",
+    "needsAttention": "يحتاج إلى انتباه",
+    "stylistLabel": "{name}:",
+    "salonLabel": "الصالون:",
+    "bookingSources": "من أين تأتي الحجوزات",
+    "bookingSourcesHint": "رابط الحجز مقابل الزيارات التي تسجلها بنفسك",
+    "source_PUBLIC_PAGE": "رابط الحجز / QR",
+    "source_SALONS_TAB": "سجّله الموظفون",
+    "source_STYLISTS_TAB": "تطبيق العملاء",
+    "sourceCount": "{count, plural, one {# حجز} other {# حجوزات}}",
+    "serviceCount": "{count, plural, one {# خدمة} other {# خدمات}}"
   },
   "login": {
     "errPhone": "أدخل رقم هاتف صالحًا",
@@ -483,7 +505,8 @@
     "saving": "جارٍ الحفظ…",
     "collectingPayment": "في انتظار الدفع…",
     "logService": "تسجيل الخدمة",
-    "scheduleBooking": "جدولة الحجز"
+    "scheduleBooking": "جدولة الحجز",
+    "logTitle": "سجّل زيارة"
   },
   "completeBooking": {
     "title": "إتمام الحجز",

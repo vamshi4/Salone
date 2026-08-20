@@ -89,7 +89,10 @@
     "loggedToday": "ثبت‌شده امروز",
     "viewAll": "مشاهده همه",
     "nothingLoggedYet": "امروز هنوز چیزی ثبت نشده — برای ثبت مراجعه حضوری روی «رزرو جدید» ضربه بزنید.",
-    "noSalonYet": "هنوز سالنی در حساب شما یافت نشد."
+    "noSalonYet": "هنوز سالنی در حساب شما یافت نشد.",
+    "quickLog": "ثبت مراجعه حضوری",
+    "quickLogHint": "برای ثبت خدمت همیشگی ضربه بزنید",
+    "daysAgo": "{days, plural, =0 {امروز} one {# روز پیش} other {# روز پیش}}"
   },
   "bookings": {
     "title": "رزروها",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "خدمت",
     "repeat": "تکراری",
-    "rebook": "رزرو مجدد"
+    "rebook": "رزرو مجدد",
+    "requestReview": "درخواست نظر",
+    "reviewMessage": "سلام {name}! از بازدید شما از {salonName} متشکریم. دوست داریم نظر شما را بدانیم — {link}"
   },
   "staff": {
     "title": "کارکنان",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "یادآوری در واتساپ",
     "customerFallback": "مشتری",
     "daysOverdue": "{days} روز تأخیر",
-    "whatsappGreeting": "سلام {name}! مدتی است که به {salonName} مراجعه نکرده‌اید. خوشحال می‌شویم دوباره شما را ببینیم — برای رزرو نوبت بعدی همین‌جا پاسخ دهید."
+    "whatsappGreeting": "سلام {name}! مدتی است که به {salonName} مراجعه نکرده‌اید. خوشحال می‌شویم دوباره شما را ببینیم — برای رزرو نوبت بعدی همین‌جا پاسخ دهید.",
+    "tabReviews": "نظرات",
+    "loadingReviews": "در حال بارگذاری نظرات…",
+    "loadErrorReviews": "نظرات بارگذاری نشدند. دوباره تلاش کنید.",
+    "overallRating": "امتیاز کلی",
+    "reviewCount": "{count, plural, one {# نظر} other {# نظر}}",
+    "recentReviews": "نظرات اخیر",
+    "noReviewsYet": "هنوز نظری ثبت نشده است. از یک مشتری راضی بخواهید نظر بدهد!",
+    "needsAttention": "نیاز به توجه",
+    "stylistLabel": "{name}:",
+    "salonLabel": "سالن:",
+    "bookingSources": "رزروها از کجا می‌آیند",
+    "bookingSourcesHint": "لینک رزرو شما در برابر مراجعه‌های حضوری ثبت‌شده",
+    "source_PUBLIC_PAGE": "لینک رزرو / QR",
+    "source_SALONS_TAB": "ثبت‌شده توسط کارکنان",
+    "source_STYLISTS_TAB": "اپلیکیشن مشتری",
+    "sourceCount": "{count, plural, one {# رزرو} other {# رزرو}}",
+    "serviceCount": "{count, plural, one {# خدمت} other {# خدمت}}"
   },
   "login": {
     "errPhone": "یک شماره تلفن معتبر وارد کنید",
@@ -483,7 +505,8 @@
     "saving": "در حال ذخیره…",
     "collectingPayment": "در انتظار پرداخت…",
     "logService": "ثبت خدمت",
-    "scheduleBooking": "زمان‌بندی رزرو"
+    "scheduleBooking": "زمان‌بندی رزرو",
+    "logTitle": "ثبت مراجعه حضوری"
   },
   "completeBooking": {
     "title": "تکمیل رزرو",

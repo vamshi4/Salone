@@ -54,6 +54,10 @@ function useInvalidate() {
     salons: () => qc.invalidateQueries({ queryKey: ['salon-summaries'] }),
     bookings: (salonId: string) => qc.invalidateQueries({ queryKey: ['bookings', salonId] }),
     customers: (salonId: string) => qc.invalidateQueries({ queryKey: ['customers', salonId] }),
+    // Logging a visit changes both who's most likely next and their usual
+    // service, so the quick-log strip has to re-rank or it keeps offering the
+    // person who just left.
+    regulars: (salonId: string) => qc.invalidateQueries({ queryKey: ['regulars', salonId] }),
   };
 }
 
@@ -65,6 +69,7 @@ export function useLogBooking() {
       inv.bookings(variables.salonId);
       inv.salons();
       inv.customers(variables.salonId);
+      inv.regulars(variables.salonId);
     },
   });
 }
@@ -151,6 +156,22 @@ export function useStylistEarnings(salonId: string, stylistId: string, period: '
   });
 }
 
+export function useRegulars(salonId: string | null, limit = 10) {
+  return useQuery({
+    queryKey: ['regulars', salonId, limit],
+    queryFn: () => api.fetchRegulars(salonId!, limit),
+    enabled: !!salonId,
+  });
+}
+
+export function useBookingSources(salonId: string | null, period: 'day' | 'week' | 'month') {
+  return useQuery({
+    queryKey: ['booking-sources', salonId, period],
+    queryFn: () => api.fetchBookingSources(salonId!, period),
+    enabled: !!salonId,
+  });
+}
+
 export function useEarnings(salonId: string | null, period: 'day' | 'week' | 'month') {
   return useQuery({
     queryKey: ['earnings', salonId, period],
@@ -178,6 +199,14 @@ export function useAtRisk(salonId: string | null) {
   return useQuery({
     queryKey: ['at-risk', salonId],
     queryFn: () => api.fetchAtRisk(salonId!),
+    enabled: !!salonId,
+  });
+}
+
+export function useReviews(salonId: string | null) {
+  return useQuery({
+    queryKey: ['reviews', salonId],
+    queryFn: () => api.fetchReviews(salonId!),
     enabled: !!salonId,
   });
 }

@@ -386,6 +386,227 @@ router.get('/:salonId/at-risk', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async
   }
 });
 
+// GET /api/v2/salons/:salonId/regulars
+// Powers one-tap walk-in logging. Owners won't stop mid-service to fill an
+// eight-field form, so visits go unlogged — and since retention is computed
+// purely from booking history, an unlogged visit silently makes a loyal
+// regular look churned. This returns the people most likely to walk in next,
+// each carrying enough of their usual booking to be saved without typing.
+//
+// Ranked by recency and frequency together: someone who comes weekly and was
+// here 3 days ago should outrank a one-off from yesterday.
+router.get('/:salonId/regulars', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? '10'), 10) || 10, 1), 30);
+
+    // Only COMPLETED — a cancelled or no-show booking says nothing about what
+    // this customer usually has done.
+    const bookings = await prisma.booking.findMany({
+      where: { salonId: req.params.salonId, status: 'COMPLETED' },
+      select: {
+        customerId: true,
+        price: true,
+        completedAt: true,
+        createdAt: true,
+        stylistId: true,
+        customer: { select: { name: true, phone: true } },
+        stylist: { select: { user: { select: { name: true } } } },
+        services: { select: { serviceId: true, service: { select: { name: true } } }, orderBy: { sortOrder: 'asc' } },
+        service: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 2000,
+    });
+
+    type Agg = {
+      customerId: string; name: string | null; phone: string;
+      visits: number; lastVisit: Date;
+      stylistId: string | null; stylistName: string | null;
+      serviceIds: string[]; serviceNames: string[]; price: number;
+    };
+    const byCustomer = new Map<string, Agg>();
+
+    for (const b of bookings) {
+      const when = b.completedAt ?? b.createdAt;
+      const existing = byCustomer.get(b.customerId);
+      if (existing) {
+        existing.visits += 1;
+        continue; // bookings are newest-first, so the first one seen is the latest
+      }
+      // Multi-service bookings live in `services`; older single-service rows
+      // still use the legacy `service` relation.
+      const items = b.services.length
+        ? b.services.map((s) => ({ id: s.serviceId, name: s.service?.name ?? '' }))
+        : b.service
+          ? [{ id: b.service.id, name: b.service.name }]
+          : [];
+      byCustomer.set(b.customerId, {
+        customerId: b.customerId,
+        name: b.customer?.name ?? null,
+        phone: b.customer?.phone ?? '',
+        visits: 1,
+        lastVisit: when,
+        stylistId: b.stylistId,
+        stylistName: b.stylist?.user?.name ?? null,
+        serviceIds: items.map((i) => i.id),
+        serviceNames: items.map((i) => i.name),
+        price: b.price,
+      });
+    }
+
+    const now = Date.now();
+    const ranked = [...byCustomer.values()]
+      .map((c) => {
+        const daysSince = Math.floor((now - c.lastVisit.getTime()) / 86400000);
+        return {
+          ...c,
+          lastVisit: c.lastVisit.toISOString(),
+          daysSince,
+          // Recency decays over ~2 months; frequency is damped with a log so a
+          // 40-visit regular doesn't permanently crowd out everyone else.
+          score: Math.log2(c.visits + 1) * (1 / (1 + daysSince / 60)),
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+
+    res.json({ customers: ranked });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/v2/salons/:salonId/booking-sources?period=day|week|month
+// Every booking already records where it came from, but nothing ever showed
+// it — so an owner who prints the QR code has no way to tell whether it
+// actually brings anyone in. That's the question this answers.
+//
+// The enum names are misleading about who creates them, so don't pass them
+// to the UI raw:
+//   PUBLIC_PAGE  - public-booking.ts, the self-serve link/QR
+//   SALONS_TAB   - POST /bookings/salon-manual, i.e. a walk-in or phone
+//                  booking the owner typed in themselves (NOT self-serve)
+//   STYLISTS_TAB - POST /bookings by a CUSTOMER, the customer app
+//
+// Counts cover every booking in the window: a link booking that later
+// cancelled still proves the channel works. Revenue only counts COMPLETED,
+// to stay consistent with /earnings.
+router.get('/:salonId/booking-sources', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const periodParam = String(req.query.period);
+    const period = ['day', 'week', 'month'].includes(periodParam) ? periodParam : 'month';
+    const days = period === 'day' ? 1 : period === 'week' ? 7 : 30;
+    const from = istStartOfDay(new Date());
+    from.setUTCDate(from.getUTCDate() - (days - 1));
+
+    // Bucket on createdAt (when the booking was taken) rather than slotStart
+    // — the question is when the channel produced it, not when the chair was
+    // filled, and a link booking for next month still counts today.
+    const [counts, revenue] = await Promise.all([
+      prisma.booking.groupBy({
+        by: ['bookedVia'],
+        where: { salonId: req.params.salonId, createdAt: { gte: from } },
+        _count: { _all: true },
+      }),
+      prisma.booking.groupBy({
+        by: ['bookedVia'],
+        where: { salonId: req.params.salonId, status: 'COMPLETED', createdAt: { gte: from } },
+        _sum: { price: true },
+      }),
+    ]);
+
+    const revenueBy = new Map(revenue.map((r) => [r.bookedVia, r._sum.price ?? 0]));
+    // Always emit all three, including zeros — "the link brought in 0" is the
+    // most actionable reading there is, and it vanishes if absent rows are
+    // dropped.
+    const sources = (['PUBLIC_PAGE', 'SALONS_TAB', 'STYLISTS_TAB'] as const).map((via) => ({
+      source: via,
+      bookings: counts.find((c) => c.bookedVia === via)?._count._all ?? 0,
+      revenue: revenueBy.get(via) ?? 0,
+    }));
+
+    const total = sources.reduce((t, s) => t + s.bookings, 0);
+    res.json({
+      period,
+      totalBookings: total,
+      sources: sources.map((s) => ({
+        ...s,
+        // Rounded server-side so every client renders the same number, and
+        // guarded against total=0 on a salon with no bookings yet.
+        share: total > 0 ? Math.round((s.bookings / total) * 100) : 0,
+      })),
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/v2/salons/:salonId/reviews — customer feedback left via the
+// public /review/:bookingId page. rating/totalReviews on Salon/Stylist are
+// precomputed aggregates (see public-review.ts), so this just reads them
+// plus the individual review feed; flagged (rating <= 2) ones sort first
+// so the owner sees what needs attention.
+router.get('/:salonId/reviews', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
+  try {
+    const salon = await findOwnedSalon(req.params.salonId, req.user);
+    if (!salon) return res.status(404).json({ error: 'Salon not found' });
+
+    const [reviews, stylists] = await Promise.all([
+      prisma.review.findMany({
+        where: { booking: { salonId: req.params.salonId } },
+        include: {
+          booking: {
+            include: {
+              customer: true,
+              stylist: { include: { user: true } },
+              services: { include: { service: true }, orderBy: { sortOrder: 'asc' } },
+              service: true,
+            },
+          },
+        },
+        orderBy: [{ flaggedToSalon: 'desc' }, { createdAt: 'desc' }],
+        take: 100,
+      }),
+      prisma.salonStylist.findMany({
+        where: { salonId: req.params.salonId, status: 'ACTIVE' },
+        include: { stylist: { include: { user: true } } },
+      }),
+    ]);
+
+    res.json({
+      salon: { rating: salon.rating, totalReviews: salon.totalReviews },
+      byStylist: stylists.map((rel) => ({
+        stylistId: rel.stylist.id,
+        name: rel.stylist.user.name ?? 'Staff',
+        rating: rel.stylist.rating,
+        totalReviews: rel.stylist.totalReviews,
+      })),
+      reviews: reviews.map((r) => ({
+        id: r.id,
+        customerName: r.booking.customer?.name ?? 'Customer',
+        stylistName: r.booking.stylist?.user.name ?? 'Staff',
+        serviceNames: r.booking.services.length
+          ? r.booking.services.map((s) => s.service.name)
+          : [r.booking.service.name],
+        stylistRating: r.stylistRating,
+        salonRating: r.salonRating,
+        stylistComment: r.stylistComment,
+        salonComment: r.salonComment,
+        flagged: r.flaggedToSalon,
+        createdAt: r.createdAt,
+      })),
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/v2/salons/:salonId/earnings?period=day|week|month
 // Sums COMPLETED bookings by their earned date (completedAt, falling back to
 // createdAt for older records). Day buckets are computed in IST (India).

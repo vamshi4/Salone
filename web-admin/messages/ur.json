@@ -89,7 +89,10 @@
     "loggedToday": "آج لاگ ہوا",
     "viewAll": "سب دیکھیں",
     "nothingLoggedYet": "آج ابھی تک کچھ لاگ نہیں ہوا — واک اِن درج کرنے کے لیے \"نئی بکنگ\" پر ٹیپ کریں۔",
-    "noSalonYet": "آپ کے اکاؤنٹ میں ابھی تک کوئی سیلون نہیں ملا۔"
+    "noSalonYet": "آپ کے اکاؤنٹ میں ابھی تک کوئی سیلون نہیں ملا۔",
+    "quickLog": "واک اِن درج کریں",
+    "quickLogHint": "ان کی معمول کی سروس درج کرنے کے لیے ٹیپ کریں",
+    "daysAgo": "{days, plural, =0 {آج} one {# دن پہلے} other {# دن پہلے}}"
   },
   "bookings": {
     "title": "بکنگز",
@@ -119,7 +122,9 @@
   "bookingRow": {
     "serviceFallback": "سروس",
     "repeat": "تکرار",
-    "rebook": "دوبارہ بک کریں"
+    "rebook": "دوبارہ بک کریں",
+    "requestReview": "جائزے کی درخواست کریں",
+    "reviewMessage": "ہیلو {name}! {salonName} آنے کا شکریہ۔ ہمیں آپ کی رائے پسند آئے گی — {link}"
   },
   "staff": {
     "title": "عملہ",
@@ -215,7 +220,24 @@
     "remindWhatsApp": "WhatsApp پر یاد دلائیں",
     "customerFallback": "کسٹمر",
     "daysOverdue": "{days} دن گزر گئے",
-    "whatsappGreeting": "ہیلو {name}! آپ کو {salonName} آئے کافی وقت ہو گیا ہے۔ ہمیں آپ کو دوبارہ دیکھ کر خوشی ہوگی — اپنی اگلی بکنگ کے لیے یہاں جواب دیں۔"
+    "whatsappGreeting": "ہیلو {name}! آپ کو {salonName} آئے کافی وقت ہو گیا ہے۔ ہمیں آپ کو دوبارہ دیکھ کر خوشی ہوگی — اپنی اگلی بکنگ کے لیے یہاں جواب دیں۔",
+    "tabReviews": "جائزے",
+    "loadingReviews": "جائزے لوڈ ہو رہے ہیں…",
+    "loadErrorReviews": "جائزے لوڈ نہیں ہو سکے۔ دوبارہ کوشش کریں۔",
+    "overallRating": "مجموعی درجہ بندی",
+    "reviewCount": "{count, plural, one {# جائزہ} other {# جائزے}}",
+    "recentReviews": "حالیہ جائزے",
+    "noReviewsYet": "ابھی تک کوئی جائزہ نہیں۔ کسی خوش گاہک سے ایک چھوڑنے کو کہیں!",
+    "needsAttention": "توجہ درکار ہے",
+    "stylistLabel": "{name}:",
+    "salonLabel": "سیلون:",
+    "bookingSources": "بکنگ کہاں سے آتی ہیں",
+    "bookingSourcesHint": "آپ کا بکنگ لنک بمقابلہ آپ کے درج کردہ واک اِن",
+    "source_PUBLIC_PAGE": "بکنگ لنک / QR",
+    "source_SALONS_TAB": "عملے کا درج کردہ",
+    "source_STYLISTS_TAB": "کسٹمر ایپ",
+    "sourceCount": "{count, plural, one {# بکنگ} other {# بکنگز}}",
+    "serviceCount": "{count, plural, one {# سروس} other {# سروسز}}"
   },
   "login": {
     "errPhone": "ایک درست فون نمبر درج کریں",
@@ -483,7 +505,8 @@
     "saving": "محفوظ ہو رہا ہے…",
     "collectingPayment": "ادائیگی کا انتظار…",
     "logService": "سروس لاگ کریں",
-    "scheduleBooking": "بکنگ شیڈول کریں"
+    "scheduleBooking": "بکنگ شیڈول کریں",
+    "logTitle": "واک اِن درج کریں"
   },
   "completeBooking": {
     "title": "بکنگ مکمل کریں",
