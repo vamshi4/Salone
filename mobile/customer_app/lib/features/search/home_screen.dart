@@ -9,7 +9,8 @@ import 'salons_tab.dart';
 import 'stylists_tab.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required this.onLogout});
+  final Future<void> Function() onLogout;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -40,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen>
         children: [
           _DiscoveryPage(tabController: _tabController),
           const BookingsScreen(),
-          const ProfileScreen(),
+          ProfileScreen(onLogout: widget.onLogout),
         ],
       ),
       bottomNavigationBar: NavigationBar(

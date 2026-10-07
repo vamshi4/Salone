@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../core/api/api_client.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, required this.onLogout});
+  final Future<void> Function() onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -19,24 +21,24 @@ class ProfileScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.black.withValues(alpha: 0.07)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 28,
                   backgroundColor: Color(0xFFF0ECFF),
                   child: Icon(Icons.person_outline, color: Color(0xFF5B3DB8)),
                 ),
-                SizedBox(width: 14),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Demo Customer',
-                          style: TextStyle(
+                      Text(ApiClient.customerName ?? 'Customer',
+                          style: const TextStyle(
                               fontSize: 17, fontWeight: FontWeight.w900)),
-                      SizedBox(height: 4),
-                      Text('customer-demo',
-                          style: TextStyle(
+                      const SizedBox(height: 4),
+                      Text(ApiClient.customerPhone ?? '',
+                          style: const TextStyle(
                               color: Color(0xFF756E80),
                               fontWeight: FontWeight.w600)),
                     ],
@@ -52,6 +54,11 @@ class ProfileScreen extends StatelessWidget {
               icon: Icons.location_on_outlined, label: 'Addresses'),
           const _ProfileRow(
               icon: Icons.support_agent, label: 'Help and support'),
+          OutlinedButton.icon(
+            onPressed: onLogout,
+            icon: const Icon(Icons.logout),
+            label: const Text('Sign out'),
+          ),
         ],
       ),
     );

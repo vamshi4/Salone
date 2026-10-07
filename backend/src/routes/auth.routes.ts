@@ -57,6 +57,32 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.post('/customer-signup', async (req, res) => {
+  try {
+    const name = String(req.body.name ?? '').trim();
+    const phone = String(req.body.phone ?? '').trim();
+    const password = String(req.body.password ?? '');
+    if (name.length < 2 || phone.length < 6 || password.length < 6) {
+      return res.status(400).json({
+        error: 'Name, valid phone, and password of at least 6 characters are required',
+      });
+    }
+    if (await prisma.user.findUnique({ where: { phone } })) {
+      return res.status(409).json({ error: 'Phone already registered' });
+    }
+    const user = await prisma.user.create({
+      data: { name, phone, password: hashPassword(password), role: 'CUSTOMER' },
+    });
+    res.status(201).json({
+      token: signToken({ id: user.id, role: user.role, phone: user.phone }),
+      user: publicUser(user),
+    });
+  } catch (e: any) {
+    if (e.code === 'P2002') return res.status(409).json({ error: 'Phone already registered' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // POST /google-login — { idToken, role }. Logs in an EXISTING account only
 // (matched by googleId, or by email on first use — which also auto-links the
 // Google account for next time). Does not create new accounts; a first-time

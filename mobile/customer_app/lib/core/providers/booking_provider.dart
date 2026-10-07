@@ -4,6 +4,6 @@ import '../api/api_client.dart';
 import '../models/booking.dart';
 
 final bookingsProvider = FutureProvider<List<CustomerBooking>>((ref) async {
-  final res = await ApiClient().get('/v2/bookings');
+  final res = await ApiClient().get('/api/v2/bookings');
   return (res.data as List).map((e) => CustomerBooking.fromJson(e)).toList();
 });

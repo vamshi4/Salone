@@ -100,6 +100,23 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     return '${date.year}-$month-$day';
   }
 
+  Future<Position> _currentPosition() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      throw Exception('Turn on location services to check home service.');
+    }
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      throw Exception('Location permission is required for home service.');
+    }
+
+    return Geolocator.getCurrentPosition();
+  }
+
   Future<void> _checkHomeService() async {
     setState(() {
       _checking = true;
@@ -107,9 +124,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     });
 
     try {
-      final pos = await Geolocator.getCurrentPosition();
+      final pos = await _currentPosition();
       final res =
-          await ApiClient().post('/v2/bookings/check-home-service', data: {
+          await ApiClient().post('/api/v2/bookings/check-home-service', data: {
         'stylistId': widget.stylist.id,
         'customerLat': pos.latitude,
         'customerLng': pos.longitude,
@@ -133,13 +150,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     setState(() => _booking = true);
 
     try {
-      final pos = _homeService ? await Geolocator.getCurrentPosition() : null;
+      final pos = _homeService ? await _currentPosition() : null;
       final selectedSlot = _selectedSlot;
       if (selectedSlot == null) {
         throw Exception('Please select an available slot');
       }
 
-      final res = await ApiClient().post('/v2/bookings', data: {
+      final res = await ApiClient().post('/api/v2/bookings', data: {
         'stylistId': widget.stylist.id,
         'serviceIds': _selectedServiceIds.toList(),
         'dateTime': selectedSlot.toUtc().toIso8601String(),

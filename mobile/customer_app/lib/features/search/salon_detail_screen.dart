@@ -135,23 +135,26 @@ class SalonDetailScreen extends StatelessWidget {
                       .map(
                         (stylist) => Padding(
                           padding: const EdgeInsets.only(bottom: 10),
-                          child: ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFF0ECFF),
-                              child: Icon(Icons.person_outline,
-                                  color: Color(0xFF5B3DB8)),
-                            ),
-                            title: Text(stylist.name,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w900)),
-                            subtitle: Text(stylist.priceText),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      StylistProfileScreen(stylist: stylist)),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFF0ECFF),
+                                child: Icon(Icons.person_outline,
+                                    color: Color(0xFF5B3DB8)),
+                              ),
+                              title: Text(stylist.name,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w900)),
+                              subtitle: Text(stylist.priceText),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => StylistProfileScreen(
+                                        stylist: stylist)),
+                              ),
                             ),
                           ),
                         ),

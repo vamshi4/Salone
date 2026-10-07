@@ -60,7 +60,7 @@ class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
     setState(() => _booking = true);
 
     try {
-      final res = await ApiClient().post('/v2/bookings', data: {
+      final res = await ApiClient().post('/api/v2/bookings', data: {
         'stylistId': stylist.id,
         'serviceIds': [_selectedService.id],
         'dateTime': _selectedSlot.toIso8601String(),

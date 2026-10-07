@@ -1,17 +1,29 @@
-# salon_customer_app
+# GlamBook customer app
 
-A new Flutter project.
+Customer discovery, booking, booking history, and reschedule demo for the
+Chairful marketplace backend.
 
-## Getting Started
+## Run on the physical Android device
 
-This project is a starting point for a Flutter application.
+Start the local backend on port 3000, connect the phone over USB, then run:
 
-A few resources to get you started if this is your first Flutter project:
+```powershell
+adb -s ed083e3d reverse tcp:3000 tcp:3000
+flutter pub get
+flutter analyze
+flutter run -d ed083e3d --dart-define=API_URL=http://127.0.0.1:3000
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Customers create an account or sign in with phone and password. The session
+token is stored in Android secure storage.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Release bundle
+
+Copy `android/key.properties.example` to `android/key.properties`, provide the
+upload keystore and credentials, then run:
+
+```powershell
+flutter build appbundle --release --dart-define=API_URL=https://api.slotvibe.buzz
+```
+
+Release builds intentionally fail when `android/key.properties` is missing.

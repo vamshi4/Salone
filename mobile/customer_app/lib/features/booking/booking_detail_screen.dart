@@ -21,7 +21,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   Future<void> _rejectReschedule() async {
     await _updateBooking(
       request: () => ApiClient().patch(
-        '/v2/bookings/${widget.booking.id}/reject-reschedule',
+        '/api/v2/bookings/${widget.booking.id}/reject-reschedule',
         data: {'rejectedBy': 'CUSTOMER'},
       ),
       message: 'Reschedule rejected',
@@ -31,7 +31,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   Future<void> _acceptReschedule() async {
     await _updateBooking(
       request: () => ApiClient().patch(
-        '/v2/bookings/${widget.booking.id}/accept-reschedule',
+        '/api/v2/bookings/${widget.booking.id}/accept-reschedule',
         data: {'acceptedBy': 'CUSTOMER'},
       ),
       message: 'Reschedule accepted',
@@ -61,7 +61,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
 
     await _updateBooking(
       request: () => ApiClient().patch(
-        '/v2/bookings/${booking.id}/reschedule',
+        '/api/v2/bookings/${booking.id}/reschedule',
         data: {
           'dateTime': newTime.toUtc().toIso8601String(),
           'proposedBy': 'CUSTOMER',

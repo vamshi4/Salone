@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/api/api_client.dart';
+import 'features/auth/auth_screen.dart';
 import 'features/search/home_screen.dart';
 
 void main() {
@@ -79,7 +81,39 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const HomeScreen(),
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  late final Future<bool> _session = ApiClient.initialize();
+  bool? _signedIn;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _session,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        final signedIn = _signedIn ?? snapshot.data!;
+        if (!signedIn) {
+          return AuthScreen(onAuthenticated: () => setState(() => _signedIn = true));
+        }
+        return HomeScreen(onLogout: () async {
+          await ApiClient.logout();
+          if (mounted) setState(() => _signedIn = false);
+        });
+      },
     );
   }
 }
