@@ -26,7 +26,8 @@ class ApiClient {
   }
 
   static Future<void> signup(String name, String phone, String password) async {
-    final response = await _publicDio().post('/api/v2/auth/customer-signup', data: {
+    final response =
+        await _publicDio().post('/api/v2/auth/customer-signup', data: {
       'name': name,
       'phone': phone,
       'password': password,
@@ -63,7 +64,10 @@ class ApiClient {
       handler.next(options);
     }));
 
-  Future<Response> get(String path) => _dio.get(path);
-  Future<Response> post(String path, {dynamic data}) => _dio.post(path, data: data);
-  Future<Response> patch(String path, {dynamic data}) => _dio.patch(path, data: data);
+  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) =>
+      _dio.get(path, queryParameters: queryParameters);
+  Future<Response> post(String path, {dynamic data}) =>
+      _dio.post(path, data: data);
+  Future<Response> patch(String path, {dynamic data}) =>
+      _dio.patch(path, data: data);
 }

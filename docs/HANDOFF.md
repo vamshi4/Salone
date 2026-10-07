@@ -1072,3 +1072,21 @@ own `overflow-x: auto/scroll`) came back clean afterward except for the hero car
 `518a9cb` (backend/`salone-api`): **not yet deployed** — see the warning in section 2 above. Do
 not assume the CDN-caching symptom is resolved on production until `deploy/k8s/salone-api.yaml` is
 repinned to a commit at or after `518a9cb` and rolled.
+
+## 2026-10-07 — customer booking time aligned with Chairful admin
+
+- Replaced the customer app's fabricated “next six hours” choices with the same real availability
+  flow used by `salon_admin_app_v3`: customer selects a date, then the app calls
+  `GET /api/v2/stylists/:id/availability` with the selected service and displays the returned slots.
+- The first real slot is selected by default. Changing service, stylist, or date reloads slots.
+  Loading, API failure, no-service, no-staff, and no-slot states are explicit; confirmation stays
+  disabled until service, staff, and an available time are all valid.
+- Verified the signed release on physical device `ed083e3d` against production. The tested salon
+  showed real 30-minute slots (6:00 PM through 9:00 PM) and the date label `Today, 7 Oct`.
+- Customer app: `flutter analyze` and `flutter test` pass; signed production release APK builds.
+  Salon admin v3: `flutter analyze` passes and the production release APK builds. A stale ignored
+  `GeneratedPluginRegistrant.java` entry for the dev-only `integration_test` plugin had to be
+  removed locally before the admin release build.
+- Graphify refresh was attempted but could not run on Ubuntu because the documented `graphify` CLI
+  is not installed or present in PATH. `graphify-out/` therefore remains at its prior snapshot and
+  should be refreshed with `graphify update .` when the CLI is restored.

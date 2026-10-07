@@ -19,7 +19,11 @@ class SalonBookingScreen extends ConsumerStatefulWidget {
 class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
   late SalonService _selectedService;
   Stylist? _selectedStylist;
-  late DateTime _selectedSlot;
+  DateTime _selectedDate = DateTime.now();
+  DateTime? _selectedSlot;
+  List<DateTime> _slots = [];
+  bool _loadingSlots = false;
+  String? _slotError;
   bool _booking = false;
 
   @override
@@ -36,16 +40,72 @@ class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
           );
     _selectedStylist =
         widget.salon.staff.isNotEmpty ? widget.salon.staff.first : null;
-    final now = DateTime.now();
-    _selectedSlot = DateTime(now.year, now.month, now.day, now.hour + 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSlots());
   }
 
-  List<DateTime> get _slots {
-    final now = DateTime.now();
-    return List.generate(6, (index) {
-      final hour = index + 1;
-      return DateTime(now.year, now.month, now.day, now.hour + hour);
+  bool get _canBook =>
+      widget.salon.services.isNotEmpty &&
+      _selectedStylist != null &&
+      _selectedSlot != null;
+
+  Future<void> _loadSlots() async {
+    final stylist = _selectedStylist;
+    if (stylist == null || widget.salon.services.isEmpty) {
+      setState(() {
+        _slots = [];
+        _selectedSlot = null;
+        _slotError = stylist == null
+            ? 'This salon has no active staff yet.'
+            : 'This salon has no bookable services yet.';
+      });
+      return;
+    }
+
+    setState(() {
+      _loadingSlots = true;
+      _slotError = null;
+      _slots = [];
+      _selectedSlot = null;
     });
+    try {
+      final response = await ApiClient().get(
+        '/api/v2/stylists/${stylist.id}/availability',
+        queryParameters: {
+          'date': _dateValue(_selectedDate),
+          'serviceIds': _selectedService.id,
+        },
+      );
+      final slots = ((response.data['slots'] ?? []) as List)
+          .map((slot) => DateTime.parse(slot['dateTime']).toLocal())
+          .toList();
+      if (!mounted) return;
+      setState(() {
+        _slots = slots;
+        _selectedSlot = slots.isEmpty ? null : slots.first;
+        _slotError = slots.isEmpty
+            ? 'No times available on this date. Try another day.'
+            : null;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _slotError = 'Could not load available times.');
+      }
+    } finally {
+      if (mounted) setState(() => _loadingSlots = false);
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final today = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(today.year, today.month, today.day),
+      lastDate: today.add(const Duration(days: 60)),
+    );
+    if (date == null || date == _selectedDate) return;
+    setState(() => _selectedDate = date);
+    await _loadSlots();
   }
 
   Future<void> _confirmBooking() async {
@@ -63,7 +123,7 @@ class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
       final res = await ApiClient().post('/api/v2/bookings', data: {
         'stylistId': stylist.id,
         'serviceIds': [_selectedService.id],
-        'dateTime': _selectedSlot.toIso8601String(),
+        'dateTime': _selectedSlot!.toUtc().toIso8601String(),
         'isHomeService': false,
       });
 
@@ -109,7 +169,10 @@ class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
                       child: _ServiceTile(
                         service: service,
                         selected: service.id == _selectedService.id,
-                        onTap: () => setState(() => _selectedService = service),
+                        onTap: () {
+                          setState(() => _selectedService = service);
+                          _loadSlots();
+                        },
                       ),
                     ),
                   )
@@ -136,8 +199,10 @@ class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
                           child: _StylistTile(
                             stylist: stylist,
                             selected: stylist.id == _selectedStylist?.id,
-                            onTap: () =>
-                                setState(() => _selectedStylist = stylist),
+                            onTap: () {
+                              setState(() => _selectedStylist = stylist);
+                              _loadSlots();
+                            },
                           ),
                         ),
                       )
@@ -146,19 +211,50 @@ class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
           ),
           const SizedBox(height: 14),
           _Section(
-            title: '3. Select time',
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _slots.map((slot) {
-                final selected = slot.hour == _selectedSlot.hour &&
-                    slot.day == _selectedSlot.day;
-                return ChoiceChip(
-                  selected: selected,
-                  label: Text(_formatSlot(slot)),
-                  onSelected: (_) => setState(() => _selectedSlot = slot),
-                );
-              }).toList(),
+            title: '3. Choose date and time',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _pickDate,
+                  icon: const Icon(Icons.calendar_today_outlined),
+                  label: Text(_dateLabel(_selectedDate)),
+                ),
+                const SizedBox(height: 14),
+                const Text('Available times',
+                    style: TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                if (_loadingSlots)
+                  const LinearProgressIndicator(minHeight: 3)
+                else if (_slotError != null)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline,
+                          size: 18, color: Color(0xFF756E80)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(_slotError!,
+                            style: const TextStyle(
+                                color: Color(0xFF756E80),
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _slots.map((slot) {
+                      final selected = slot == _selectedSlot;
+                      return ChoiceChip(
+                        selected: selected,
+                        label: Text(_formatSlot(slot)),
+                        onSelected: (_) => setState(() => _selectedSlot = slot),
+                      );
+                    }).toList(),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 14),
@@ -176,7 +272,9 @@ class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
                 const SizedBox(height: 10),
                 _SummaryRow(
                     label: 'Time',
-                    value: 'Today, ${_formatSlot(_selectedSlot)}'),
+                    value: _selectedSlot == null
+                        ? 'Choose an available time'
+                        : '${_dateLabel(_selectedDate)}, ${_formatSlot(_selectedSlot!)}'),
                 const Divider(height: 24, color: Colors.white24),
                 _SummaryRow(
                     label: 'Estimated total',
@@ -187,7 +285,7 @@ class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: _booking ? null : _confirmBooking,
+            onPressed: _booking || !_canBook ? null : _confirmBooking,
             icon: _booking
                 ? const SizedBox(
                     width: 18,
@@ -204,10 +302,45 @@ class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
   }
 
   String _formatSlot(DateTime slot) {
-    final hour = slot.hour > 12 ? slot.hour - 12 : slot.hour;
+    final hour =
+        slot.hour == 0 ? 12 : (slot.hour > 12 ? slot.hour - 12 : slot.hour);
     final suffix = slot.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:00 $suffix';
+    final minute = slot.minute.toString().padLeft(2, '0');
+    return '$hour:$minute $suffix';
   }
+
+  String _dateValue(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  String _dateLabel(DateTime date) {
+    final today = DateTime.now();
+    final tomorrow = today.add(const Duration(days: 1));
+    final prefix = _sameDay(date, today)
+        ? 'Today'
+        : (_sameDay(date, tomorrow) ? 'Tomorrow' : _weekday(date.weekday));
+    return '$prefix, ${date.day} ${_month(date.month)}';
+  }
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  String _weekday(int day) =>
+      const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day - 1];
+
+  String _month(int month) => const [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ][month - 1];
 }
 
 class _Section extends StatelessWidget {
