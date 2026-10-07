@@ -8,7 +8,9 @@ plugins {
 }
 
 val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
+val keystorePropertiesFile = System.getenv("CHAIRFUL_KEY_PROPERTIES")
+    ?.let { file(it) }
+    ?: rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
@@ -43,7 +45,9 @@ android {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String?
             keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = (keystoreProperties["storeFile"] as String?)?.let { file(it) }
+            storeFile = (keystoreProperties["storeFile"] as String?)?.let {
+                keystorePropertiesFile.parentFile.resolve("app").resolve(it)
+            }
             storePassword = keystoreProperties["storePassword"] as String?
         }
     }

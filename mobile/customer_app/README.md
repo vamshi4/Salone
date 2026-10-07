@@ -27,3 +27,5 @@ flutter build appbundle --release --dart-define=API_URL=https://api.slotvibe.buz
 ```
 
 Release builds intentionally fail when `android/key.properties` is missing.
+The existing Chairful key can instead be selected with the
+`CHAIRFUL_KEY_PROPERTIES` environment variable.
