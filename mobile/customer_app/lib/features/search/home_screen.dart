@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../core/providers/booking_provider.dart';
 import '../booking/bookings_screen.dart';
@@ -70,10 +71,74 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
-class _DiscoveryPage extends StatelessWidget {
+class _DiscoveryPage extends StatefulWidget {
   const _DiscoveryPage({required this.tabController});
 
   final TabController tabController;
+
+  @override
+  State<_DiscoveryPage> createState() => _DiscoveryPageState();
+}
+
+class _DiscoveryPageState extends State<_DiscoveryPage> {
+  final _searchController = TextEditingController();
+  final Set<String> _filters = {};
+  double? _latitude;
+  double? _longitude;
+  bool _locating = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleFilter(String filter) {
+    setState(() {
+      if (!_filters.add(filter)) _filters.remove(filter);
+    });
+  }
+
+  void _clearFilters() {
+    _searchController.clear();
+    setState(_filters.clear);
+  }
+
+  Future<void> _toggleNearby() async {
+    if (_filters.contains('nearby')) {
+      setState(() => _filters.remove('nearby'));
+      return;
+    }
+    setState(() => _locating = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw Exception('Turn on location services to find nearby salons.');
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw Exception('Location permission is required for Nearby.');
+      }
+      final position = await Geolocator.getCurrentPosition();
+      if (!mounted) return;
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+        _filters.add('nearby');
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,11 +206,19 @@ class _DiscoveryPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  readOnly: true,
+                  controller: _searchController,
+                  onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: 'Search services or stylists',
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon: const Icon(Icons.tune),
+                    suffixIcon:
+                        _searchController.text.isEmpty && _filters.isEmpty
+                            ? null
+                            : IconButton(
+                                onPressed: _clearFilters,
+                                tooltip: 'Clear search and filters',
+                                icon: const Icon(Icons.close),
+                              ),
                     filled: true,
                     fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -172,13 +245,31 @@ class _DiscoveryPage extends StatelessWidget {
                   height: 36,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
-                    children: const [
-                      _FilterChip(label: 'Haircut', icon: Icons.content_cut),
+                    children: [
                       _FilterChip(
-                          label: 'Home service', icon: Icons.home_outlined),
-                      _FilterChip(label: 'Top rated', icon: Icons.star_border),
+                        label: 'Haircut',
+                        icon: Icons.content_cut,
+                        selected: _filters.contains('haircut'),
+                        onTap: () => _toggleFilter('haircut'),
+                      ),
                       _FilterChip(
-                          label: 'Near me', icon: Icons.near_me_outlined),
+                        label: 'Home service',
+                        icon: Icons.home_outlined,
+                        selected: _filters.contains('home'),
+                        onTap: () => _toggleFilter('home'),
+                      ),
+                      _FilterChip(
+                        label: 'Top rated',
+                        icon: Icons.star_border,
+                        selected: _filters.contains('rated'),
+                        onTap: () => _toggleFilter('rated'),
+                      ),
+                      _FilterChip(
+                        label: _locating ? 'Locating...' : 'Nearby',
+                        icon: Icons.near_me_outlined,
+                        selected: _filters.contains('nearby'),
+                        onTap: _locating ? null : _toggleNearby,
+                      ),
                     ],
                   ),
                 ),
@@ -194,7 +285,7 @@ class _DiscoveryPage extends StatelessWidget {
               ),
             ),
             child: TabBar(
-              controller: tabController,
+              controller: widget.tabController,
               labelColor: Theme.of(context).colorScheme.primary,
               unselectedLabelColor: const Color(0xFF756E80),
               indicatorColor: Theme.of(context).colorScheme.primary,
@@ -211,10 +302,22 @@ class _DiscoveryPage extends StatelessWidget {
           ),
           Expanded(
             child: TabBarView(
-              controller: tabController,
-              children: const [
-                SalonsTab(),
-                StylistsTab(),
+              controller: widget.tabController,
+              children: [
+                SalonsTab(
+                  query: _searchController.text,
+                  filters: _filters,
+                  latitude: _latitude,
+                  longitude: _longitude,
+                  onClear: _clearFilters,
+                ),
+                StylistsTab(
+                  query: _searchController.text,
+                  filters: _filters,
+                  latitude: _latitude,
+                  longitude: _longitude,
+                  onClear: _clearFilters,
+                ),
               ],
             ),
           ),
@@ -227,11 +330,11 @@ class _DiscoveryPage extends StatelessWidget {
 class _NotificationButton extends StatelessWidget {
   const _NotificationButton({
     required this.pendingCount,
-    required this.onTap,
+    this.onTap,
   });
 
   final int pendingCount;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -271,33 +374,41 @@ class _NotificationButton extends StatelessWidget {
 }
 
 class _FilterChip extends StatelessWidget {
-  const _FilterChip({required this.label, required this.icon});
+  const _FilterChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    this.onTap,
+  });
 
   final String label;
   final IconData icon;
+  final bool selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 11),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-                color: Color(0xFF2B2532)),
-          ),
-        ],
+    final primary = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        selected: selected,
+        onSelected: onTap == null ? null : (_) => onTap!(),
+        avatar: Icon(icon, size: 16, color: selected ? primary : null),
+        label: Text(label),
+        showCheckmark: false,
+        selectedColor: const Color(0xFFF0ECFF),
+        side: BorderSide(
+          color: selected ? primary : Colors.black.withValues(alpha: 0.08),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+          color: selected ? primary : const Color(0xFF2B2532),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        visualDensity: VisualDensity.compact,
       ),
     );
   }

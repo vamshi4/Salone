@@ -4,6 +4,8 @@ class MarketplaceSalon {
   final String id;
   final String name;
   final String address;
+  final double latitude;
+  final double longitude;
   final double rating;
   final int totalReviews;
   final List<SalonService> services;
@@ -13,6 +15,8 @@ class MarketplaceSalon {
     required this.id,
     required this.name,
     required this.address,
+    required this.latitude,
+    required this.longitude,
     required this.rating,
     required this.totalReviews,
     required this.services,
@@ -33,6 +37,8 @@ class MarketplaceSalon {
       id: json['id'],
       name: json['name'] ?? 'Salon',
       address: json['address'] ?? '',
+      latitude: (json['lat'] ?? 0).toDouble(),
+      longitude: (json['lng'] ?? 0).toDouble(),
       rating: (json['rating'] ?? 0).toDouble(),
       totalReviews: json['totalReviews'] ?? 0,
       services: ((json['services'] ?? []) as List)

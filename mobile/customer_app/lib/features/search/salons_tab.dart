@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../core/models/marketplace_salon.dart';
 import '../../core/providers/salon_provider.dart';
 import 'salon_detail_screen.dart';
 
 class SalonsTab extends ConsumerWidget {
-  const SalonsTab({super.key});
+  const SalonsTab({
+    super.key,
+    required this.query,
+    required this.filters,
+    required this.latitude,
+    required this.longitude,
+    required this.onClear,
+  });
+
+  final String query;
+  final Set<String> filters;
+  final double? latitude;
+  final double? longitude;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -15,14 +29,25 @@ class SalonsTab extends ConsumerWidget {
     return salonsAsync.when(
       data: (salons) {
         if (salons.isEmpty) return const _EmptyState();
+        final visible = filterSalons(
+          salons,
+          query,
+          filters,
+          latitude: latitude,
+          longitude: longitude,
+        );
+        if (visible.isEmpty) return _NoMatches(onClear: onClear);
 
         return RefreshIndicator(
           onRefresh: () async => ref.invalidate(salonsProvider),
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            itemCount: salons.length,
+            itemCount: visible.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) => _SalonCard(salon: salons[index]),
+            itemBuilder: (context, index) => _SalonCard(
+              salon: visible[index],
+              distanceKm: _distanceToSalon(visible[index], latitude, longitude),
+            ),
           ),
         );
       },
@@ -35,10 +60,70 @@ class SalonsTab extends ConsumerWidget {
   }
 }
 
+List<MarketplaceSalon> filterSalons(
+  List<MarketplaceSalon> salons,
+  String query,
+  Set<String> filters, {
+  double? latitude,
+  double? longitude,
+}) {
+  final needle = query.trim().toLowerCase();
+  return salons.where((salon) {
+    final searchable = [
+      salon.name,
+      salon.address,
+      ...salon.services.expand((service) => [service.name, service.category]),
+      ...salon.staff.map((stylist) => stylist.displayName),
+    ].join(' ').toLowerCase();
+    if (needle.isNotEmpty && !searchable.contains(needle)) return false;
+    if (filters.contains('haircut') &&
+        !salon.services.any((service) => '${service.name} ${service.category}'
+            .toLowerCase()
+            .contains('hair'))) {
+      return false;
+    }
+    if (filters.contains('home') &&
+        !salon.staff.any((stylist) => stylist.homeServiceEnabled)) {
+      return false;
+    }
+    if (filters.contains('rated') && salon.rating < 4) return false;
+    if (filters.contains('nearby')) {
+      final distance = _distanceToSalon(salon, latitude, longitude);
+      if (distance == null) return false;
+    }
+    return true;
+  }).toList()
+    ..sort((a, b) {
+      if (!filters.contains('nearby')) return 0;
+      return _distanceToSalon(a, latitude, longitude)!
+          .compareTo(_distanceToSalon(b, latitude, longitude)!);
+    });
+}
+
+double? _distanceToSalon(
+  MarketplaceSalon salon,
+  double? latitude,
+  double? longitude,
+) {
+  if (latitude == null ||
+      longitude == null ||
+      (salon.latitude == 0 && salon.longitude == 0)) {
+    return null;
+  }
+  return Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        salon.latitude,
+        salon.longitude,
+      ) /
+      1000;
+}
+
 class _SalonCard extends StatelessWidget {
-  const _SalonCard({required this.salon});
+  const _SalonCard({required this.salon, required this.distanceKm});
 
   final MarketplaceSalon salon;
+  final double? distanceKm;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +202,9 @@ class _SalonCard extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  salon.address,
+                  distanceKm == null
+                      ? salon.address
+                      : '${distanceKm!.toStringAsFixed(1)} km · ${salon.address}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -151,6 +238,28 @@ class _EmptyState extends StatelessWidget {
       child: Text(
         'No salons available right now',
         style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF756E80)),
+      ),
+    );
+  }
+}
+
+class _NoMatches extends StatelessWidget {
+  const _NoMatches({required this.onClear});
+
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('No salons match your search',
+              style: TextStyle(
+                  fontWeight: FontWeight.w800, color: Color(0xFF756E80))),
+          const SizedBox(height: 12),
+          TextButton(onPressed: onClear, child: const Text('Clear filters')),
+        ],
       ),
     );
   }

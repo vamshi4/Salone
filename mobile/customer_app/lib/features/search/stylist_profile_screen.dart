@@ -118,46 +118,53 @@ class StylistProfileScreen extends StatelessWidget {
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 12),
-                ...stylist.bookableServices.map(
-                  (service) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0ECFF),
-                            borderRadius: BorderRadius.circular(8),
+                if (stylist.bookableServices.isEmpty)
+                  const Text(
+                    'No bookable services available yet.',
+                    style: TextStyle(
+                        color: Color(0xFF756E80), fontWeight: FontWeight.w600),
+                  )
+                else
+                  ...stylist.bookableServices.map(
+                    (service) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0ECFF),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.spa_outlined,
+                                color: Color(0xFF5B3DB8)),
                           ),
-                          child: const Icon(Icons.spa_outlined,
-                              color: Color(0xFF5B3DB8)),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(service.name,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(service.name,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w900)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${service.duration} min • ${service.category}',
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.w900)),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${service.duration} min • ${service.category}',
-                                style: const TextStyle(
-                                    color: Color(0xFF756E80),
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ],
+                                      color: Color(0xFF756E80),
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        Text(service.priceText,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w900)),
-                      ],
+                          Text(service.priceText,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w900)),
+                        ],
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -201,13 +208,17 @@ class StylistProfileScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: FilledButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => BookingScreen(stylist: stylist)),
-            ),
+            onPressed: stylist.bookableServices.isEmpty
+                ? null
+                : () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => BookingScreen(stylist: stylist)),
+                    ),
             icon: const Icon(Icons.calendar_month_outlined),
-            label: const Text('Continue to booking'),
+            label: Text(stylist.bookableServices.isEmpty
+                ? 'No services available'
+                : 'Continue to booking'),
           ),
         ),
       ),

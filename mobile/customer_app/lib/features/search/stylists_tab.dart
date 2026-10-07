@@ -1,12 +1,27 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
+import '../../core/models/stylist.dart';
 import '../../core/providers/stylist_provider.dart';
 import 'stylist_profile_screen.dart';
 
 class StylistsTab extends ConsumerWidget {
-  const StylistsTab({super.key});
+  const StylistsTab({
+    super.key,
+    required this.query,
+    required this.filters,
+    required this.latitude,
+    required this.longitude,
+    required this.onClear,
+  });
+
+  final String query;
+  final Set<String> filters;
+  final double? latitude;
+  final double? longitude;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,15 +32,25 @@ class StylistsTab extends ConsumerWidget {
         if (stylists.isEmpty) {
           return const _EmptyState();
         }
+        final visible = filterStylists(
+          stylists,
+          query,
+          filters,
+          latitude: latitude,
+          longitude: longitude,
+        );
+        if (visible.isEmpty) return _NoMatches(onClear: onClear);
 
         return RefreshIndicator(
           onRefresh: () async => ref.invalidate(stylistsProvider),
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            itemCount: stylists.length,
+            itemCount: visible.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
-              final stylist = stylists[index];
+              final stylist = visible[index];
+              final distanceKm =
+                  _distanceToStylist(stylist, latitude, longitude);
               final isExclusive = stylist.registrationType == 'SALON_EXCLUSIVE';
               final canBookHome = !isExclusive && stylist.homeServiceEnabled;
 
@@ -132,6 +157,13 @@ class StylistsTab extends ConsumerWidget {
                             color: Color(0xFF008F7A),
                             background: Color(0xFFE5F6F2),
                           ),
+                        if (distanceKm != null)
+                          _StatusPill(
+                            icon: Icons.near_me_outlined,
+                            text: '${distanceKm.toStringAsFixed(1)} km away',
+                            color: const Color(0xFF5B3DB8),
+                            background: const Color(0xFFF0ECFF),
+                          ),
                         const _StatusPill(
                           icon: Icons.verified_outlined,
                           text: 'Verified',
@@ -141,31 +173,19 @@ class StylistsTab extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {},
-                            icon:
-                                const Icon(Icons.chat_bubble_outline, size: 18),
-                            label: const Text('Message'),
-                          ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  StylistProfileScreen(stylist: stylist)),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      StylistProfileScreen(stylist: stylist)),
-                            ),
-                            icon: const Icon(Icons.calendar_month_outlined,
-                                size: 18),
-                            label: const Text('View profile'),
-                          ),
-                        ),
-                      ],
+                        icon:
+                            const Icon(Icons.calendar_month_outlined, size: 18),
+                        label: const Text('View profile'),
+                      ),
                     ),
                   ],
                 ),
@@ -181,6 +201,65 @@ class StylistsTab extends ConsumerWidget {
       ),
     );
   }
+}
+
+List<Stylist> filterStylists(
+  List<Stylist> stylists,
+  String query,
+  Set<String> filters, {
+  double? latitude,
+  double? longitude,
+}) {
+  final needle = query.trim().toLowerCase();
+  return stylists.where((stylist) {
+    final searchable = [
+      stylist.displayName,
+      stylist.primarySalon?.name ?? '',
+      ...stylist.services.expand((service) => [service.name, service.category]),
+    ].join(' ').toLowerCase();
+    if (needle.isNotEmpty && !searchable.contains(needle)) return false;
+    if (filters.contains('haircut') &&
+        !stylist.services.any((service) => '${service.name} ${service.category}'
+            .toLowerCase()
+            .contains('hair'))) {
+      return false;
+    }
+    if (filters.contains('home') && !stylist.homeServiceEnabled) return false;
+    if (filters.contains('rated') && stylist.rating < 4) return false;
+    if (filters.contains('nearby')) {
+      final distance = _distanceToStylist(stylist, latitude, longitude);
+      if (distance == null) return false;
+    }
+    return true;
+  }).toList()
+    ..sort((a, b) {
+      if (!filters.contains('nearby')) return 0;
+      return _distanceToStylist(a, latitude, longitude)!
+          .compareTo(_distanceToStylist(b, latitude, longitude)!);
+    });
+}
+
+double? _distanceToStylist(
+  Stylist stylist,
+  double? latitude,
+  double? longitude,
+) {
+  final stylistLatitude = stylist.latitude ?? stylist.primarySalon?.latitude;
+  final stylistLongitude = stylist.longitude ?? stylist.primarySalon?.longitude;
+  if (latitude == null ||
+      longitude == null ||
+      stylistLatitude == null ||
+      stylistLongitude == null ||
+      (stylistLatitude == 0 && stylistLongitude == 0)) {
+    return null;
+  }
+  return Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        stylistLatitude,
+        stylistLongitude,
+      ) /
+      1000;
 }
 
 class _AvatarFallback extends StatelessWidget {
@@ -265,6 +344,28 @@ class _EmptyState extends StatelessWidget {
       child: Text(
         'No stylists available right now',
         style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF756E80)),
+      ),
+    );
+  }
+}
+
+class _NoMatches extends StatelessWidget {
+  const _NoMatches({required this.onClear});
+
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('No stylists match your search',
+              style: TextStyle(
+                  fontWeight: FontWeight.w800, color: Color(0xFF756E80))),
+          const SizedBox(height: 12),
+          TextButton(onPressed: onClear, child: const Text('Clear filters')),
+        ],
       ),
     );
   }

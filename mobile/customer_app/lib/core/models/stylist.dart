@@ -7,6 +7,8 @@ class Stylist {
   final String registrationType;
   final bool homeServiceEnabled;
   final bool independentBookingEnabled;
+  final double? latitude;
+  final double? longitude;
   final int? salonPrice;
   final int? minPrice;
   final Salon? primarySalon;
@@ -21,6 +23,8 @@ class Stylist {
     required this.registrationType,
     required this.homeServiceEnabled,
     required this.independentBookingEnabled,
+    this.latitude,
+    this.longitude,
     this.salonPrice,
     this.minPrice,
     this.primarySalon,
@@ -40,19 +44,7 @@ class Stylist {
       ? 'Rs ${(salonPrice ?? 0) ~/ 100}'
       : 'Rs ${(minPrice ?? 0) ~/ 100} onwards';
 
-  List<StylistService> get bookableServices {
-    if (services.isNotEmpty) return services;
-
-    return [
-      StylistService(
-        id: 'standard-service',
-        name: 'Standard Styling Session',
-        category: 'Salon',
-        duration: 60,
-        basePrice: fallbackPrice,
-      ),
-    ];
-  }
+  List<StylistService> get bookableServices => services;
 
   factory Stylist.fromJson(Map<String, dynamic> json) {
     return Stylist(
@@ -64,6 +56,8 @@ class Stylist {
       registrationType: json['registrationType'],
       homeServiceEnabled: json['homeServiceEnabled'] ?? false,
       independentBookingEnabled: json['independentBookingEnabled'] ?? true,
+      latitude: (json['lat'] as num?)?.toDouble(),
+      longitude: (json['lng'] as num?)?.toDouble(),
       salonPrice: json['salonPrice'],
       minPrice: json['minPrice'],
       primarySalon: json['primarySalon'] != null
@@ -79,11 +73,22 @@ class Stylist {
 class Salon {
   final String id;
   final String name;
+  final double? latitude;
+  final double? longitude;
 
-  Salon({required this.id, required this.name});
+  Salon({
+    required this.id,
+    required this.name,
+    this.latitude,
+    this.longitude,
+  });
 
-  factory Salon.fromJson(Map<String, dynamic> json) =>
-      Salon(id: json['id'], name: json['name']);
+  factory Salon.fromJson(Map<String, dynamic> json) => Salon(
+        id: json['id'],
+        name: json['name'],
+        latitude: (json['lat'] as num?)?.toDouble(),
+        longitude: (json['lng'] as num?)?.toDouble(),
+      );
 }
 
 class StylistService {

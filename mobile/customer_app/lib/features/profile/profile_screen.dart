@@ -48,47 +48,11 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const _ProfileRow(
-              icon: Icons.favorite_border, label: 'Saved stylists'),
-          const _ProfileRow(
-              icon: Icons.location_on_outlined, label: 'Addresses'),
-          const _ProfileRow(
-              icon: Icons.support_agent, label: 'Help and support'),
           OutlinedButton.icon(
             onPressed: onLogout,
             icon: const Icon(Icons.logout),
             label: const Text('Sign out'),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileRow extends StatelessWidget {
-  const _ProfileRow({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.07)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF5B3DB8)),
-          const SizedBox(width: 12),
-          Expanded(
-              child: Text(label,
-                  style: const TextStyle(fontWeight: FontWeight.w800))),
-          const Icon(Icons.chevron_right, color: Color(0xFF756E80)),
         ],
       ),
     );

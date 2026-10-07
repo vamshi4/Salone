@@ -1090,3 +1090,21 @@ repinned to a commit at or after `518a9cb` and rolled.
 - Graphify refresh was attempted but could not run on Ubuntu because the documented `graphify` CLI
   is not installed or present in PATH. `graphify-out/` therefore remains at its prior snapshot and
   should be refreshed with `graphify update .` when the CLI is restored.
+
+## 2026-10-07 — customer discovery controls and Nearby completed
+
+- Search is now editable and filters salon/stylist names, addresses, services, categories, and
+  provider names. Haircut, Home service, and Top rated are real toggleable filters with selected
+  states, combined filtering, clear controls, and useful no-match recovery.
+- Nearby now requests Android location permission, excludes listings without usable coordinates,
+  sorts location-enabled results nearest-first, and displays the calculated distance on cards
+  (for example `18.3 km`). It intentionally does not impose a fixed radius while production data
+  is sparse. Exclusive stylists use their primary salon coordinates when their own are absent.
+- Removed false affordances: the unimplemented stylist Message button and the nonfunctional Saved
+  stylists, Addresses, and Help profile rows. The unsupported filter icon was replaced by a clear
+  search/filter action.
+- Removed invented fallback stylist services. Providers without real services now show an explicit
+  unavailable state and cannot enter booking, preventing invalid placeholder service IDs.
+- Verified on physical device `ed083e3d`: location permission prompt, selected Nearby chip, nearest
+  salon result, and displayed distance. `flutter analyze` and both customer tests pass.
+- `graphify update .` remains unavailable on Ubuntu because the Graphify executable is missing.
