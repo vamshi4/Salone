@@ -167,6 +167,17 @@ class _SalonCard extends StatelessWidget {
                       style: const TextStyle(
                           fontSize: 17, fontWeight: FontWeight.w900),
                     ),
+                    const SizedBox(height: 5),
+                    Text(
+                      salon.isOnline ? 'ONLINE' : 'OFFLINE',
+                      style: TextStyle(
+                        color: salon.isOnline
+                            ? const Color(0xFF0F8D58)
+                            : const Color(0xFFC33B3B),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Row(
                       children: [

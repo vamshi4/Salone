@@ -8,6 +8,7 @@ class MarketplaceSalon {
   final double longitude;
   final double rating;
   final int totalReviews;
+  final bool isOnline;
   final List<SalonService> services;
   final List<Stylist> staff;
 
@@ -19,6 +20,7 @@ class MarketplaceSalon {
     required this.longitude,
     required this.rating,
     required this.totalReviews,
+    required this.isOnline,
     required this.services,
     required this.staff,
   });
@@ -41,6 +43,7 @@ class MarketplaceSalon {
       longitude: (json['lng'] ?? 0).toDouble(),
       rating: (json['rating'] ?? 0).toDouble(),
       totalReviews: json['totalReviews'] ?? 0,
+      isOnline: json['isOnline'] ?? true,
       services: ((json['services'] ?? []) as List)
           .map((service) => SalonService.fromJson(service))
           .toList(),

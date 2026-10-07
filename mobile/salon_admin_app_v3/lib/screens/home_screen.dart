@@ -21,15 +21,16 @@ class HomeScreen extends StatelessWidget {
     final data = DashboardScope.of(context);
     final salon = data.salon;
     if (salon == null || data.staffRelations.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.addStaffBeforeBookings)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context)!.addStaffBeforeBookings)));
       return;
     }
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => NewBookingSheet(salon: salon, staffRelations: data.staffRelations),
+      builder: (context) =>
+          NewBookingSheet(salon: salon, staffRelations: data.staffRelations),
     );
     if (created == true) await data.load();
   }
@@ -46,7 +47,8 @@ class HomeScreen extends StatelessWidget {
         child: RefreshIndicator(
           onRefresh: data.load,
           child: ListView(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 24 + MediaQuery.of(context).padding.bottom),
+            padding: EdgeInsets.fromLTRB(
+                16, 8, 16, 24 + MediaQuery.of(context).padding.bottom),
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -56,37 +58,88 @@ class HomeScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(formatFullDate(DateTime.now()),
-                            style: const TextStyle(color: AppColors.inkMuted, fontSize: 13)),
+                            style: const TextStyle(
+                                color: AppColors.inkMuted, fontSize: 13)),
                         const SizedBox(height: 2),
-                        Text('${salon['name'] ?? t.salonLabel}', style: Theme.of(context).textTheme.headlineSmall),
+                        Text('${salon['name'] ?? t.salonLabel}',
+                            style: Theme.of(context).textTheme.headlineSmall),
                       ],
                     ),
                   ),
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: AppColors.accentSoft,
-                    child: Icon(Icons.storefront, color: AppColors.accent, size: 20),
+                    child: Icon(Icons.storefront,
+                        color: AppColors.accent, size: 20),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
+              Container(
+                decoration: cardDecoration(
+                  borderColor: salon['isOnline'] == false
+                      ? AppColors.danger
+                      : AppColors.success,
+                ),
+                child: SwitchListTile.adaptive(
+                  value: salon['isOnline'] != false,
+                  onChanged: data.saving ? null : data.setSalonOnline,
+                  secondary: Icon(
+                    salon['isOnline'] == false
+                        ? Icons.storefront_outlined
+                        : Icons.storefront,
+                    color: salon['isOnline'] == false
+                        ? AppColors.danger
+                        : AppColors.success,
+                  ),
+                  title: Text(
+                    salon['isOnline'] == false
+                        ? 'Salon offline'
+                        : 'Salon online',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  subtitle: Text(
+                    salon['isOnline'] == false
+                        ? 'Customers cannot make new bookings'
+                        : 'Customers can make new bookings',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
               NewBookingButton(onPressed: () => _openNewBooking(context)),
               const SizedBox(height: 14),
               Row(
                 children: [
-                  Expanded(child: StatTile(label: t.statToday, value: '${data.todayCount}', helper: t.statLoggedHelper)),
+                  Expanded(
+                      child: StatTile(
+                          label: t.statToday,
+                          value: '${data.todayCount}',
+                          helper: t.statLoggedHelper)),
                   const SizedBox(width: 10),
-                  Expanded(child: StatTile(label: t.statRepeat, value: '${data.repeatCustomers}', helper: t.statBackHelper)),
+                  Expanded(
+                      child: StatTile(
+                          label: t.statRepeat,
+                          value: '${data.repeatCustomers}',
+                          helper: t.statBackHelper)),
                 ],
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Expanded(child: StatTile(label: t.statToday, value: formatMoney(data.todayRevenue))),
+                  Expanded(
+                      child: StatTile(
+                          label: t.statToday,
+                          value: formatMoney(data.todayRevenue))),
                   const SizedBox(width: 10),
-                  Expanded(child: StatTile(label: t.statWeek, value: formatMoney(data.weekRevenue))),
+                  Expanded(
+                      child: StatTile(
+                          label: t.statWeek,
+                          value: formatMoney(data.weekRevenue))),
                   const SizedBox(width: 10),
-                  Expanded(child: StatTile(label: t.statMonth, value: formatMoney(data.monthRevenue))),
+                  Expanded(
+                      child: StatTile(
+                          label: t.statMonth,
+                          value: formatMoney(data.monthRevenue))),
                 ],
               ),
               const SizedBox(height: 18),

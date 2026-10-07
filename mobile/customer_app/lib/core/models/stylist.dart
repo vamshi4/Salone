@@ -75,12 +75,14 @@ class Salon {
   final String name;
   final double? latitude;
   final double? longitude;
+  final bool isOnline;
 
   Salon({
     required this.id,
     required this.name,
     this.latitude,
     this.longitude,
+    required this.isOnline,
   });
 
   factory Salon.fromJson(Map<String, dynamic> json) => Salon(
@@ -88,6 +90,7 @@ class Salon {
         name: json['name'],
         latitude: (json['lat'] as num?)?.toDouble(),
         longitude: (json['lng'] as num?)?.toDouble(),
+        isOnline: json['isOnline'] ?? true,
       );
 }
 

@@ -44,11 +44,20 @@ class _SalonBookingScreenState extends ConsumerState<SalonBookingScreen> {
   }
 
   bool get _canBook =>
+      widget.salon.isOnline &&
       widget.salon.services.isNotEmpty &&
       _selectedStylist != null &&
       _selectedSlot != null;
 
   Future<void> _loadSlots() async {
+    if (!widget.salon.isOnline) {
+      setState(() {
+        _slots = [];
+        _selectedSlot = null;
+        _slotError = 'This salon is offline and is not accepting bookings.';
+      });
+      return;
+    }
     final stylist = _selectedStylist;
     if (stylist == null || widget.salon.services.isEmpty) {
       setState(() {

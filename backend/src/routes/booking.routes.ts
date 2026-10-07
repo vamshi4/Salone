@@ -338,6 +338,10 @@ router.post('/', requireRole('CUSTOMER'), async (req, res) => {
 
     if (!stylist || stylist.deletedAt) return res.status(404).json({ error: 'Stylist not found' });
 
+    if (!isHomeService && stylist.primarySalon && !stylist.primarySalon.isOnline) {
+      return res.status(409).json({ error: 'This salon is offline and is not accepting bookings' });
+    }
+
     if (isHomeService) {
       if (!stylist.homeServiceEnabled || stylist.registrationType === 'SALON_EXCLUSIVE') {
         return res.status(400).json({ error: 'Home service is not available for this stylist' });
@@ -372,6 +376,20 @@ router.post('/', requireRole('CUSTOMER'), async (req, res) => {
 
     if (requestedServiceIds.length && selectedServices.length !== requestedServiceIds.length) {
       return res.status(400).json({ error: 'One or more services were not found for stylist' });
+    }
+    const offlineServiceSalon = selectedServices.some(
+      (selectedService) => selectedService.salonId != null,
+    )
+      ? await prisma.salon.findFirst({
+          where: {
+            id: { in: selectedServices.map((item) => item.salonId).filter(Boolean) as string[] },
+            isOnline: false,
+          },
+          select: { id: true },
+        })
+      : null;
+    if (offlineServiceSalon) {
+      return res.status(409).json({ error: 'This salon is offline and is not accepting bookings' });
     }
     if (requestedServiceIds.length) {
       selectedServices.sort(

@@ -1108,3 +1108,19 @@ repinned to a commit at or after `518a9cb` and rolled.
 - Verified on physical device `ed083e3d`: location permission prompt, selected Nearby chip, nearest
   salon result, and displayed distance. `flutter analyze` and both customer tests pass.
 - `graphify update .` remains unavailable on Ubuntu because the Graphify executable is missing.
+
+## 2026-10-07 — pending-booking alarm and next availability rule
+
+- Salon admin v3 now checks for new pending bookings every 20 seconds while the app is active.
+  An unresolved booking shows a persistent action banner and plays the system alert every 15
+  seconds until the salon confirms/rejects it. “5 min” snoozes only that booking; any other new
+  booking can still alert immediately. Returning to the app triggers an immediate refresh.
+- This is an in-app alarm only. Reliable ringing while the app is backgrounded, locked, or closed
+  still requires Firebase Cloud Messaging configuration, device-token registration, and a backend
+  push when a booking is created. Do not describe closed-app alerts as production-ready yet.
+- Added an owner-controlled Online/Offline status for every salon. Salon admin v3 exposes the
+  switch on Home; the customer app labels offline salons and disables their booking action. The
+  backend also rejects authenticated and public booking creation for offline salons, so stale
+  clients cannot bypass the UI. Migration: `20261007120000_add_salon_online_status`.
+- The Online/Offline rule is not live until the backend image containing this migration and route
+  logic is deployed. Both mobile release APKs were built against `https://api.slotvibe.buzz`.

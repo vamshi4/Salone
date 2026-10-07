@@ -33,6 +33,7 @@ void main() {
     longitude: 78.55,
     rating: 4.6,
     totalReviews: 20,
+    isOnline: true,
     services: [
       SalonService(
         id: haircut.id,

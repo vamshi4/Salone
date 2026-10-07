@@ -295,6 +295,37 @@ router.get('/:id/availability', async (req, res) => {
       return res.status(400).json({ error: 'date and serviceId/serviceIds are required' });
     }
 
+    const stylist = await prisma.stylist.findUnique({
+      where: { id },
+      select: { registrationType: true, primarySalon: { select: { isOnline: true } } },
+    });
+    if (!stylist) return res.status(404).json({ error: 'Stylist not found' });
+    if (stylist.registrationType === 'SALON_EXCLUSIVE' && stylist.primarySalon?.isOnline === false) {
+      return res.json({
+        date,
+        stylistId: id,
+        serviceIds: selectedServiceIds,
+        slots: [],
+        salonOffline: true,
+      });
+    }
+    const offlineServiceSalon = await prisma.service.findFirst({
+      where: {
+        id: { in: selectedServiceIds },
+        salon: { isOnline: false },
+      },
+      select: { id: true },
+    });
+    if (offlineServiceSalon) {
+      return res.json({
+        date,
+        stylistId: id,
+        serviceIds: selectedServiceIds,
+        slots: [],
+        salonOffline: true,
+      });
+    }
+
     const slots = await buildAvailableSlots(id, selectedServiceIds, String(date));
     res.json({ date, stylistId: id, serviceIds: selectedServiceIds, slots });
   } catch (e: any) {

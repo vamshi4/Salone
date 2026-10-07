@@ -64,7 +64,8 @@ class DashboardData extends ChangeNotifier {
     }
   }
 
-  Future<void> toggleCanSetOwnPrice(Map<String, dynamic> relation, bool value) async {
+  Future<void> toggleCanSetOwnPrice(
+      Map<String, dynamic> relation, bool value) async {
     final s = salon;
     final stylist = relation['stylist'];
     if (s == null || stylist == null) return;
@@ -83,11 +84,27 @@ class DashboardData extends ChangeNotifier {
     }
   }
 
+  Future<void> setSalonOnline(bool value) async {
+    final s = salon;
+    if (s == null || saving) return;
+
+    saving = true;
+    notifyListeners();
+    try {
+      await api().patch('/api/v2/salons/${s['id']}', data: {'isOnline': value});
+      await load();
+    } finally {
+      saving = false;
+      notifyListeners();
+    }
+  }
+
   List<Map<String, dynamic>> get _completedBookings =>
       bookings.where((b) => b['status'] == 'COMPLETED').toList();
 
   bool _within(Map<String, dynamic> booking, DateTime start) =>
-      effectiveBookingTime(booking).isAfter(start.subtract(const Duration(milliseconds: 1)));
+      effectiveBookingTime(booking)
+          .isAfter(start.subtract(const Duration(milliseconds: 1)));
 
   int get todayCount {
     final now = DateTime.now();
@@ -107,7 +124,8 @@ class DashboardData extends ChangeNotifier {
   int get weekRevenue {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    return _revenueSince(DateTime(weekStart.year, weekStart.month, weekStart.day));
+    return _revenueSince(
+        DateTime(weekStart.year, weekStart.month, weekStart.day));
   }
 
   int get monthRevenue {
@@ -115,10 +133,8 @@ class DashboardData extends ChangeNotifier {
     return _revenueSince(DateTime(now.year, now.month, 1));
   }
 
-  Set<String> get _customerKeys => bookings
-      .map(customerKey)
-      .whereType<String>()
-      .toSet();
+  Set<String> get _customerKeys =>
+      bookings.map(customerKey).whereType<String>().toSet();
 
   int get uniqueCustomers => _customerKeys.length;
 
@@ -132,12 +148,15 @@ class DashboardData extends ChangeNotifier {
     return counts;
   }
 
-  int get repeatCustomers => _customerCounts.values.where((count) => count > 1).length;
+  int get repeatCustomers =>
+      _customerCounts.values.where((count) => count > 1).length;
 
   /// Customer keys with more than one booking — used to show a "Repeat" tag
   /// next to their name in the Bookings log.
-  Set<String> get repeatCustomerKeys =>
-      _customerCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
+  Set<String> get repeatCustomerKeys => _customerCounts.entries
+      .where((e) => e.value > 1)
+      .map((e) => e.key)
+      .toSet();
 
   /// Today's completed bookings, most-recently-logged first — the "Logged
   /// today" list on Home.
@@ -146,7 +165,8 @@ class DashboardData extends ChangeNotifier {
     final today = _completedBookings
         .where((b) => isSameDay(effectiveBookingTime(b), now))
         .toList()
-      ..sort((a, b) => effectiveBookingTime(b).compareTo(effectiveBookingTime(a)));
+      ..sort(
+          (a, b) => effectiveBookingTime(b).compareTo(effectiveBookingTime(a)));
     return today;
   }
 
@@ -156,7 +176,8 @@ class DashboardData extends ChangeNotifier {
   List<Map<String, dynamic>> get needsAction => bookings.where((b) {
         final status = b['status'];
         return status == 'PENDING' ||
-            (status == 'PENDING_RESCHEDULE' && b['rescheduleProposedBy'] == 'CUSTOMER');
+            (status == 'PENDING_RESCHEDULE' &&
+                b['rescheduleProposedBy'] == 'CUSTOMER');
       }).toList();
 
   /// All bookings (completed log entries and anything still pending),
@@ -169,7 +190,8 @@ class DashboardData extends ChangeNotifier {
       map.putIfAbsent(day, () => []).add(booking);
     }
     for (final list in map.values) {
-      list.sort((a, b) => effectiveBookingTime(b).compareTo(effectiveBookingTime(a)));
+      list.sort(
+          (a, b) => effectiveBookingTime(b).compareTo(effectiveBookingTime(a)));
     }
     final sortedKeys = map.keys.toList()..sort((a, b) => b.compareTo(a));
     return {for (final k in sortedKeys) k: map[k]!};

@@ -48,6 +48,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   int get _total => _servicesTotal + (_homeService ? _travelFee : 0);
 
+  bool get _salonVisitAvailable =>
+      widget.stylist.primarySalon?.isOnline != false;
+
   Future<void> _loadSlots() async {
     final requestVersion = ++_slotRequestVersion;
     final serviceIds = _selectedServiceIds.join(',');
@@ -302,11 +305,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               color: const Color(0xFF0F8D58),
             )
           else if (widget.stylist.registrationType == 'SALON_EXCLUSIVE')
-            const _NoticeBox(
+            _NoticeBox(
               icon: Icons.info_outline,
-              text: 'Exclusive stylists are available only inside the salon.',
-              background: Color(0xFFFFF4DD),
-              color: Color(0xFF9B6410),
+              text: _salonVisitAvailable
+                  ? 'Exclusive stylists are available only inside the salon.'
+                  : 'This salon is offline and is not accepting bookings.',
+              background: const Color(0xFFFFF4DD),
+              color: const Color(0xFF9B6410),
             ),
           const SizedBox(height: 14),
           _SummaryCard(
@@ -324,7 +329,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     _selectedServiceIds.isEmpty ||
                     _selectedSlot == null ||
                     _slotError != null ||
-                    (_homeService && _eligibilityError != null)
+                    (_homeService && _eligibilityError != null) ||
+                    (!_homeService && !_salonVisitAvailable)
                 ? null
                 : _confirmBooking,
             icon: _booking

@@ -102,6 +102,7 @@ model Salon {
   upiId           String?
   gstEnabled      Boolean  @default(false)
   gstRate         Int      @default(18)
+  isOnline        Boolean  @default(true)
   deletedAt       DateTime?
 
   owner             User            @relation("SalonOwner", fields: [ownerId], references: [id])

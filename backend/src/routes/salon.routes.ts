@@ -118,7 +118,7 @@ router.post('/', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => 
 router.patch('/:salonId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req, res) => {
   try {
     const { salonId } = req.params;
-    const { name, address, lat, lng, countryCode, currency, dailyRevenueGoal } = req.body;
+    const { name, address, lat, lng, countryCode, currency, dailyRevenueGoal, isOnline } = req.body;
 
     const salon = await findOwnedSalon(salonId, req.user);
     if (!salon) return res.status(404).json({ error: 'Salon not found' });
@@ -141,6 +141,7 @@ router.patch('/:salonId', requireRole('SALON_OWNER', 'SUPER_ADMIN'), async (req,
         ...(dailyRevenueGoal != null && Number.isFinite(Number(dailyRevenueGoal))
           ? { dailyRevenueGoal: Math.max(0, Math.round(Number(dailyRevenueGoal))) }
           : {}),
+        ...(typeof isOnline === 'boolean' ? { isOnline } : {}),
       },
     });
 

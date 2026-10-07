@@ -237,6 +237,9 @@ export function registerPublicBookingRoutes(app: Application): void {
 
       const salon = await prisma.salon.findFirst({ where: { id: salonId, deletedAt: null } });
       if (!salon) return res.status(404).json({ error: 'Salon not found' });
+      if (!salon.isOnline) {
+        return res.status(409).json({ error: 'This salon is offline and is not accepting bookings' });
+      }
 
       const stylist = await prisma.stylist.findFirst({
         where: {

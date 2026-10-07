@@ -37,6 +37,18 @@ class SalonDetailScreen extends StatelessWidget {
                 Text(salon.name,
                     style: const TextStyle(
                         fontSize: 24, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                Text(
+                  salon.isOnline
+                      ? 'Open for bookings'
+                      : 'Offline · not accepting bookings',
+                  style: TextStyle(
+                    color: salon.isOnline
+                        ? const Color(0xFF0F8D58)
+                        : const Color(0xFFC33B3B),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -152,8 +164,8 @@ class SalonDetailScreen extends StatelessWidget {
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) => StylistProfileScreen(
-                                        stylist: stylist)),
+                                    builder: (_) =>
+                                        StylistProfileScreen(stylist: stylist)),
                               ),
                             ),
                           ),
@@ -168,13 +180,16 @@ class SalonDetailScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: FilledButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => SalonBookingScreen(salon: salon)),
-            ),
+            onPressed: salon.isOnline
+                ? () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => SalonBookingScreen(salon: salon)),
+                    )
+                : null,
             icon: const Icon(Icons.calendar_month_outlined),
-            label: const Text('Book at this salon'),
+            label: Text(
+                salon.isOnline ? 'Book at this salon' : 'Salon is offline'),
           ),
         ),
       ),
