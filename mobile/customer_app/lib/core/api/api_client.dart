@@ -35,6 +35,16 @@ class ApiClient {
     await _saveSession(response.data);
   }
 
+  static Future<void> googleLogin(String idToken, {String? phone}) async {
+    final response =
+        await _publicDio().post('/api/v2/auth/google-login', data: {
+      'idToken': idToken,
+      'role': 'CUSTOMER',
+      if (phone != null) 'phone': phone,
+    });
+    await _saveSession(response.data);
+  }
+
   static Future<void> logout() async {
     _token = null;
     customerName = null;

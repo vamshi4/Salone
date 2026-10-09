@@ -1124,3 +1124,15 @@ repinned to a commit at or after `518a9cb` and rolled.
   clients cannot bypass the UI. Migration: `20261007120000_add_salon_online_status`.
 - The Online/Offline rule is not live until the backend image containing this migration and route
   logic is deployed. Both mobile release APKs were built against `https://api.slotvibe.buzz`.
+
+## 2026-10-09 — customer Google authentication
+
+- Customer app now supports existing-account Google sign-in and first-time Google signup. Signup
+  requires a phone number because customer contact remains required; the name and verified email
+  come from the Google ID token. Existing phone accounts are never silently linked by phone.
+- Backend `/api/v2/auth/google-login` creates a `CUSTOMER` only when a valid Google token and a new
+  phone number are supplied. Salon-owner behavior is unchanged.
+- Customer release builds must include
+  `--dart-define=GOOGLE_SERVER_CLIENT_ID=562611122778-qip8n4i7q2a1ad2fpo85l1g8ngt1u17d.apps.googleusercontent.com`.
+- Google Cloud also needs an Android OAuth client for package `com.chairful.customer` and the
+  release signing SHA-1 `97:97:6E:59:34:30:EF:CA:7D:A6:C5:22:67:58:DF:EA:25:78:BA:DA`.

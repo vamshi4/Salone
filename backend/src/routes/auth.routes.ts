@@ -83,14 +83,14 @@ router.post('/customer-signup', async (req, res) => {
   }
 });
 
-// POST /google-login — { idToken, role }. Logs in an EXISTING account only
-// (matched by googleId, or by email on first use — which also auto-links the
-// Google account for next time). Does not create new accounts; a first-time
-// owner still goes through /salon-signup (with googleIdToken instead of a
-// password) since that also needs salon name/address.
+// POST /google-login — { idToken, role, phone? }. Existing accounts are
+// matched by googleId or email. A first-time customer can provide a phone to
+// create their account; salon owners still use /salon-signup because that
+// flow also needs the salon profile.
 router.post('/google-login', async (req, res) => {
   try {
     const { idToken, role = 'SALON_OWNER' } = req.body;
+    const phone = String(req.body.phone ?? '').trim();
     if (!idToken || !Object.values(UserRole).includes(role)) {
       return res.status(400).json({ error: 'idToken and valid role are required' });
     }
@@ -118,9 +118,39 @@ router.post('/google-login', async (req, res) => {
       }
     }
 
+    if (!user && role === 'CUSTOMER' && phone.length >= 6) {
+      const identityInUse = await prisma.user.findFirst({
+        where: {
+          OR: [{ googleId: identity.googleId }, { email: identity.email }],
+          deletedAt: null,
+        },
+      });
+      if (identityInUse) {
+        return res.status(409).json({
+          error: 'This Google account is already used by another Chairful account.',
+        });
+      }
+      if (await prisma.user.findUnique({ where: { phone } })) {
+        return res.status(409).json({
+          error: 'Phone already registered. Sign in with your password first.',
+        });
+      }
+      user = await prisma.user.create({
+        data: {
+          name: identity.name ?? 'Customer',
+          phone,
+          email: identity.email,
+          googleId: identity.googleId,
+          role: 'CUSTOMER',
+        },
+      });
+    }
+
     if (!user) {
       return res.status(404).json({
-        error: 'No account found for this Google account. Sign up first.',
+        error: role === 'CUSTOMER'
+          ? 'No account found. Choose Create account and enter your phone number.'
+          : 'No account found for this Google account. Sign up first.',
       });
     }
 

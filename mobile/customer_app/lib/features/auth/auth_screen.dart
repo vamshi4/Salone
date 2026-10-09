@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/api/google_auth.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key, required this.onAuthenticated});
@@ -17,6 +18,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _password = TextEditingController();
   bool _signup = false;
   bool _loading = false;
+  bool _googleLoading = false;
   bool _obscure = true;
 
   @override
@@ -27,29 +29,58 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
+  Future<void> _continueWithGoogle() async {
+    final phone = _phone.text.trim();
+    if (_signup && phone.length < 6) {
+      _show('Enter your phone number to create your customer account.');
+      return;
+    }
+
+    setState(() => _googleLoading = true);
+    try {
+      final idToken = await signInWithGoogleIdToken();
+      if (idToken == null) return;
+      await ApiClient.googleLogin(idToken, phone: _signup ? phone : null);
+      widget.onAuthenticated();
+    } on GoogleAuthNotConfiguredError {
+      _show('Google sign-in is not configured in this build.');
+    } on DioException catch (e) {
+      _show(e.response?.data?['error']?.toString() ??
+          'Google sign-in failed. Please try again.');
+    } catch (_) {
+      _show('Google sign-in failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
+    }
+  }
+
   Future<void> _submit() async {
-    if (_phone.text.trim().length < 6 || _password.text.length < 6 ||
+    if (_phone.text.trim().length < 6 ||
+        _password.text.length < 6 ||
         (_signup && _name.text.trim().length < 2)) {
-      _show('Enter valid account details. Password must be at least 6 characters.');
+      _show(
+          'Enter valid account details. Password must be at least 6 characters.');
       return;
     }
     setState(() => _loading = true);
     try {
       if (_signup) {
-        await ApiClient.signup(_name.text.trim(), _phone.text.trim(), _password.text);
+        await ApiClient.signup(
+            _name.text.trim(), _phone.text.trim(), _password.text);
       } else {
         await ApiClient.login(_phone.text.trim(), _password.text);
       }
       widget.onAuthenticated();
     } on DioException catch (e) {
-      _show(e.response?.data?['error']?.toString() ?? 'Could not connect. Please try again.');
+      _show(e.response?.data?['error']?.toString() ??
+          'Could not connect. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _show(String message) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  void _show(String message) => ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text(message)));
 
   @override
   Widget build(BuildContext context) {
@@ -60,35 +91,104 @@ class _AuthScreenState extends State<AuthScreen> {
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Icon(Icons.content_cut, size: 42, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(height: 16),
-                Text(_signup ? 'Create your GlamBook account' : 'Welcome to GlamBook',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 8),
-                Text(_signup ? 'Book salons and stylists with one account.' : 'Sign in to manage your bookings.',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Color(0xFF625B6B), fontWeight: FontWeight.w600)),
-                const SizedBox(height: 28),
-                if (_signup) ...[
-                  TextField(controller: _name, textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(labelText: 'Name', prefixIcon: Icon(Icons.person_outline))),
-                  const SizedBox(height: 12),
-                ],
-                TextField(controller: _phone, keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone_outlined))),
-                const SizedBox(height: 12),
-                TextField(controller: _password, obscureText: _obscure,
-                    decoration: InputDecoration(labelText: 'Password', prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(onPressed: () => setState(() => _obscure = !_obscure),
-                        icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined)))),
-                const SizedBox(height: 20),
-                FilledButton(onPressed: _loading ? null : _submit,
-                    child: Text(_loading ? 'Please wait…' : (_signup ? 'Create account' : 'Sign in'))),
-                TextButton(onPressed: _loading ? null : () => setState(() => _signup = !_signup),
-                    child: Text(_signup ? 'Already have an account? Sign in' : 'New customer? Create account')),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Icon(Icons.content_cut,
+                        size: 42, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(height: 16),
+                    Text(
+                        _signup
+                            ? 'Create your GlamBook account'
+                            : 'Welcome to GlamBook',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 8),
+                    Text(
+                        _signup
+                            ? 'Book salons and stylists with one account.'
+                            : 'Sign in to manage your bookings.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            color: Color(0xFF625B6B),
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 28),
+                    if (_signup) ...[
+                      TextField(
+                          controller: _name,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: const InputDecoration(
+                              labelText: 'Name',
+                              prefixIcon: Icon(Icons.person_outline))),
+                      const SizedBox(height: 12),
+                    ],
+                    TextField(
+                        controller: _phone,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                            labelText: 'Phone',
+                            prefixIcon: Icon(Icons.phone_outlined))),
+                    const SizedBox(height: 12),
+                    TextField(
+                        controller: _password,
+                        obscureText: _obscure,
+                        decoration: InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
+                                icon: Icon(_obscure
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined)))),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: (_loading || _googleLoading) ? null : _submit,
+                      child: Text(_loading
+                          ? 'Please wait…'
+                          : (_signup ? 'Create account' : 'Sign in')),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Row(
+                        children: [
+                          Expanded(child: Divider()),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('or',
+                                style: TextStyle(color: Color(0xFF625B6B))),
+                          ),
+                          Expanded(child: Divider()),
+                        ],
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: (_loading || _googleLoading)
+                          ? null
+                          : _continueWithGoogle,
+                      icon: _googleLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('G',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w900)),
+                      label: Text(_signup
+                          ? 'Sign up with Google'
+                          : 'Continue with Google'),
+                    ),
+                    TextButton(
+                      onPressed: (_loading || _googleLoading)
+                          ? null
+                          : () => setState(() => _signup = !_signup),
+                      child: Text(_signup
+                          ? 'Already have an account? Sign in'
+                          : 'New customer? Create account'),
+                    ),
+                  ]),
             ),
           ),
         ),

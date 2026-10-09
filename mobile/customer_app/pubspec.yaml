@@ -1,6 +1,6 @@
 name: salon_customer_app
 description: Customer app for Salon Marketplace V2
-version: 2.0.0+1
+version: 2.0.0+2
 environment:
   sdk: '>=3.3.0 <4.0.0'
 dependencies:
@@ -13,6 +13,7 @@ dependencies:
   geolocator: ^11.0.0
   cached_network_image: ^3.3.1
   flutter_secure_storage: ^9.2.4
+  google_sign_in: ^6.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
