@@ -1136,3 +1136,7 @@ repinned to a commit at or after `518a9cb` and rolled.
   `--dart-define=GOOGLE_SERVER_CLIENT_ID=562611122778-qip8n4i7q2a1ad2fpo85l1g8ngt1u17d.apps.googleusercontent.com`.
 - Google Cloud also needs an Android OAuth client for package `com.chairful.customer` and the
   release signing SHA-1 `97:97:6E:59:34:30:EF:CA:7D:A6:C5:22:67:58:DF:EA:25:78:BA:DA`.
+- Created that Google Cloud Android OAuth client on 2026-10-09. Client ID:
+  `562611122778-0na090arul1330g7q3bp6ctqruklnuak.apps.googleusercontent.com`.
+- GitHub Actions successfully published backend image `ghcr.io/vamshi4/salone-backend:0460dbf`;
+  `deploy/k8s/salone-api.yaml` is pinned to it in deploy commit `40750d1` for ArgoCD rollout.
